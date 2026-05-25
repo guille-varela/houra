@@ -2,7 +2,7 @@
 
 Internal time tracker for Gut. Tracks hours per project, per person, and per cost matrix (area × role) to give real-time margin visibility.
 
-> Phase 03 complete — project matrix dashboard live. Production: [houra.guillermo-varela.workers.dev](https://houra.guillermo-varela.workers.dev)
+> Phase 05 complete — reports + sharing live. Production: [houra.guillermo-varela.workers.dev](https://houra.guillermo-varela.workers.dev)
 
 ---
 
@@ -123,8 +123,9 @@ Secrets are managed with `wrangler secret put` — never stored in the repositor
 | 02 | Time entry UI | ✅ Done |
 | 03 | Project management + matrix dashboard | ✅ Done |
 | 04 | Margin + amendments | ✅ Done |
-| 05 | Reports + sharing | Pending |
-| 06–08 | Background jobs, notifications, audit log | — |
+| 05 | Reports + sharing | ✅ Done |
+| 06 | Time off + notifications (Inngest + Slack/email) | Pending |
+| 07–08 | Background jobs, audit log, exports | — |
 | 09 | Brand tokens + final design | — |
 
 ---

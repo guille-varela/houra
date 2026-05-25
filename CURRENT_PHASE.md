@@ -1,6 +1,6 @@
 # Current Phase
 
-phase: 05
+phase: 06
 status: pending
 completed_phases:
   - phase: 00
@@ -19,4 +19,7 @@ completed_phases:
   - phase: 04
     status: completed
     completed_at: 2026-05-26
-next: Phase 05 — Reports + sharing
+  - phase: 05
+    status: completed
+    completed_at: 2026-05-26
+next: Phase 06 — Time off + notifications
