@@ -1,13 +1,15 @@
 name = "houra"
+main = ".open-next/worker.js"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# El adapter genera los assets aquí; Cloudflare Pages los sirve desde este directorio
-pages_build_output_dir = ".open-next/assets"
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
 
 [vars]
-NEXT_PUBLIC_APP_URL = "https://houra.pages.dev"
+NEXT_PUBLIC_APP_URL = "https://houra.guillermo-varela.workers.dev"
 
-# El resto de ENV vars (DATABASE_URL, BETTER_AUTH_SECRET, RESEND_API_KEY,
-# INNGEST_SIGNING_KEY, INNGEST_EVENT_KEY) se configuran en el dashboard de
-# Cloudflare Pages → Settings → Environment variables (nunca en este archivo)
+# Secrets (DATABASE_URL, BETTER_AUTH_SECRET, RESEND_API_KEY, etc.)
+# se añaden vía: pnpm exec wrangler secret put NOMBRE_VAR
+# Nunca en este archivo
