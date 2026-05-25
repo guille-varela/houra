@@ -1,0 +1,199 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import {
+  Stack,
+  Title,
+  Group,
+  Text,
+  Button,
+  Select,
+  Alert,
+  NumberInput,
+  Table,
+  Divider,
+  Badge,
+} from '@mantine/core'
+import { updateProjectStatus, updateAllocation } from '@/actions/projects'
+import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS, type Allocation } from '@/lib/matrix'
+import { isValidTransition, PROJECT_STATUSES } from '@/lib/schemas/project'
+
+const STATUS_LABELS: Record<string, string> = {
+  draft: 'Borrador',
+  active: 'Activo',
+  paused: 'Pausado',
+  closed: 'Cerrado',
+}
+
+type Props = {
+  projectId: string
+  status: string
+  allocation: Allocation
+}
+
+export default function SettingsTab({ projectId, status, allocation }: Props) {
+  const [statusError, setStatusError] = useState<string | null>(null)
+  const [allocError, setAllocError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
+
+  const isDraft = status === 'draft'
+
+  // Local editable allocation state
+  const [editAlloc, setEditAlloc] = useState<Allocation>(() => {
+    const copy: Allocation = {}
+    for (const area of AREAS) {
+      copy[area] = {}
+      for (const role of ROLES) {
+        copy[area]![role] = allocation[area]?.[role] ?? 0
+      }
+    }
+    return copy
+  })
+
+  const validNextStatuses = PROJECT_STATUSES.filter((s) => isValidTransition(status, s))
+
+  function handleStatusChange() {
+    if (!selectedStatus) return
+    setStatusError(null)
+    startTransition(async () => {
+      const result = await updateProjectStatus({ projectId, status: selectedStatus })
+      if (!result.ok) setStatusError(result.error)
+    })
+  }
+
+  function handleAllocChange(area: string, role: string, value: number | string) {
+    const num = typeof value === 'string' ? parseFloat(value) || 0 : value
+    setEditAlloc((prev) => ({
+      ...prev,
+      [area]: { ...prev[area], [role]: num },
+    }))
+  }
+
+  function handleSaveAlloc() {
+    setAllocError(null)
+    startTransition(async () => {
+      const result = await updateAllocation({ projectId, allocation: editAlloc })
+      if (!result.ok) setAllocError(result.error)
+    })
+  }
+
+  return (
+    <Stack gap="xl">
+      {/* Status transition */}
+      <Stack gap="sm">
+        <Title order={5}>Estado del proyecto</Title>
+        <Group gap="xs">
+          <Text size="sm" c="dimmed">
+            Estado actual:
+          </Text>
+          <Badge variant="light" color="gray">
+            {STATUS_LABELS[status] ?? status}
+          </Badge>
+        </Group>
+
+        {statusError && (
+          <Alert color="red" variant="light" withCloseButton onClose={() => setStatusError(null)}>
+            {statusError}
+          </Alert>
+        )}
+
+        {validNextStatuses.length > 0 ? (
+          <Group gap="sm">
+            <Select
+              placeholder="Nuevo estado..."
+              data={validNextStatuses.map((s) => ({
+                value: s,
+                label: STATUS_LABELS[s] ?? s,
+              }))}
+              value={selectedStatus}
+              onChange={setSelectedStatus}
+              style={{ flex: 1, maxWidth: 220 }}
+            />
+            <Button
+              size="sm"
+              variant="light"
+              loading={isPending}
+              disabled={!selectedStatus}
+              onClick={handleStatusChange}
+            >
+              Cambiar estado
+            </Button>
+          </Group>
+        ) : (
+          <Text size="sm" c="dimmed">
+            No hay transiciones disponibles desde este estado.
+          </Text>
+        )}
+      </Stack>
+
+      <Divider />
+
+      {/* Allocation matrix edit */}
+      <Stack gap="sm">
+        <Group gap="xs" align="flex-start">
+          <Title order={5}>Asignación de horas</Title>
+          {!isDraft && (
+            <Badge size="sm" color="gray" variant="light">
+              Bloqueado (proyecto {STATUS_LABELS[status]?.toLowerCase()})
+            </Badge>
+          )}
+        </Group>
+        {isDraft ? (
+          <Text size="xs" c="dimmed">
+            Edita las horas planificadas por celda (área × rol). 0 = celda inactiva.
+          </Text>
+        ) : (
+          <Text size="xs" c="dimmed">
+            La asignación es editable solo en estado Borrador. Para modificar un proyecto activo usa un Amendment (Phase 04).
+          </Text>
+        )}
+
+        {allocError && (
+          <Alert color="red" variant="light" withCloseButton onClose={() => setAllocError(null)}>
+            {allocError}
+          </Alert>
+        )}
+
+        <Table withTableBorder withColumnBorders fz="sm">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th></Table.Th>
+              {ROLES.map((role) => (
+                <Table.Th key={role} ta="center" style={{ minWidth: 90 }}>
+                  {ROLE_LABELS[role]}
+                </Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {AREAS.map((area) => (
+              <Table.Tr key={area}>
+                <Table.Td fw={500}>{AREA_LABELS[area]}</Table.Td>
+                {ROLES.map((role) => (
+                  <Table.Td key={role} p={4}>
+                    <NumberInput
+                      value={editAlloc[area]?.[role] ?? 0}
+                      onChange={(v) => handleAllocChange(area, role, v)}
+                      min={0}
+                      step={10}
+                      disabled={!isDraft || isPending}
+                      size="xs"
+                      styles={{ input: { textAlign: 'center' } }}
+                    />
+                  </Table.Td>
+                ))}
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+
+        {isDraft && (
+          <Button size="sm" variant="light" loading={isPending} onClick={handleSaveAlloc} style={{ alignSelf: 'flex-start' }}>
+            Guardar asignación
+          </Button>
+        )}
+      </Stack>
+    </Stack>
+  )
+}

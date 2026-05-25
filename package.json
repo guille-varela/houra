@@ -20,6 +20,7 @@
     "deploy:cf": "opennextjs-cloudflare deploy"
   },
   "dependencies": {
+    "@mantine/charts": "9.2.1",
     "@mantine/core": "^9.2.1",
     "@mantine/dates": "^9.2.1",
     "@mantine/form": "^9.2.1",
@@ -36,6 +37,7 @@
     "postcss-simple-vars": "^7.0.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "recharts": "3.8.1",
     "resend": "^6.12.3",
     "ws": "^8.21.0",
     "zod": "^4.4.3"

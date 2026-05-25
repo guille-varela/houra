@@ -1,6 +1,6 @@
 # Current Phase
 
-phase: 03
+phase: 04
 status: pending
 completed_phases:
   - phase: 00
@@ -13,4 +13,7 @@ completed_phases:
   - phase: 02
     status: completed
     completed_at: 2026-05-25
-next: Phase 03 — (pendiente de spec)
+  - phase: 03
+    status: completed
+    completed_at: 2026-05-26
+next: Phase 04 — Margin + amendments

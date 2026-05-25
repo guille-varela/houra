@@ -1,0 +1,122 @@
+import { notFound, redirect } from 'next/navigation'
+import { eq } from 'drizzle-orm'
+import { Stack, Title, Group, Badge, Text } from '@mantine/core'
+import { db } from '@/lib/db'
+import { getCurrentPerson } from '@/lib/auth-helpers'
+import { projects, workspaces } from '@/db/schema'
+import OverviewTab from './overview-tab'
+import TeamTab from './team-tab'
+import TimeEntriesTab from './time-entries-tab'
+import SettingsTab from './settings-tab'
+import ProjectTabs from './project-tabs'
+
+const STATUS_LABELS: Record<string, string> = {
+  draft: 'Borrador',
+  active: 'Activo',
+  paused: 'Pausado',
+  closed: 'Cerrado',
+}
+
+const STATUS_COLOR: Record<string, string> = {
+  draft: 'gray',
+  active: 'green',
+  paused: 'yellow',
+  closed: 'red',
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  fixed_bag: 'Bolsa fija',
+  renewable_bag: 'Bolsa renovable',
+  ongoing_capacity: 'Capacidad continua',
+}
+
+type Props = {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ tab?: string }>
+}
+
+export default async function ProjectDetailPage({ params, searchParams }: Props) {
+  const { id } = await params
+  const { tab } = await searchParams
+
+  const person = await getCurrentPerson()
+  if (!person) redirect('/login')
+
+  const isAdmin = person.appRole === 'admin'
+  const isManager = person.appRole === 'manager' || isAdmin
+
+  if (!isManager) redirect('/today')
+
+  const [project] = await db
+    .select({
+      id: projects.id,
+      name: projects.name,
+      type: projects.type,
+      status: projects.status,
+      startDate: projects.startDate,
+      endDate: projects.endDate,
+      originalAllocation: projects.originalAllocation,
+      areasEnabled: projects.areasEnabled,
+      weeklyHours: projects.weeklyHours,
+      workspaceName: workspaces.name,
+    })
+    .from(projects)
+    .leftJoin(workspaces, eq(workspaces.id, projects.workspaceId))
+    .where(eq(projects.id, id))
+    .limit(1)
+
+  if (!project) notFound()
+
+  const allocation = project.originalAllocation as Record<string, Record<string, number>>
+  const activeTab = tab ?? 'overview'
+
+  return (
+    <Stack p="md" gap="md">
+      <div>
+        <Group justify="space-between" align="flex-start" mb={4}>
+          <Title order={3}>{project.name}</Title>
+          <Badge color={STATUS_COLOR[project.status] ?? 'gray'} variant="light">
+            {STATUS_LABELS[project.status] ?? project.status}
+          </Badge>
+        </Group>
+        <Group gap="xs">
+          {project.workspaceName && (
+            <Text size="xs" c="dimmed">
+              {project.workspaceName}
+            </Text>
+          )}
+          <Badge size="xs" variant="outline" color="gray">
+            {TYPE_LABELS[project.type] ?? project.type}
+          </Badge>
+          {project.startDate && (
+            <Text size="xs" c="dimmed">
+              {project.startDate}
+              {project.endDate ? ` → ${project.endDate}` : ''}
+            </Text>
+          )}
+        </Group>
+      </div>
+
+      <ProjectTabs
+        defaultTab={activeTab}
+        isAdmin={isAdmin}
+        overview={
+          <OverviewTab
+            projectId={id}
+            allocation={allocation}
+            projectType={project.type}
+            startDate={project.startDate}
+            endDate={project.endDate}
+          />
+        }
+        entries={<TimeEntriesTab projectId={id} />}
+        team={isAdmin ? <TeamTab projectId={id} organizationId={person.organizationId} /> : null}
+        settings={
+          isAdmin ? (
+            <SettingsTab projectId={id} status={project.status} allocation={allocation} />
+          ) : null
+        }
+      />
+    </Stack>
+  )
+}

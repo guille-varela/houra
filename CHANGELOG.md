@@ -10,6 +10,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.0] — 2026-05-26
+
+### Phase 03 — Projects + matrix dashboard
+
+The centerpiece of Houra: project overview with the `(area × role)` consumption matrix.
+
+### Added
+
+- `/projects` — project list for Admin + Manager (role-guarded; contributors redirected to `/today`)
+- `/projects/[id]` — project detail with four tabs: Overview, Entradas, Equipo, Ajustes
+- **Overview tab**: `(area × role)` matrix with traffic-light coloring (green <80%, orange 80–99%, red ≥100%); unplanned consumption (no allocation set) shown as red cells
+- **Cell drill-down**: click any active matrix cell to open a drawer listing every person who imputed hours in that (area × role) combination
+- **Burn rate chart**: cumulative hours by ISO week (`@mantine/charts` + `recharts`)
+- **Projected end date** for `fixed_bag` and `renewable_bag` project types (based on weekly consumption rate)
+- **Top contributors** list (top 5 by hours)
+- **Entradas tab**: paginated table of all time entries for the project (last 200)
+- **Equipo tab** (Admin only): list active assignments, add/remove people, set `allowed_areas` per person
+- **Ajustes tab** (Admin only): status transitions (draft → active → paused → closed; active → draft blocked), editable allocation matrix (unlocked only in `draft` status)
+- `lib/matrix.ts` — pure functions: `buildMatrix`, `getProjectTotals`, `getProjectedEndDate`
+- `lib/schemas/project.ts` — Zod schemas + `isValidTransition` guard
+- `actions/projects.ts` — `updateProjectStatus`, `updateAllocation` (both audit-logged)
+- `actions/project-assignments.ts` — `upsertAssignment`, `deactivateAssignment` (both audit-logged)
+- `actions/projects-query.ts` — `getCellEntries` server action for cell drill-down
+
+### Dependencies
+
+- `@mantine/charts@9.2.1` + `recharts@3.8.1`
+
+### Decisions
+
+- Mantine compound components (`Tabs.*`, `Table.*`) don't resolve in Turbopack Server Components — workaround: `Tabs` shell extracted to a `'use client'` wrapper (`ProjectTabs`); `Table.*` replaced with standalone named exports (`TableThead`, `TableTbody`, etc.) in Server Components
+- Unplanned consumption (consumed > 0, planned = 0) shown as red cell with raw hours instead of percentage — more informative than hiding the data
+
+[0.4.0]: https://github.com/guille-varela/houra/releases/tag/v0.4.0
+
+---
+
 ## [0.1.0] — 2026-05-25
 
 ### Phase 00 — Scaffold
