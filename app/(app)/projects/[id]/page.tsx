@@ -8,6 +8,8 @@ import OverviewTab from './overview-tab'
 import TeamTab from './team-tab'
 import TimeEntriesTab from './time-entries-tab'
 import SettingsTab from './settings-tab'
+import MarginTab from './margin-tab'
+import AmendmentsTab from './amendments-tab'
 import ProjectTabs from './project-tabs'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -100,6 +102,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
       <ProjectTabs
         defaultTab={activeTab}
         isAdmin={isAdmin}
+        isManager={isManager}
         overview={
           <OverviewTab
             projectId={id}
@@ -110,6 +113,14 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
           />
         }
         entries={<TimeEntriesTab projectId={id} />}
+        margin={<MarginTab projectId={id} originalAllocation={allocation} />}
+        amendments={
+          <AmendmentsTab
+            projectId={id}
+            originalAllocation={allocation}
+            projectStatus={project.status}
+          />
+        }
         team={isAdmin ? <TeamTab projectId={id} organizationId={person.organizationId} /> : null}
         settings={
           isAdmin ? (
