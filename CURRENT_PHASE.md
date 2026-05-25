@@ -1,6 +1,6 @@
 # Current Phase
 
-phase: 04
+phase: 05
 status: pending
 completed_phases:
   - phase: 00
@@ -16,4 +16,7 @@ completed_phases:
   - phase: 03
     status: completed
     completed_at: 2026-05-26
-next: Phase 04 — Margin + amendments
+  - phase: 04
+    status: completed
+    completed_at: 2026-05-26
+next: Phase 05 — Reports + sharing

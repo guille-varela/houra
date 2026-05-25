@@ -122,8 +122,8 @@ Secrets are managed with `wrangler secret put` — never stored in the repositor
 | 01 | Data model + auth | ✅ Done |
 | 02 | Time entry UI | ✅ Done |
 | 03 | Project management + matrix dashboard | ✅ Done |
-| 04 | Margin + amendments | Pending |
-| 05 | PDF export (Cloudflare-compatible) | — |
+| 04 | Margin + amendments | ✅ Done |
+| 05 | Reports + sharing | Pending |
 | 06–08 | Background jobs, notifications, audit log | — |
 | 09 | Brand tokens + final design | — |
 
