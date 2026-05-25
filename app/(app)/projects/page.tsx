@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
 import { Stack, Title, Group, Badge, Card, Text, Anchor, SimpleGrid } from '@mantine/core'
+import Link from 'next/link'
 import { db } from '@/lib/db'
 import { requireRole } from '@/lib/auth-helpers'
 import { projects, workspaces } from '@/db/schema'
@@ -41,6 +42,7 @@ export default async function ProjectsPage() {
       status: projects.status,
       startDate: projects.startDate,
       endDate: projects.endDate,
+      workspaceId: projects.workspaceId,
       workspaceName: workspaces.name,
     })
     .from(projects)
@@ -62,10 +64,10 @@ export default async function ProjectsPage() {
               {STATUS_LABELS[project.status] ?? project.status}
             </Badge>
           </Group>
-          {project.workspaceName && (
-            <Text size="xs" c="dimmed">
+          {project.workspaceName && project.workspaceId && (
+            <Anchor component={Link} href={`/workspaces/${project.workspaceId}`} size="xs" c="dimmed">
               {project.workspaceName}
-            </Text>
+            </Anchor>
           )}
           <Group gap="xs" mt={6}>
             <Badge size="xs" variant="outline" color="gray">

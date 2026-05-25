@@ -10,6 +10,7 @@ import TimeEntriesTab from './time-entries-tab'
 import SettingsTab from './settings-tab'
 import MarginTab from './margin-tab'
 import AmendmentsTab from './amendments-tab'
+import ShareTab from './share-tab'
 import ProjectTabs from './project-tabs'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -121,6 +122,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
             projectStatus={project.status}
           />
         }
+        share={<ShareTab projectId={id} />}
         team={isAdmin ? <TeamTab projectId={id} organizationId={person.organizationId} /> : null}
         settings={
           isAdmin ? (
