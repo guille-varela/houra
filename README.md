@@ -1,36 +1,141 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Houra
 
-## Getting Started
+Internal time tracker for Gut. Tracks hours per project, per person, and per cost matrix (area × role) to give real-time margin visibility.
 
-First, run the development server:
+> Phase 00 — Scaffold complete. Production: [houra.guillermo-varela.workers.dev](https://houra.guillermo-varela.workers.dev)
+
+---
+
+## Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router) + React 19 + TypeScript strict |
+| UI | Mantine v9 (wireframe mode) + Tailwind 4 |
+| Database | Drizzle ORM + Neon (Postgres serverless) |
+| Auth | Better Auth — email/password + magic link (Resend) |
+| Background jobs | Inngest |
+| PDF export | `@react-pdf/renderer` (⚠ edge limitation — see Known issues) |
+| Deploy | Cloudflare Workers via `@opennextjs/cloudflare` |
+| CI preview | Neon branch per PR (GitHub Actions) |
+
+---
+
+## Local development
+
+### Prerequisites
+
+- Node.js 20+
+- pnpm 9+
+- A Neon project (get the `DATABASE_URL` from the Neon dashboard)
+
+### Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 1. Install dependencies
+pnpm install
+
+# 2. Copy env template and fill in values
+cp .env.local.example .env.local
+
+# 3. Push the schema to your dev database
+pnpm db:generate
+pnpm db:migrate
+
+# 4. Start the dev server
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | Neon connection string |
+| `BETTER_AUTH_URL` | Yes | App base URL (e.g. `http://localhost:3000`) |
+| `BETTER_AUTH_SECRET` | Yes | Random 32-char secret |
+| `RESEND_API_KEY` | Magic link only | Resend API key |
+| `RESEND_FROM_EMAIL` | Magic link only | Sender address |
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm dev           # Next.js dev server
+pnpm build         # Standard Next.js build
+pnpm build:cf      # Cloudflare Workers build (opennextjs-cloudflare)
+pnpm preview:cf    # Local Cloudflare Workers preview
+pnpm deploy:cf     # Deploy to Cloudflare Workers
+pnpm typecheck     # TypeScript check (no emit)
+pnpm db:generate   # Generate Drizzle migrations
+pnpm db:migrate    # Apply migrations
+pnpm db:studio     # Drizzle Studio (local DB UI)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Project structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+app/                   # Next.js App Router
+  (auth)/login/        # Login page
+  (app)/               # Authenticated shell
+    today/             # Daily time entry
+    projects/          # Project list
+    time-off/          # PTO management
+    settings/          # User settings
+  api/
+    auth/[...all]/     # Better Auth handler
+    inngest/           # Inngest endpoint
+    pdf-test/          # PDF smoke test
+db/
+  schema/              # Drizzle schema (index.ts)
+lib/
+  auth.ts              # Better Auth config
+  db.ts                # Neon + Drizzle client
+  inngest.ts           # Inngest client
+  theme.ts             # Mantine wireframe theme
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Deployment
+
+The app deploys to Cloudflare Workers via `@opennextjs/cloudflare`.
+
+```bash
+# Build + deploy
+pnpm build:cf && pnpm deploy:cf
+```
+
+Secrets are managed with `wrangler secret put` — never stored in the repository.
+
+---
+
+## Roadmap
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 00 | Scaffold — infrastructure wired | ✅ Done |
+| 01 | Data model + auth | Pending |
+| 02 | Time entry UI | — |
+| 03 | Project management | — |
+| 04 | Reporting + cost matrix | — |
+| 05 | PDF export (Cloudflare-compatible) | — |
+| 06–08 | Background jobs, notifications, audit log | — |
+| 09 | Brand tokens + final design | — |
+
+---
+
+## Known issues
+
+- `GET /api/pdf-test` returns 500 in Cloudflare Workers. `@react-pdf/renderer` depends on Node.js `canvas`, which is not fully supported in the Cloudflare edge runtime. Mitigation planned for Phase 05.
+- CI build command in Cloudflare dashboard is currently `pnpm run build`. It should be `pnpm build:cf`.
+
+---
+
+## License
+
+Private — Gut internal use only.
