@@ -1,5 +1,77 @@
 @import '@mantine/core/styles.css';
 @import '@mantine/notifications/styles.css';
 @import '@mantine/dates/styles.css';
+@import '@mantine/charts/styles.css';
 
 @import "tailwindcss";
+
+/* ─── Semantic tokens — Houra design system ────────────────────────────────
+   Wireframe mode: all --h-brand vars point to Mantine gray scale.
+   Phase 09 migration: swap --h-brand-* references to brand palette vars.
+   Status vars (--h-success/warning/caution/danger) are functional — never swap.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Brand — neutral gray in wireframe */
+  --h-brand:       var(--mantine-color-gray-8);
+  --h-brand-light: var(--mantine-color-gray-1);
+  --h-brand-text:  var(--mantine-color-white);
+
+  /* Surfaces */
+  --h-surface:        var(--mantine-color-white);
+  --h-surface-raised: var(--mantine-color-gray-0);
+  --h-surface-subtle: var(--mantine-color-gray-1);
+
+  /* Borders */
+  --h-border:        var(--mantine-color-gray-3);
+  --h-border-strong: var(--mantine-color-gray-5);
+
+  /* Text */
+  --h-text:          var(--mantine-color-gray-9);
+  --h-text-subtle:   var(--mantine-color-gray-6);
+  --h-text-disabled: var(--mantine-color-gray-4);
+  --h-text-inverse:  var(--mantine-color-white);
+
+  /* Status — functional traffic-light (cell consumption + margin) */
+  --h-success:    var(--mantine-color-green-7);
+  --h-success-bg: var(--mantine-color-green-0);
+  --h-warning:    var(--mantine-color-orange-6);
+  --h-warning-bg: var(--mantine-color-orange-0);
+  --h-caution:    var(--mantine-color-yellow-7);
+  --h-caution-bg: var(--mantine-color-yellow-0);
+  --h-danger:     var(--mantine-color-red-7);
+  --h-danger-bg:  var(--mantine-color-red-0);
+
+  /* Typography */
+  --h-font-sans: var(--mantine-font-family);
+  --h-font-mono: var(--mantine-font-family-monospace);
+}
+
+/* ─── Tailwind 4 custom utilities ───────────────────────────────────────────
+   Maps --h-* tokens to Tailwind color utilities.
+   Usage: bg-h-surface, text-h-subtle, border-h-border, etc.
+   ─────────────────────────────────────────────────────────────────────────── */
+@theme {
+  --color-h-brand:          var(--h-brand);
+  --color-h-brand-light:    var(--h-brand-light);
+  --color-h-brand-text:     var(--h-brand-text);
+  --color-h-surface:        var(--h-surface);
+  --color-h-surface-raised: var(--h-surface-raised);
+  --color-h-surface-subtle: var(--h-surface-subtle);
+  --color-h-border:         var(--h-border);
+  --color-h-border-strong:  var(--h-border-strong);
+  --color-h-text:           var(--h-text);
+  --color-h-text-subtle:    var(--h-text-subtle);
+  --color-h-text-disabled:  var(--h-text-disabled);
+  --color-h-text-inverse:   var(--h-text-inverse);
+  --color-h-success:        var(--h-success);
+  --color-h-success-bg:     var(--h-success-bg);
+  --color-h-warning:        var(--h-warning);
+  --color-h-warning-bg:     var(--h-warning-bg);
+  --color-h-caution:        var(--h-caution);
+  --color-h-caution-bg:     var(--h-caution-bg);
+  --color-h-danger:         var(--h-danger);
+  --color-h-danger-bg:      var(--h-danger-bg);
+
+  --font-h-sans: var(--h-font-sans);
+  --font-h-mono: var(--h-font-mono);
+}
