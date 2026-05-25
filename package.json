@@ -13,6 +13,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx --env-file=.env.local db/seed.ts",
+    "db:fixtures": "tsx --env-file=.env.local db/fixtures.ts",
     "db:studio": "drizzle-kit studio",
     "build:cf": "opennextjs-cloudflare build",
     "preview:cf": "opennextjs-cloudflare preview",

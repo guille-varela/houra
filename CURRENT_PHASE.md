@@ -1,6 +1,6 @@
 # Current Phase
 
-phase: 02
+phase: 03
 status: pending
 completed_phases:
   - phase: 00
@@ -10,4 +10,7 @@ completed_phases:
   - phase: 01
     status: completed
     completed_at: 2026-05-25
-next: Phase 02 — Time imputation core
+  - phase: 02
+    status: completed
+    completed_at: 2026-05-25
+next: Phase 03 — (pendiente de spec)

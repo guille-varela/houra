@@ -1,8 +1,15 @@
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+import { redirect } from 'next/navigation'
+import { getCurrentPerson } from '@/lib/auth-helpers'
+import MobileNav from '@/components/nav/mobile-nav'
+
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const person = await getCurrentPerson()
+  if (!person) redirect('/login')
+
   return (
-    <div className="flex min-h-screen">
-      {/* Nav lateral — Phase 01 */}
-      <main className="flex-1 p-6">{children}</main>
+    <div className="flex flex-col min-h-screen">
+      <main className="flex-1 pb-20">{children}</main>
+      <MobileNav />
     </div>
   )
 }
