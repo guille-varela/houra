@@ -1,0 +1,1 @@
+ALTER TYPE "public"."time_off_type" ADD VALUE 'sick_leave';

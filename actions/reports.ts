@@ -8,6 +8,7 @@ import { db } from '@/lib/db'
 import { organizations, reports, reportSnapshots } from '@/db/schema'
 import { requireRole } from '@/lib/auth-helpers'
 import { logAuditEvent } from '@/lib/audit'
+import { notifySlack } from '@/lib/notify'
 import {
   hashReportPassword,
   checkReportPassword,
@@ -53,6 +54,8 @@ export async function createReport(raw: unknown) {
     entityId: report!.id,
     diff: { before: null, after: { scope, scopeId, slug } },
   })
+
+  await notifySlack(`🔗 Report compartido (${scope}) por ${person.name}: /r/${slug}`)
 
   revalidatePath(`/projects/${scopeId}`)
   return { ok: true as const, slug }

@@ -2,7 +2,7 @@ import { date, index, numeric, pgEnum, pgTable, text, timestamp, uuid } from 'dr
 import { organizations } from './organizations'
 import { persons } from './persons'
 
-export const timeOffTypeEnum = pgEnum('time_off_type', ['holiday', 'vacation'])
+export const timeOffTypeEnum = pgEnum('time_off_type', ['holiday', 'vacation', 'sick_leave'])
 
 export const timeOffEntries = pgTable(
   'time_off_entries',

@@ -6,6 +6,7 @@ import { db } from '@/lib/db'
 import { amendments, projects } from '@/db/schema'
 import { requireRole } from '@/lib/auth-helpers'
 import { logAuditEvent } from '@/lib/audit'
+import { notifySlack } from '@/lib/notify'
 import { createAmendmentSchema } from '@/lib/schemas/amendment'
 
 export async function createAmendment(raw: unknown) {
@@ -55,6 +56,10 @@ export async function createAmendment(raw: unknown) {
     entityId: amendment!.id,
     diff: { before: null, after: { projectId, deltaAllocation, reason, effectiveDate } },
   })
+
+  await notifySlack(
+    `📋 Amendment creado en proyecto por ${person.name}: "${reason}"`,
+  )
 
   revalidatePath(`/projects/${projectId}`)
   return { ok: true as const, amendmentId: amendment!.id }
