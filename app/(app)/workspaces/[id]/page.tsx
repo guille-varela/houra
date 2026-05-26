@@ -1,9 +1,16 @@
 import { notFound, redirect } from 'next/navigation'
 import { desc, eq, sql } from 'drizzle-orm'
-import { Stack, Text, Group, Badge, Card, SimpleGrid, Anchor } from '@mantine/core'
-import Link from 'next/link'
+import { Stack, Text, Group, Card, SimpleGrid } from '@mantine/core'
 import { db } from '@/lib/db'
-import { amendments, persons, projects, reports, timeEntries, workspaces } from '@/db/schema'
+import {
+  amendments,
+  hourTransfers,
+  persons,
+  projects,
+  reports,
+  timeEntries,
+  workspaces,
+} from '@/db/schema'
 import { requireRole } from '@/lib/auth-helpers'
 import {
   buildMatrix,
@@ -13,28 +20,9 @@ import {
   type ConsumedMap,
   type Allocation,
 } from '@/lib/matrix'
-import {
-  buildMarginMatrix,
-  computeEffectiveAllocation,
-  getMarginTotals,
-  formatEur,
-} from '@/lib/margin'
-import { marginColor, consumptionColor } from '@/lib/tokens'
+import { buildMarginMatrix, computeEffectiveAllocation, getMarginTotals, formatEur } from '@/lib/margin'
 import WorkspaceShareClient from './workspace-share-client'
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Borrador',
-  active: 'Activo',
-  paused: 'Pausado',
-  closed: 'Cerrado',
-}
-
-const STATUS_COLOR: Record<string, string> = {
-  draft: 'gray',
-  active: 'green',
-  paused: 'yellow',
-  closed: 'red',
-}
+import WorkspaceTabs from './workspace-tabs'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -73,11 +61,11 @@ export default async function WorkspacePage({ params }: Props) {
         db.select({ deltaAllocation: amendments.deltaAllocation })
           .from(amendments).where(eq(amendments.projectId, p.id)),
         db.select({
-            area: timeEntries.area, role: persons.professionalCategory,
-            hours: sql<string>`SUM(${timeEntries.hours}::numeric)`,
-            costCents: sql<string>`SUM(${timeEntries.hours}::numeric * ${timeEntries.costRateAtEntryCents})`,
-            soldCents: sql<string>`SUM(${timeEntries.hours}::numeric * ${timeEntries.soldRateAtEntryCents})`,
-          }).from(timeEntries).innerJoin(persons, eq(persons.id, timeEntries.personId))
+          area: timeEntries.area, role: persons.professionalCategory,
+          hours: sql<string>`SUM(${timeEntries.hours}::numeric)`,
+          costCents: sql<string>`SUM(${timeEntries.hours}::numeric * ${timeEntries.costRateAtEntryCents})`,
+          soldCents: sql<string>`SUM(${timeEntries.hours}::numeric * ${timeEntries.soldRateAtEntryCents})`,
+        }).from(timeEntries).innerJoin(persons, eq(persons.id, timeEntries.personId))
           .where(eq(timeEntries.projectId, p.id)).groupBy(timeEntries.area, persons.professionalCategory),
       ])
 
@@ -100,9 +88,42 @@ export default async function WorkspacePage({ params }: Props) {
         costCents: parseFloat(r.costCents), soldCents: parseFloat(r.soldCents),
       }))
       const marginTotals = getMarginTotals(buildMarginMatrix(parsedMarginRows))
-      return { ...p, totals, marginTotals }
+      return { id: p.id, name: p.name, status: p.status, totals, marginTotals }
     }),
   )
+
+  const transferRows = await db
+    .select({
+      id: hourTransfers.id,
+      fromProjectId: hourTransfers.fromProjectId,
+      toProjectId: hourTransfers.toProjectId,
+      area: hourTransfers.area,
+      role: hourTransfers.role,
+      hours: hourTransfers.hours,
+      reason: hourTransfers.reason,
+      performedAt: hourTransfers.performedAt,
+      performedByName: persons.name,
+    })
+    .from(hourTransfers)
+    .innerJoin(persons, eq(persons.id, hourTransfers.performedBy))
+    .where(eq(hourTransfers.organizationId, workspace.organizationId))
+    .orderBy(desc(hourTransfers.performedAt))
+
+  const projectNameById = Object.fromEntries(projectRows.map((p) => [p.id, p.name]))
+
+  const transfers = transferRows
+    .filter((t) => projectNameById[t.fromProjectId] || projectNameById[t.toProjectId])
+    .map((t) => ({
+      id: t.id,
+      fromProjectName: projectNameById[t.fromProjectId] ?? t.fromProjectId,
+      toProjectName: projectNameById[t.toProjectId] ?? t.toProjectId,
+      area: t.area,
+      role: t.role,
+      hours: t.hours,
+      reason: t.reason,
+      performedByName: t.performedByName ?? 'Sistema',
+      performedAt: t.performedAt.toISOString(),
+    }))
 
   const existingReports = await db
     .select({ id: reports.id, shareUrlSlug: reports.shareUrlSlug, status: reports.status, createdAt: reports.createdAt })
@@ -113,7 +134,6 @@ export default async function WorkspacePage({ params }: Props) {
 
   return (
     <Stack p="md" gap="xl">
-      {/* Header */}
       <Group justify="space-between" align="flex-start">
         <div>
           <Text style={{ fontSize: '1.0625rem', fontWeight: 600, letterSpacing: '-0.02em' }}>
@@ -134,7 +154,6 @@ export default async function WorkspacePage({ params }: Props) {
         />
       </Group>
 
-      {/* KPI row */}
       <SimpleGrid cols={2} spacing="sm">
         <Card p="md">
           <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>Horas</Text>
@@ -150,54 +169,7 @@ export default async function WorkspacePage({ params }: Props) {
         </Card>
       </SimpleGrid>
 
-      {/* Project list */}
-      <Stack gap="sm">
-        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
-          Proyectos
-        </Text>
-        {projectData.length === 0 && (
-          <Card><Text size="sm" c="dimmed" ta="center" py="lg">Sin proyectos en este workspace.</Text></Card>
-        )}
-        {projectData.map((p) => {
-          const mColor = marginColor(p.marginTotals.marginPct ?? -1)
-          const cColor = consumptionColor(p.totals.pct)
-          return (
-            <Card key={p.id} p="md">
-              <Group justify="space-between" align="flex-start">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <Group gap="xs" mb={4}>
-                    <Anchor component={Link} href={`/projects/${p.id}`} fw={600} size="sm" c="dark">
-                      {p.name}
-                    </Anchor>
-                    <Badge size="xs" color={STATUS_COLOR[p.status] ?? 'gray'} variant="light" radius="sm">
-                      {STATUS_LABELS[p.status] ?? p.status}
-                    </Badge>
-                  </Group>
-                  <Text size="xs" c="dimmed">
-                    <Text span c={cColor} fw={500} size="xs">
-                      {p.totals.consumed.toFixed(1)}h
-                    </Text>
-                    {p.totals.planned > 0 ? ` / ${p.totals.planned.toFixed(0)}h` : ''}
-                    {p.totals.pct !== null ? ` · ${Math.round(p.totals.pct)}%` : ''}
-                  </Text>
-                </div>
-                <Group gap="xl">
-                  <div style={{ textAlign: 'right' }}>
-                    <Text size="xs" c="dimmed">Ingresos</Text>
-                    <Text size="sm" fw={600}>{formatEur(p.marginTotals.soldCents)}</Text>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <Text size="xs" c="dimmed">Margen</Text>
-                    <Text size="sm" fw={600} c={mColor}>
-                      {p.marginTotals.marginPct !== null ? `${p.marginTotals.marginPct.toFixed(1)}%` : '—'}
-                    </Text>
-                  </div>
-                </Group>
-              </Group>
-            </Card>
-          )
-        })}
-      </Stack>
+      <WorkspaceTabs workspaceId={id} projects={projectData} transfers={transfers} />
     </Stack>
   )
 }

@@ -8,17 +8,30 @@ import {
   IconCalendarWeek,
   IconFolders,
   IconUmbrella,
+  IconSettings,
 } from '@tabler/icons-react'
 
-const NAV_ITEMS = [
+type NavItem = { href: string; label: string; Icon: React.ComponentType<{ size: number; stroke: number; color: string; style: React.CSSProperties }> }
+
+const CONTRIBUTOR_NAV: NavItem[] = [
   { href: '/today', label: 'Mi día', Icon: IconSun },
   { href: '/week', label: 'Semana', Icon: IconCalendarWeek },
   { href: '/my-projects', label: 'Proyectos', Icon: IconFolders },
   { href: '/time-off', label: 'Libre', Icon: IconUmbrella },
-] as const
+]
 
-export default function MobileNav() {
+const MANAGER_NAV: NavItem[] = [
+  { href: '/today', label: 'Mi día', Icon: IconSun },
+  { href: '/week', label: 'Semana', Icon: IconCalendarWeek },
+  { href: '/projects', label: 'Proyectos', Icon: IconFolders },
+  { href: '/settings', label: 'Configuración', Icon: IconSettings },
+]
+
+type Props = { appRole: string }
+
+export default function MobileNav({ appRole }: Props) {
   const pathname = usePathname()
+  const items = appRole === 'contributor' ? CONTRIBUTOR_NAV : MANAGER_NAV
 
   return (
     <nav
@@ -35,7 +48,7 @@ export default function MobileNav() {
       }}
     >
       <Group grow h={60} px="xs">
-        {NAV_ITEMS.map(({ href, label, Icon }) => {
+        {items.map(({ href, label, Icon }) => {
           const active = pathname === href || (href !== '/today' && pathname.startsWith(href))
           return (
             <UnstyledButton

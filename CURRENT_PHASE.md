@@ -25,4 +25,4 @@ completed_phases:
   - phase: 06
     status: completed
     completed_at: 2026-05-26
-next: Phase 07 — Audit log UI + exports
+next: Phase 07 — Aggregations + transfers + GDPR

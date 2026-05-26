@@ -10,7 +10,6 @@ import {
   Anchor,
   Alert,
   CopyButton,
-  Paper,
 } from '@mantine/core'
 import { shareWithCommittee } from '@/actions/reports'
 

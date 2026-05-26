@@ -9,7 +9,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 pb-20">{children}</main>
-      <MobileNav />
+      <MobileNav appRole={person.appRole} />
     </div>
   )
 }
