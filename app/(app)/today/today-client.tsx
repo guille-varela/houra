@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useDisclosure } from '@mantine/hooks'
-import { Stack, Group, Title, Text, Button, Badge, Card, ActionIcon, Alert } from '@mantine/core'
+import { Stack, Group, Text, Button, Card, ActionIcon, Alert } from '@mantine/core'
+import { IconTrash, IconPlus } from '@tabler/icons-react'
 import { deleteTimeEntry } from '@/actions/time-entries'
 import TimeEntryForm from '@/components/time-entries/time-entry-form'
 
@@ -60,69 +61,85 @@ export default function TodayClient({
     if (!result.ok) setDeleteError(result.error)
   }
 
+  const over = totalHours >= SOFT_CAP
+
   return (
     <Stack p="md" gap="md">
-      <Group justify="space-between" align="flex-start">
-        <div>
-          <Title order={3}>{personName}</Title>
-          <Text c="dimmed" size="sm">
-            {dateLabel}
-          </Text>
-        </div>
-        <Badge size="lg" color={totalHours >= SOFT_CAP ? 'yellow' : 'gray'} variant="light">
-          {totalHours.toFixed(1)}h
-        </Badge>
-      </Group>
+      {/* KPI header — estilo stat card */}
+      <Card>
+        <Group justify="space-between" align="flex-start">
+          <div>
+            <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+              {dateLabel}
+            </Text>
+            <Text
+              style={{
+                fontSize: '2.5rem',
+                fontWeight: 700,
+                lineHeight: 1.1,
+                letterSpacing: '-0.03em',
+                color: over ? 'var(--mantine-color-orange-6)' : 'var(--mantine-color-dark-9)',
+              }}
+            >
+              {totalHours.toFixed(1)}h
+            </Text>
+            <Text size="sm" c="dimmed" mt={2}>
+              {personName}
+            </Text>
+          </div>
+        </Group>
+      </Card>
 
-      {totalHours >= SOFT_CAP && (
-        <Alert color="yellow" variant="light">
-          Has alcanzado el límite recomendado de {SOFT_CAP}h para hoy.
+      {over && (
+        <Alert color="orange" variant="light" radius="lg">
+          {totalHours.toFixed(1)}h registradas — por encima del límite recomendado de {SOFT_CAP}h.
         </Alert>
       )}
 
       {deleteError && (
-        <Alert color="red" variant="light" withCloseButton onClose={() => setDeleteError(null)}>
+        <Alert color="red" variant="light" radius="lg" withCloseButton onClose={() => setDeleteError(null)}>
           {deleteError}
         </Alert>
       )}
 
+      {/* Entry list */}
       {entries.length === 0 ? (
-        <Text c="dimmed" size="sm">
-          No hay entradas registradas hoy.
-        </Text>
+        <Card>
+          <Text c="dimmed" size="sm" ta="center" py="lg">
+            No hay entradas registradas hoy.
+          </Text>
+        </Card>
       ) : (
         <Stack gap="xs">
           {entries.map((entry) => (
-            <Card key={entry.id} withBorder p="sm" radius="sm">
-              <Group justify="space-between" align="flex-start">
-                <div style={{ flex: 1 }}>
-                  <Text fw={500} size="sm">
+            <Card key={entry.id} p="md">
+              <Group justify="space-between" align="flex-start" wrap="nowrap">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Text fw={500} size="sm" truncate>
                     {projectNames[entry.projectId] ?? '—'}
                   </Text>
-                  <Group gap="xs" mt={2}>
-                    <Text size="xs" c="dimmed">
-                      {AREA_LABELS[entry.area] ?? entry.area}
-                    </Text>
+                  <Group gap={6} mt={4}>
+                    <Text size="xs" c="dimmed">{AREA_LABELS[entry.area] ?? entry.area}</Text>
                     <Text size="xs" c="dimmed">·</Text>
-                    <Text size="xs" c="dimmed">
+                    <Text size="xs" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums' }}>
                       {parseFloat(entry.hours).toFixed(1)}h
                     </Text>
                   </Group>
                   {entry.description && (
-                    <Text size="xs" c="dimmed" mt={4} lineClamp={2}>
+                    <Text size="xs" c="dimmed" mt={4} lineClamp={1}>
                       {entry.description}
                     </Text>
                   )}
                 </div>
                 <ActionIcon
                   variant="subtle"
-                  color="red"
+                  color="gray"
                   size="sm"
                   loading={deletingId === entry.id}
                   onClick={() => handleDelete(entry.id)}
                   aria-label="Eliminar entrada"
                 >
-                  ×
+                  <IconTrash size={14} />
                 </ActionIcon>
               </Group>
             </Card>
@@ -130,8 +147,14 @@ export default function TodayClient({
         </Stack>
       )}
 
-      <Button onClick={open} disabled={assignedProjects.length === 0}>
-        + Añadir entrada
+      <Button
+        onClick={open}
+        disabled={assignedProjects.length === 0}
+        leftSection={<IconPlus size={15} />}
+        fullWidth
+        size="md"
+      >
+        Añadir entrada
       </Button>
 
       {assignedProjects.length === 0 && (

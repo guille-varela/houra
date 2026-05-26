@@ -55,48 +55,66 @@ export default async function ProjectsPage() {
   function ProjectCard({ project }: { project: (typeof rows)[number] }) {
     return (
       <Anchor href={`/projects/${project.id}`} underline="never">
-        <Card withBorder p="md" radius="sm" style={{ cursor: 'pointer' }}>
-          <Group justify="space-between" align="flex-start" mb={6}>
-            <Text fw={600} size="sm">
-              {project.name}
-            </Text>
-            <Badge size="sm" color={STATUS_COLOR[project.status] ?? 'gray'} variant="light">
-              {STATUS_LABELS[project.status] ?? project.status}
-            </Badge>
-          </Group>
-          {project.workspaceName && project.workspaceId && (
-            <Anchor component={Link} href={`/workspaces/${project.workspaceId}`} size="xs" c="dimmed">
-              {project.workspaceName}
-            </Anchor>
-          )}
-          <Group gap="xs" mt={6}>
-            <Badge size="xs" variant="outline" color="gray">
-              {TYPE_LABELS[project.type] ?? project.type}
-            </Badge>
-            {project.endDate && (
-              <Text size="xs" c="dimmed">
-                hasta {project.endDate}
+        <Card style={{ cursor: 'pointer', height: '100%' }}>
+          <Stack gap="xs" style={{ height: '100%' }}>
+            <Group justify="space-between" align="flex-start">
+              <Text fw={600} size="sm" style={{ flex: 1, lineHeight: 1.3 }}>
+                {project.name}
               </Text>
+              <Badge
+                size="xs"
+                color={STATUS_COLOR[project.status] ?? 'gray'}
+                variant="light"
+                radius="sm"
+              >
+                {STATUS_LABELS[project.status] ?? project.status}
+              </Badge>
+            </Group>
+
+            {project.workspaceName && project.workspaceId && (
+              <Anchor
+                component={Link}
+                href={`/workspaces/${project.workspaceId}`}
+                size="xs"
+                c="dimmed"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {project.workspaceName}
+              </Anchor>
             )}
-          </Group>
+
+            <Group gap="xs" mt="auto">
+              <Text size="xs" c="dimmed">
+                {TYPE_LABELS[project.type] ?? project.type}
+              </Text>
+              {project.endDate && (
+                <>
+                  <Text size="xs" c="dimmed">·</Text>
+                  <Text size="xs" c="dimmed">hasta {project.endDate}</Text>
+                </>
+              )}
+            </Group>
+          </Stack>
         </Card>
       </Anchor>
     )
   }
 
   return (
-    <Stack p="md" gap="lg">
-      <Title order={3}>Proyectos</Title>
+    <Stack p="md" gap="xl">
+      <Title order={3} style={{ letterSpacing: '-0.02em' }}>Proyectos</Title>
 
       {rows.length === 0 && (
-        <Text c="dimmed" size="sm">
-          No hay proyectos todavía.
-        </Text>
+        <Card>
+          <Text c="dimmed" size="sm" ta="center" py="lg">
+            No hay proyectos todavía.
+          </Text>
+        </Card>
       )}
 
       {active.length > 0 && (
         <Stack gap="sm">
-          <Text size="sm" fw={600} c="dimmed">
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
             Activos
           </Text>
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
@@ -109,7 +127,7 @@ export default async function ProjectsPage() {
 
       {rest.length > 0 && (
         <Stack gap="sm">
-          <Text size="sm" fw={600} c="dimmed">
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
             Otros
           </Text>
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">

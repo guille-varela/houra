@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Stack, Title, TextInput, PasswordInput, Button, Alert, Text } from '@mantine/core'
+import { Stack, TextInput, PasswordInput, Button, Alert, Text } from '@mantine/core'
 import { authClient } from '@/lib/auth-client'
 
 export default function LoginPage() {
@@ -31,41 +31,66 @@ export default function LoginPage() {
   }
 
   return (
-    <Stack maw={400} mx="auto" mt={80} px="md">
-      <Title order={2}>Houra</Title>
-      <Text c="dimmed" size="sm">
-        Registra tu jornada
-      </Text>
-
-      {error && (
-        <Alert color="red" variant="light">
-          {error}
-        </Alert>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <Stack gap="sm">
-          <TextInput
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.currentTarget.value)}
-            required
-            autoComplete="email"
-            autoFocus
-          />
-          <PasswordInput
-            label="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.currentTarget.value)}
-            required
-            autoComplete="current-password"
-          />
-          <Button type="submit" loading={loading} fullWidth mt="xs">
-            Entrar
-          </Button>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+        background: '#fafafa',
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: 360 }}>
+        {/* Wordmark */}
+        <Stack gap={4} mb="xl">
+          <Text
+            style={{
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
+              color: 'var(--mantine-color-dark-9)',
+            }}
+          >
+            Houra
+          </Text>
+          <Text size="sm" c="dimmed">
+            Registra tu jornada
+          </Text>
         </Stack>
-      </form>
-    </Stack>
+
+        {error && (
+          <Alert color="red" variant="light" radius="lg" mb="md">
+            {error}
+          </Alert>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <Stack gap="sm">
+            <TextInput
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.currentTarget.value)}
+              required
+              autoComplete="email"
+              autoFocus
+              size="md"
+            />
+            <PasswordInput
+              label="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.currentTarget.value)}
+              required
+              autoComplete="current-password"
+              size="md"
+            />
+            <Button type="submit" loading={loading} fullWidth mt="xs" size="md">
+              Entrar
+            </Button>
+          </Stack>
+        </form>
+      </div>
+    </div>
   )
 }

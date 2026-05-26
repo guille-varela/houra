@@ -1,6 +1,5 @@
-import { eq } from 'drizzle-orm'
-import { sql } from 'drizzle-orm'
-import { Stack, Title, Group, Text, Badge, Card, SimpleGrid, Divider } from '@mantine/core'
+import { eq, sql } from 'drizzle-orm'
+import { Stack, Text, Group, Card, SimpleGrid } from '@mantine/core'
 import { db } from '@/lib/db'
 import { persons, timeEntries } from '@/db/schema'
 import {
@@ -11,15 +10,9 @@ import {
   type Role,
   type ConsumedMap,
 } from '@/lib/matrix'
+import { consumptionColor } from '@/lib/tokens'
 import AllocationMatrix from '@/components/projects/allocation-matrix'
 import BurnRateChart from '@/components/projects/burn-rate-chart'
-
-const STATUS_COLOR: Record<string, string> = {
-  green: 'green',
-  orange: 'orange',
-  red: 'red',
-  empty: 'gray',
-}
 
 type Props = {
   projectId: string
@@ -36,7 +29,6 @@ export default async function OverviewTab({
   startDate,
   endDate,
 }: Props) {
-  // 1. Matrix consumption: area × professional_category
   const consumedRows = await db
     .select({
       area: timeEntries.area,
@@ -59,7 +51,6 @@ export default async function OverviewTab({
   const matrix = buildMatrix(allocation, consumed)
   const totals = getProjectTotals(matrix)
 
-  // 2. Burn rate by ISO week
   const weekRows = await db
     .select({
       week: sql<string>`TO_CHAR(DATE_TRUNC('week', ${timeEntries.date}::date), 'YYYY-MM-DD')`,
@@ -76,7 +67,6 @@ export default async function OverviewTab({
     return { week: r.week, hours: parseFloat(r.hours), cumulative }
   })
 
-  // 3. Top contributors
   const contributorRows = await db
     .select({
       name: persons.name,
@@ -89,95 +79,100 @@ export default async function OverviewTab({
     .orderBy(sql`SUM(${timeEntries.hours}) DESC`)
     .limit(5)
 
-  // 4. Projected end
   const isBag = projectType === 'fixed_bag' || projectType === 'renewable_bag'
   const projectedEnd = isBag
     ? getProjectedEndDate(totals.planned, totals.consumed, startDate)
     : null
 
+  const pctColor = consumptionColor(totals.pct)
+
   return (
-    <Stack gap="lg">
-      {/* Summary */}
+    <Stack gap="xl">
+      {/* KPI row */}
       <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-        <Card withBorder p="sm" radius="sm">
-          <Text size="xs" c="dimmed">
+        <Card p="md">
+          <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>
             Planificado
           </Text>
-          <Text fw={600}>{totals.planned.toFixed(0)}h</Text>
+          <Text
+            style={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.02em' }}
+          >
+            {totals.planned.toFixed(0)}h
+          </Text>
         </Card>
-        <Card withBorder p="sm" radius="sm">
-          <Text size="xs" c="dimmed">
+        <Card p="md">
+          <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>
             Consumido
           </Text>
-          <Text fw={600}>{totals.consumed.toFixed(1)}h</Text>
-        </Card>
-        <Card withBorder p="sm" radius="sm">
-          <Text size="xs" c="dimmed">
-            % total
-          </Text>
-          <Badge
-            color={(STATUS_COLOR[totals.color] ?? 'gray') as string}
-            variant="light"
-            size="lg"
-            style={{ fontWeight: 600 }}
+          <Text
+            style={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.02em' }}
+            c={pctColor}
           >
-            {totals.pct !== null ? `${Math.round(totals.pct)}%` : '—'}
-          </Badge>
+            {totals.consumed.toFixed(1)}h
+          </Text>
+          {totals.pct !== null && (
+            <Text size="xs" c="dimmed" mt={2}>{Math.round(totals.pct)}%</Text>
+          )}
         </Card>
         {projectedEnd && (
-          <Card withBorder p="sm" radius="sm">
-            <Text size="xs" c="dimmed">
+          <Card p="md">
+            <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>
               Fin proyectado
             </Text>
-            <Text fw={600} size="sm">
-              {projectedEnd}
-            </Text>
+            <Text fw={600} size="sm" mt={4}>{projectedEnd}</Text>
             {endDate && projectedEnd > endDate && (
-              <Text size="xs" c="red" mt={2}>
-                supera fecha fin
-              </Text>
+              <Text size="xs" c="red" mt={2}>supera fecha fin</Text>
             )}
           </Card>
         )}
       </SimpleGrid>
 
       {/* Matrix */}
-      <Stack gap="xs">
-        <Title order={5}>Matriz área × rol</Title>
-        <Text size="xs" c="dimmed">
-          Haz clic en una celda para ver las entradas detalladas.
+      <Stack gap="sm">
+        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+          Área × rol
         </Text>
+        <Text size="xs" c="dimmed">Haz clic en una celda para ver las entradas detalladas.</Text>
         <AllocationMatrix matrix={matrix} projectId={projectId} />
       </Stack>
 
       {/* Burn rate */}
-      <Stack gap="xs">
-        <Title order={5}>Burn rate</Title>
-        <BurnRateChart data={burnData} />
-      </Stack>
+      {burnData.length > 0 && (
+        <Stack gap="sm">
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+            Burn rate
+          </Text>
+          <Card p="md">
+            <BurnRateChart data={burnData} />
+          </Card>
+        </Stack>
+      )}
 
-      {/* Top contributors */}
+      {/* Contributors */}
       {contributorRows.length > 0 && (
-        <Stack gap="xs">
-          <Title order={5}>Top colaboradores</Title>
-          {contributorRows.map((c) => (
-            <Group key={c.name} justify="space-between">
-              <Text size="sm">{c.name}</Text>
-              <Text size="sm" c="dimmed">
-                {parseFloat(c.hours).toFixed(1)}h
-              </Text>
-            </Group>
-          ))}
+        <Stack gap="sm">
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+            Colaboradores
+          </Text>
+          <Card p="md">
+            <Stack gap="sm">
+              {contributorRows.map((c) => (
+                <Group key={c.name} justify="space-between">
+                  <Text size="sm">{c.name}</Text>
+                  <Text size="sm" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {parseFloat(c.hours).toFixed(1)}h
+                  </Text>
+                </Group>
+              ))}
+            </Stack>
+          </Card>
         </Stack>
       )}
 
       {totals.consumed === 0 && (
-        <>
-          <Divider />
-          <Text size="sm" c="dimmed" ta="center">
-            Sin entradas registradas en este proyecto todavía.
-          </Text>
-        </>
+        <Text size="sm" c="dimmed" ta="center" py="md">
+          Sin entradas registradas en este proyecto todavía.
+        </Text>
       )}
     </Stack>
   )

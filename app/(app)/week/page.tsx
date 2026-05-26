@@ -1,6 +1,6 @@
 import { and, eq, gte, lte } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
-import { Stack, Title, Text, Group, Badge, Card } from '@mantine/core'
+import { Stack, Text, Group, Card, Badge } from '@mantine/core'
 import { db } from '@/lib/db'
 import { getCurrentPerson } from '@/lib/auth-helpers'
 import { projectAssignments, projects, timeEntries } from '@/db/schema'
@@ -25,9 +25,7 @@ export default async function WeekPage() {
     .where(eq(projectAssignments.personId, person.id))
 
   const projectNames: Record<string, string> = {}
-  for (const p of projectRows) {
-    projectNames[p.id] = p.name
-  }
+  for (const p of projectRows) projectNames[p.id] = p.name
 
   const weekEntries = await db
     .select({
@@ -47,7 +45,6 @@ export default async function WeekPage() {
       ),
     )
 
-  // Group by date
   const byDate = new Map<string, typeof weekEntries>()
   for (const entry of weekEntries) {
     const bucket = byDate.get(entry.date) ?? []
@@ -55,7 +52,6 @@ export default async function WeekPage() {
     byDate.set(entry.date, bucket)
   }
 
-  // Build Mon-Sun ordered days
   const days: string[] = []
   const startDate = new Date(start + 'T00:00:00')
   for (let i = 0; i < 7; i++) {
@@ -65,68 +61,90 @@ export default async function WeekPage() {
   }
 
   const weekTotal = weekEntries.reduce((sum, e) => sum + parseFloat(e.hours), 0)
+  const today = getLocalDateString()
 
   return (
     <Stack p="md" gap="md">
-      <Group justify="space-between" align="flex-start">
-        <Title order={3}>Esta semana</Title>
-        <Badge size="lg" color="gray" variant="light">
+      {/* KPI card */}
+      <Card>
+        <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+          Esta semana
+        </Text>
+        <Text
+          style={{
+            fontSize: '2.5rem',
+            fontWeight: 700,
+            lineHeight: 1.1,
+            letterSpacing: '-0.03em',
+          }}
+        >
           {weekTotal.toFixed(1)}h
-        </Badge>
-      </Group>
+        </Text>
+      </Card>
 
-      {days.map((day) => {
-        const dayEntries = byDate.get(day) ?? []
-        const dayTotal = dayEntries.reduce((sum, e) => sum + parseFloat(e.hours), 0)
-        const isToday = day === getLocalDateString()
+      {/* Days */}
+      <Stack gap="sm">
+        {days.map((day) => {
+          const dayEntries = byDate.get(day) ?? []
+          const dayTotal = dayEntries.reduce((sum, e) => sum + parseFloat(e.hours), 0)
+          const isToday = day === today
 
-        return (
-          <div key={day}>
-            <Group justify="space-between" mb="xs">
-              <Text
-                size="sm"
-                fw={isToday ? 700 : 400}
+          return (
+            <div key={day}>
+              <Group justify="space-between" mb={6} px={2}>
+                <Text
+                  size="xs"
+                  fw={600}
+                  tt="uppercase"
+                  style={{
+                    letterSpacing: '0.05em',
+                    color: isToday
+                      ? 'var(--mantine-color-dark-9)'
+                      : 'var(--mantine-color-gray-5)',
+                  }}
                 >
-                {formatDateEs(day)}
-              </Text>
-              {dayEntries.length > 0 && (
-                <Text size="xs" c="dimmed">
-                  {dayTotal.toFixed(1)}h
+                  {formatDateEs(day)}
                 </Text>
-              )}
-            </Group>
+                {dayEntries.length > 0 && (
+                  <Text size="xs" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {dayTotal.toFixed(1)}h
+                  </Text>
+                )}
+              </Group>
 
-            {dayEntries.length === 0 ? (
-              <Text size="xs" c="dimmed" ml="xs">
-                Sin entradas
-              </Text>
-            ) : (
-              <Stack gap={4}>
-                {dayEntries.map((entry) => (
-                  <Card key={entry.id} withBorder p="xs" radius="sm">
-                    <Group justify="space-between">
-                      <Text size="sm">{projectNames[entry.projectId] ?? '—'}</Text>
-                      <Group gap="xs">
-                        <Text size="xs" c="dimmed">
-                          {AREA_LABELS[entry.area] ?? entry.area}
+              {dayEntries.length === 0 ? (
+                <Text size="xs" c="dimmed" px={2}>—</Text>
+              ) : (
+                <Stack gap={6}>
+                  {dayEntries.map((entry) => (
+                    <Card key={entry.id} p="sm">
+                      <Group justify="space-between" wrap="nowrap">
+                        <Text size="sm" fw={500} truncate style={{ flex: 1 }}>
+                          {projectNames[entry.projectId] ?? '—'}
                         </Text>
-                        <Text size="xs" c="dimmed">
-                          {parseFloat(entry.hours).toFixed(1)}h
-                        </Text>
+                        <Group gap={6} style={{ flexShrink: 0 }}>
+                          <Text size="xs" c="dimmed">
+                            {AREA_LABELS[entry.area] ?? entry.area}
+                          </Text>
+                          <Text size="xs" c="dimmed">·</Text>
+                          <Text size="xs" c="dimmed" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            {parseFloat(entry.hours).toFixed(1)}h
+                          </Text>
+                        </Group>
                       </Group>
-                    </Group>
-                    {entry.description && (
-                      <Text size="xs" c="dimmed" mt={2} lineClamp={1}>
-                        {entry.description}
-                      </Text>
-                    )}
-                  </Card>
-                ))}
-              </Stack>
-            )}
-          </div>
-        )
-      })}
+                      {entry.description && (
+                        <Text size="xs" c="dimmed" mt={3} lineClamp={1}>
+                          {entry.description}
+                        </Text>
+                      )}
+                    </Card>
+                  ))}
+                </Stack>
+              )}
+            </div>
+          )
+        })}
+      </Stack>
     </Stack>
   )
 }

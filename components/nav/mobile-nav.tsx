@@ -3,12 +3,18 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Group, UnstyledButton, Text } from '@mantine/core'
+import {
+  IconSun,
+  IconCalendarWeek,
+  IconFolders,
+  IconUmbrella,
+} from '@tabler/icons-react'
 
 const NAV_ITEMS = [
-  { href: '/today', label: 'Mi día' },
-  { href: '/week', label: 'Semana' },
-  { href: '/my-projects', label: 'Proyectos' },
-  { href: '/time-off', label: 'Libre' },
+  { href: '/today', label: 'Mi día', Icon: IconSun },
+  { href: '/week', label: 'Semana', Icon: IconCalendarWeek },
+  { href: '/my-projects', label: 'Proyectos', Icon: IconFolders },
+  { href: '/time-off', label: 'Libre', Icon: IconUmbrella },
 ] as const
 
 export default function MobileNav() {
@@ -21,23 +27,36 @@ export default function MobileNav() {
         bottom: 0,
         left: 0,
         right: 0,
-        borderTop: '1px solid var(--mantine-color-gray-3)',
-        background: 'var(--mantine-color-white)',
+        borderTop: '1px solid var(--mantine-color-gray-2)',
+        background: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
         zIndex: 100,
       }}
     >
-      <Group grow h={64} px="sm">
-        {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href
+      <Group grow h={60} px="xs">
+        {NAV_ITEMS.map(({ href, label, Icon }) => {
+          const active = pathname === href || (href !== '/today' && pathname.startsWith(href))
           return (
             <UnstyledButton
-              key={item.href}
+              key={href}
               component={Link}
-              href={item.href}
-              style={{ textAlign: 'center' }}
+              href={href}
+              style={{ textAlign: 'center', padding: '6px 0' }}
             >
-              <Text size="xs" fw={active ? 700 : 400} c={active ? 'dark' : 'dimmed'}>
-                {item.label}
+              <Icon
+                size={20}
+                stroke={active ? 2 : 1.5}
+                color={active ? 'var(--mantine-color-dark-9)' : 'var(--mantine-color-gray-5)'}
+                style={{ display: 'block', margin: '0 auto 2px' }}
+              />
+              <Text
+                size="xs"
+                fw={active ? 600 : 400}
+                c={active ? 'dark.9' : 'dimmed'}
+                style={{ lineHeight: 1 }}
+              >
+                {label}
               </Text>
             </UnstyledButton>
           )

@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
-import { Stack, Title, Text, Card, Group, Badge } from '@mantine/core'
+import { Stack, Text, Card, Group, Badge } from '@mantine/core'
 import { db } from '@/lib/db'
 import { getCurrentPerson } from '@/lib/auth-helpers'
 import { projectAssignments, projects } from '@/db/schema'
@@ -44,64 +44,77 @@ export default async function MyProjectsPage() {
   const other = rows.filter((r) => r.status !== 'active')
 
   return (
-    <Stack p="md" gap="md">
-      <Title order={3}>Mis proyectos</Title>
+    <Stack p="md" gap="xl">
+      <Text
+        style={{
+          fontSize: '1.0625rem',
+          fontWeight: 600,
+          letterSpacing: '-0.02em',
+        }}
+      >
+        Mis proyectos
+      </Text>
 
       {rows.length === 0 && (
-        <Text c="dimmed" size="sm">
-          No tienes proyectos asignados.
-        </Text>
+        <Card>
+          <Text c="dimmed" size="sm" ta="center" py="lg">
+            No tienes proyectos asignados.
+          </Text>
+        </Card>
       )}
 
       {active.length > 0 && (
-        <Stack gap="xs">
-          {active.map((project) => (
-            <Card key={project.id} withBorder p="sm" radius="sm">
-              <Group justify="space-between" align="flex-start" mb={4}>
-                <Text fw={500}>{project.name}</Text>
-                <Badge size="sm" color="gray" variant="light">
-                  {PROJECT_TYPE_LABELS[project.type] ?? project.type}
-                </Badge>
-              </Group>
-              <Group gap={4} mt={4}>
-                {(project.allowedAreas as string[]).map((area) => (
-                  <Badge key={area} size="xs" variant="outline" color="gray">
-                    {AREA_LABELS[area] ?? area}
+        <Stack gap="sm">
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+            Activos
+          </Text>
+          <Stack gap="xs">
+            {active.map((project) => (
+              <Card key={project.id} p="md">
+                <Group justify="space-between" align="flex-start" mb={8}>
+                  <Text fw={600} size="sm">{project.name}</Text>
+                  <Badge size="xs" color="gray" variant="light" radius="sm">
+                    {PROJECT_TYPE_LABELS[project.type] ?? project.type}
                   </Badge>
-                ))}
-              </Group>
-              {(project.startDate ?? project.endDate) && (
-                <Text size="xs" c="dimmed" mt={6}>
-                  {project.startDate ?? ''}
-                  {project.startDate && project.endDate ? ' → ' : ''}
-                  {project.endDate ?? ''}
-                </Text>
-              )}
-            </Card>
-          ))}
+                </Group>
+                <Group gap={6}>
+                  {(project.allowedAreas as string[]).map((area) => (
+                    <Badge key={area} size="xs" variant="light" color="gray" radius="sm">
+                      {AREA_LABELS[area] ?? area}
+                    </Badge>
+                  ))}
+                </Group>
+                {(project.startDate ?? project.endDate) && (
+                  <Text size="xs" c="dimmed" mt={8}>
+                    {project.startDate ?? ''}
+                    {project.startDate && project.endDate ? ' → ' : ''}
+                    {project.endDate ?? ''}
+                  </Text>
+                )}
+              </Card>
+            ))}
+          </Stack>
         </Stack>
       )}
 
       {other.length > 0 && (
-        <>
-          <Text size="sm" c="dimmed" fw={500}>
+        <Stack gap="sm">
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
             Cerrados / pausados
           </Text>
           <Stack gap="xs">
             {other.map((project) => (
-              <Card key={project.id} withBorder p="sm" radius="sm" opacity={0.6}>
+              <Card key={project.id} p="md" style={{ opacity: 0.5 }}>
                 <Group justify="space-between">
-                  <Text fw={500} size="sm">
-                    {project.name}
-                  </Text>
-                  <Badge size="sm" color="gray" variant="outline">
+                  <Text fw={500} size="sm">{project.name}</Text>
+                  <Badge size="xs" color="gray" variant="light" radius="sm">
                     {project.status}
                   </Badge>
                 </Group>
               </Card>
             ))}
           </Stack>
-        </>
+        </Stack>
       )}
     </Stack>
   )
