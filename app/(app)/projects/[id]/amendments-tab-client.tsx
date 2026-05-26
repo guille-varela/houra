@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Stack, Group, Text, Button, Badge, Paper, Divider } from '@mantine/core'
+import { Stack, Group, Text, Button, Badge, Card, Divider } from '@mantine/core'
+import { IconPlus } from '@tabler/icons-react'
 import AmendmentForm from '@/components/projects/amendment-form'
 import { type Allocation } from '@/lib/matrix'
 
@@ -44,29 +45,31 @@ export default function AmendmentsTabClient({
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   return (
-    <Stack gap="md">
+    <Stack gap="xl">
       {canCreate && (
         <Group justify="flex-end">
-          <Button size="sm" onClick={() => setDrawerOpen(true)}>
+          <Button size="sm" leftSection={<IconPlus size={14} />} onClick={() => setDrawerOpen(true)}>
             Nuevo amendment
           </Button>
         </Group>
       )}
 
       {amendments.length === 0 ? (
-        <Text size="sm" c="dimmed">
-          Sin amendments registrados.{' '}
-          {canCreate
-            ? 'Crea uno para modificar el scope sin alterar la asignación original.'
-            : 'Los amendments solo se pueden crear cuando el proyecto está activo o pausado.'}
-        </Text>
+        <Card>
+          <Text size="sm" c="dimmed" ta="center" py="md">
+            Sin amendments registrados.{' '}
+            {canCreate
+              ? 'Crea uno para modificar el scope sin alterar la asignación original.'
+              : 'Los amendments solo se pueden crear cuando el proyecto está activo o pausado.'}
+          </Text>
+        </Card>
       ) : (
         <Stack gap="sm">
           {amendments.map((a) => (
-            <Paper key={a.id} withBorder p="md" radius="sm">
+            <Card key={a.id} p="md">
               <Group justify="space-between" mb={4}>
                 <Text size="sm" fw={600}>{a.reason}</Text>
-                <Badge size="xs" variant="outline" color="gray">{a.effectiveDate}</Badge>
+                <Badge size="xs" variant="light" color="gray">{a.effectiveDate}</Badge>
               </Group>
               <Text size="xs" c="dimmed" mb={6}>{formatDeltaSummary(a.deltaAllocation)}</Text>
               <Divider my={6} />
@@ -79,7 +82,7 @@ export default function AmendmentsTabClient({
                   </>
                 )}
               </Group>
-            </Paper>
+            </Card>
           ))}
         </Stack>
       )}

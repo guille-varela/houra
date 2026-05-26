@@ -8,14 +8,14 @@ import {
   Button,
   TextInput,
   Alert,
-  Paper,
+  Card,
   Badge,
   ActionIcon,
   Tooltip,
   CopyButton,
   Anchor,
-  Divider,
 } from '@mantine/core'
+import { IconLink, IconCopy, IconX, IconLock } from '@tabler/icons-react'
 import { createReport, closeReport } from '@/actions/reports'
 
 type Report = {
@@ -80,11 +80,12 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
   }
 
   return (
-    <Stack gap="md">
-      {/* Create new report */}
-      <Paper withBorder p="md" radius="sm">
+    <Stack gap="xl">
+      <Card p="lg">
         <Stack gap="sm">
-          <Text size="sm" fw={600}>Crear nuevo link de acceso</Text>
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+            Nuevo link de acceso
+          </Text>
           <TextInput
             label="Contraseña (opcional)"
             placeholder="Deja vacío para acceso libre"
@@ -99,7 +100,7 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
             </Alert>
           )}
           {newSlug && (
-            <Alert color="green" variant="light">
+            <Alert color="green" variant="light" icon={<IconLink size={16} />}>
               <Group gap="xs" wrap="nowrap">
                 <Text size="sm" style={{ wordBreak: 'break-all' }}>
                   {origin}/r/{newSlug}
@@ -114,18 +115,25 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
               </Group>
             </Alert>
           )}
-          <Button size="sm" loading={isPending} onClick={handleCreate} style={{ alignSelf: 'flex-start' }}>
+          <Button
+            size="sm"
+            loading={isPending}
+            onClick={handleCreate}
+            leftSection={<IconLink size={14} />}
+            style={{ alignSelf: 'flex-start' }}
+          >
             Generar link
           </Button>
         </Stack>
-      </Paper>
+      </Card>
 
-      {/* Existing reports */}
       {reports.length > 0 && (
         <Stack gap="xs">
-          <Text size="sm" fw={600} c="dimmed">Links activos</Text>
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+            Links activos
+          </Text>
           {reports.map((r) => (
-            <Paper key={r.id} withBorder p="sm" radius="sm">
+            <Card key={r.id} p="sm">
               <Group justify="space-between" wrap="nowrap">
                 <Stack gap={2}>
                   <Group gap="xs">
@@ -133,7 +141,9 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
                       /r/{r.shareUrlSlug}
                     </Anchor>
                     {r.hasPassword && (
-                      <Badge size="xs" variant="outline" color="gray">🔒 con contraseña</Badge>
+                      <Badge size="xs" variant="light" color="gray" leftSection={<IconLock size={10} />}>
+                        Con contraseña
+                      </Badge>
                     )}
                     <Badge
                       size="xs"
@@ -151,8 +161,8 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
                   <CopyButton value={`${origin}/r/${r.shareUrlSlug}`}>
                     {({ copied, copy }) => (
                       <Tooltip label={copied ? 'Copiado' : 'Copiar URL'}>
-                        <ActionIcon size="sm" onClick={copy} color={copied ? 'green' : 'gray'}>
-                          📋
+                        <ActionIcon size="sm" variant="subtle" color={copied ? 'green' : 'gray'} onClick={copy}>
+                          <IconCopy size={14} />
                         </ActionIcon>
                       </Tooltip>
                     )}
@@ -161,23 +171,28 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
                     <Tooltip label="Cerrar acceso">
                       <ActionIcon
                         size="sm"
+                        variant="subtle"
                         color="red"
                         loading={isPending}
                         onClick={() => handleClose(r.id)}
                       >
-                        ✕
+                        <IconX size={14} />
                       </ActionIcon>
                     </Tooltip>
                   )}
                 </Group>
               </Group>
-            </Paper>
+            </Card>
           ))}
         </Stack>
       )}
 
       {reports.length === 0 && !newSlug && (
-        <Text size="sm" c="dimmed">Sin links compartidos todavía.</Text>
+        <Card>
+          <Text size="sm" c="dimmed" ta="center" py="md">
+            Sin links compartidos todavía.
+          </Text>
+        </Card>
       )}
     </Stack>
   )

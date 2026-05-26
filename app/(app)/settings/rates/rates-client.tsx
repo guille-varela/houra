@@ -16,6 +16,7 @@ import {
   Select,
   TextInput,
 } from '@mantine/core'
+import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react'
 import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS } from '@/lib/matrix'
 import { upsertRate, deleteRate } from '@/actions/rates'
 
@@ -135,7 +136,7 @@ export default function RatesClient({ rates: initialRates }: Props) {
       )}
 
       <Group justify="flex-end">
-        <Button size="sm" onClick={() => setAddOpen(true)}>
+        <Button size="sm" leftSection={<IconPlus size={14} />} onClick={() => setAddOpen(true)}>
           Nueva tarifa
         </Button>
       </Group>
@@ -207,13 +208,13 @@ export default function RatesClient({ rates: initialRates }: Props) {
                   ) : (
                     <>
                       <Tooltip label="Editar">
-                        <ActionIcon size="sm" onClick={() => startEdit(rate)} disabled={isPending}>
-                          ✎
+                        <ActionIcon size="sm" variant="subtle" color="gray" onClick={() => startEdit(rate)} disabled={isPending}>
+                          <IconEdit size={13} />
                         </ActionIcon>
                       </Tooltip>
                       <Tooltip label="Eliminar">
-                        <ActionIcon size="sm" color="red" onClick={() => handleDelete(rate.id)} disabled={isPending}>
-                          ✕
+                        <ActionIcon size="sm" variant="subtle" color="red" onClick={() => handleDelete(rate.id)} disabled={isPending}>
+                          <IconTrash size={13} />
                         </ActionIcon>
                       </Tooltip>
                     </>

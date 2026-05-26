@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
-import { Stack, SimpleGrid, Paper, Text, Group, Title } from '@mantine/core'
+import { Stack, SimpleGrid, Card, Text, Group } from '@mantine/core'
 import { db } from '@/lib/db'
 import { amendments, persons, timeEntries } from '@/db/schema'
 import { buildMarginMatrix, computeEffectiveAllocation, getMarginTotals, formatEur } from '@/lib/margin'
@@ -60,39 +60,55 @@ export default async function MarginTab({ projectId, originalAllocation }: Props
   const totalColor = marginColor(totals.marginPct ?? -1)
 
   return (
-    <Stack gap="md">
-      {/* Summary cards */}
+    <Stack gap="xl">
       <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-        <Paper withBorder p="sm" radius="sm">
-          <Text size="xs" c="dimmed">Horas imputadas</Text>
-          <Text size="lg" fw={700}>{totals.hours.toFixed(1)}h</Text>
-        </Paper>
-        <Paper withBorder p="sm" radius="sm">
-          <Text size="xs" c="dimmed">Ingresos</Text>
-          <Text size="lg" fw={700}>{formatEur(totals.soldCents)}</Text>
-        </Paper>
-        <Paper withBorder p="sm" radius="sm">
-          <Text size="xs" c="dimmed">Coste</Text>
-          <Text size="lg" fw={700}>{formatEur(totals.costCents)}</Text>
-        </Paper>
-        <Paper withBorder p="sm" radius="sm">
-          <Text size="xs" c="dimmed">Margen</Text>
-          <Group gap={6} align="baseline">
-            <Text size="lg" fw={700} c={totalColor}>
+        <Card p="md">
+          <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>
+            Horas imputadas
+          </Text>
+          <Text style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }} mt={4}>
+            {totals.hours.toFixed(1)}h
+          </Text>
+        </Card>
+        <Card p="md">
+          <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>
+            Ingresos
+          </Text>
+          <Text style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }} mt={4}>
+            {formatEur(totals.soldCents)}
+          </Text>
+        </Card>
+        <Card p="md">
+          <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>
+            Coste
+          </Text>
+          <Text style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }} mt={4}>
+            {formatEur(totals.costCents)}
+          </Text>
+        </Card>
+        <Card p="md">
+          <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>
+            Margen
+          </Text>
+          <Group gap={6} align="baseline" mt={4}>
+            <Text
+              style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1 }}
+              c={totalColor}
+            >
               {totals.marginPct !== null ? `${totals.marginPct.toFixed(1)}%` : 'n/d'}
             </Text>
             <Text size="xs" c="dimmed">{formatEur(totals.marginCents)}</Text>
           </Group>
-        </Paper>
+        </Card>
       </SimpleGrid>
 
-      {/* Per-cell matrix */}
       <Stack gap="xs">
-        <Title order={6} c="dimmed">Margen por celda</Title>
+        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+          Margen por celda
+        </Text>
         <MarginMatrix matrix={matrix} />
       </Stack>
 
-      {/* Effective allocation reminder */}
       {amendmentRows.length > 0 && (
         <Text size="xs" c="dimmed">
           Asignación efectiva incluye {amendmentRows.length} amendment{amendmentRows.length > 1 ? 's' : ''}.

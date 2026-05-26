@@ -5,7 +5,6 @@ import { useDisclosure } from '@mantine/hooks'
 import {
   Stack,
   Group,
-  Title,
   Text,
   Button,
   Badge,
@@ -17,6 +16,7 @@ import {
   Textarea,
   Alert,
 } from '@mantine/core'
+import { IconTrash, IconPlus } from '@tabler/icons-react'
 import { DateInput } from '@mantine/dates'
 import { createTimeOffEntry, deleteTimeOffEntry } from '@/actions/time-off'
 
@@ -121,9 +121,11 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
   const totalDays = entries.length
 
   return (
-    <Stack p="md" gap="md">
+    <Stack p="md" gap="xl">
       <Group justify="space-between" align="center">
-        <Title order={3}>Tiempo libre</Title>
+        <Text style={{ fontSize: '1.0625rem', fontWeight: 600, letterSpacing: '-0.02em' }}>
+          Tiempo libre
+        </Text>
         <Badge size="lg" variant="light" color="gray">
           {totalDays} {totalDays === 1 ? 'día' : 'días'}
         </Badge>
@@ -142,18 +144,26 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
       )}
 
       {entries.length === 0 ? (
-        <Text c="dimmed" size="sm">
-          No hay ausencias registradas.
-        </Text>
+        <Card>
+          <Text c="dimmed" size="sm" ta="center" py="md">
+            No hay ausencias registradas.
+          </Text>
+        </Card>
       ) : (
         <Stack gap="lg">
           {groups.map((g) => (
             <Stack key={g.label} gap="xs">
-              <Text size="sm" fw={600} c="dimmed">
+              <Text
+                size="xs"
+                fw={600}
+                c="dimmed"
+                tt="uppercase"
+                style={{ letterSpacing: '0.05em' }}
+              >
                 {g.label}
               </Text>
               {g.entries.map((entry) => (
-                <Card key={entry.id} withBorder p="sm" radius="sm">
+                <Card key={entry.id} p="sm">
                   <Group justify="space-between" align="center">
                     <div>
                       <Group gap="xs" align="center">
@@ -189,7 +199,7 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
                       onClick={() => handleDelete(entry.id)}
                       aria-label="Eliminar"
                     >
-                      ×
+                      <IconTrash size={14} />
                     </ActionIcon>
                   </Group>
                 </Card>
@@ -199,7 +209,9 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
         </Stack>
       )}
 
-      <Button onClick={open}>+ Añadir ausencia</Button>
+      <Button leftSection={<IconPlus size={14} />} onClick={open}>
+        Añadir ausencia
+      </Button>
 
       <Drawer
         opened={opened}

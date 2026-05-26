@@ -30,7 +30,7 @@ export default async function TimeEntriesTab({ projectId }: Props) {
 
   if (rows.length === 0) {
     return (
-      <Text size="sm" c="dimmed">
+      <Text size="sm" c="dimmed" ta="center" py="md">
         Sin entradas registradas.
       </Text>
     )
@@ -38,7 +38,7 @@ export default async function TimeEntriesTab({ projectId }: Props) {
 
   return (
     <Stack gap="sm">
-      <Text size="xs" c="dimmed">
+      <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>
         Últimas {rows.length} entradas
       </Text>
       <Table withTableBorder withColumnBorders fz="sm">
@@ -58,7 +58,7 @@ export default async function TimeEntriesTab({ projectId }: Props) {
               <TableTd>
                 <Group gap={4}>
                   <Text size="sm">{row.personName}</Text>
-                  <Badge size="xs" variant="outline" color="gray">
+                  <Badge size="xs" variant="light" color="gray">
                     {row.personRole}
                   </Badge>
                 </Group>

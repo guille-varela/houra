@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
-import { Stack, Title, Group, Badge, Text } from '@mantine/core'
+import { Stack, Group, Badge, Text, Card } from '@mantine/core'
 import { db } from '@/lib/db'
 import { getCurrentPerson } from '@/lib/auth-helpers'
 import { projects, workspaces } from '@/db/schema'
@@ -75,9 +75,11 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
 
   return (
     <Stack p="md" gap="md">
-      <div>
-        <Group justify="space-between" align="flex-start" mb={4}>
-          <Title order={3}>{project.name}</Title>
+      <Card p="md">
+        <Group justify="space-between" align="flex-start" mb={6}>
+          <Text style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
+            {project.name}
+          </Text>
           <Badge color={STATUS_COLOR[project.status] ?? 'gray'} variant="light">
             {STATUS_LABELS[project.status] ?? project.status}
           </Badge>
@@ -88,7 +90,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
               {project.workspaceName}
             </Text>
           )}
-          <Badge size="xs" variant="outline" color="gray">
+          <Badge size="xs" variant="light" color="gray">
             {TYPE_LABELS[project.type] ?? project.type}
           </Badge>
           {project.startDate && (
@@ -98,7 +100,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
             </Text>
           )}
         </Group>
-      </div>
+      </Card>
 
       <ProjectTabs
         defaultTab={activeTab}

@@ -3,7 +3,6 @@
 import { useState, useTransition } from 'react'
 import {
   Stack,
-  Title,
   Text,
   Card,
   Group,
@@ -14,6 +13,7 @@ import {
   Alert,
   Divider,
 } from '@mantine/core'
+import { IconPlus, IconUserMinus } from '@tabler/icons-react'
 import { upsertAssignment, deactivateAssignment } from '@/actions/project-assignments'
 
 const AREA_LABELS: Record<string, string> = {
@@ -110,7 +110,7 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
   }
 
   return (
-    <Stack gap="md">
+    <Stack gap="xl">
       {error && (
         <Alert color="red" variant="light" withCloseButton onClose={() => setError(null)}>
           {error}
@@ -118,14 +118,20 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
       )}
 
       <Group justify="space-between" align="center">
-        <Title order={5}>Equipo asignado</Title>
-        <Button size="xs" variant="light" onClick={() => setShowAddForm((v) => !v)}>
-          {showAddForm ? 'Cancelar' : '+ Añadir persona'}
+        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+          Equipo asignado
+        </Text>
+        <Button
+          size="xs"
+          leftSection={showAddForm ? undefined : <IconPlus size={12} />}
+          onClick={() => setShowAddForm((v) => !v)}
+        >
+          {showAddForm ? 'Cancelar' : 'Añadir persona'}
         </Button>
       </Group>
 
       {showAddForm && (
-        <Card withBorder p="md" radius="sm">
+        <Card p="md">
           <Stack gap="sm">
             <Select
               label="Persona"
@@ -161,13 +167,15 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
       )}
 
       {active.length === 0 && !showAddForm && (
-        <Text size="sm" c="dimmed">
-          Sin personas asignadas.
-        </Text>
+        <Card>
+          <Text size="sm" c="dimmed" ta="center" py="md">
+            Sin personas asignadas.
+          </Text>
+        </Card>
       )}
 
       {active.map((row) => (
-        <Card key={row.assignmentId} withBorder p="sm" radius="sm">
+        <Card key={row.assignmentId} p="sm">
           <Group justify="space-between" align="flex-start">
             <div>
               <Text fw={500} size="sm">
@@ -178,7 +186,7 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
               </Text>
               <Group gap={4} mt={4}>
                 {row.allowedAreas.map((area) => (
-                  <Badge key={area} size="xs" variant="outline" color="gray">
+                  <Badge key={area} size="xs" variant="light" color="gray">
                     {AREA_LABELS[area] ?? area}
                   </Badge>
                 ))}
@@ -188,6 +196,7 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
               size="xs"
               variant="subtle"
               color="red"
+              leftSection={<IconUserMinus size={12} />}
               loading={isPending}
               onClick={() => handleDeactivate(row.assignmentId)}
             >
@@ -201,7 +210,7 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
         <>
           <Divider label="Inactivos" labelPosition="left" />
           {inactive.map((row) => (
-            <Card key={row.assignmentId} withBorder p="sm" radius="sm" opacity={0.5}>
+            <Card key={row.assignmentId} p="sm" opacity={0.5}>
               <Group justify="space-between">
                 <div>
                   <Text size="sm">{row.personName}</Text>

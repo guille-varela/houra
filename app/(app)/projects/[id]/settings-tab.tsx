@@ -3,7 +3,6 @@
 import { useState, useTransition } from 'react'
 import {
   Stack,
-  Title,
   Group,
   Text,
   Button,
@@ -82,7 +81,9 @@ export default function SettingsTab({ projectId, status, allocation }: Props) {
     <Stack gap="xl">
       {/* Status transition */}
       <Stack gap="sm">
-        <Title order={5}>Estado del proyecto</Title>
+        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+          Estado del proyecto
+        </Text>
         <Group gap="xs">
           <Text size="sm" c="dimmed">
             Estado actual:
@@ -132,7 +133,9 @@ export default function SettingsTab({ projectId, status, allocation }: Props) {
       {/* Allocation matrix edit */}
       <Stack gap="sm">
         <Group gap="xs" align="flex-start">
-          <Title order={5}>Asignación de horas</Title>
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+            Asignación de horas
+          </Text>
           {!isDraft && (
             <Badge size="sm" color="gray" variant="light">
               Bloqueado (proyecto {STATUS_LABELS[status]?.toLowerCase()})

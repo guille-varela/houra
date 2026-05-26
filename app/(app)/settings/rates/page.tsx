@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { and, isNull } from 'drizzle-orm'
-import { Stack, Title, Text } from '@mantine/core'
+import { Stack, Text } from '@mantine/core'
 import { db } from '@/lib/db'
 import { rates } from '@/db/schema'
 import { getCurrentPerson } from '@/lib/auth-helpers'
@@ -25,10 +25,12 @@ export default async function RatesPage() {
     .orderBy(rates.area, rates.role)
 
   return (
-    <Stack p="md" gap="md">
+    <Stack p="md" gap="xl">
       <div>
-        <Title order={3}>Tarifas — Organización</Title>
-        <Text size="xs" c="dimmed">
+        <Text style={{ fontSize: '1.0625rem', fontWeight: 600, letterSpacing: '-0.02em' }}>
+          Tarifas — Organización
+        </Text>
+        <Text size="xs" c="dimmed" mt={4}>
           Tarifas base para toda la organización. Se aplican cuando no hay override de workspace, proyecto o persona.
         </Text>
       </div>
