@@ -124,8 +124,8 @@ Secrets are managed with `wrangler secret put` — never stored in the repositor
 | 03 | Project management + matrix dashboard | ✅ Done |
 | 04 | Margin + amendments | ✅ Done |
 | 05 | Reports + sharing | ✅ Done |
-| 06 | Time off + notifications (Inngest + Slack/email) | Pending |
-| 07–08 | Background jobs, audit log, exports | — |
+| 06 | Time off + Inngest auto-snapshot + Slack notifications | ✅ Done |
+| 07–08 | Audit log UI, exports (CSV/PDF) | — |
 | 09 | Brand tokens + final design | — |
 
 ---

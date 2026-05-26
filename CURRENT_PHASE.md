@@ -1,6 +1,6 @@
 # Current Phase
 
-phase: 06
+phase: 07
 status: pending
 completed_phases:
   - phase: 00
@@ -22,4 +22,7 @@ completed_phases:
   - phase: 05
     status: completed
     completed_at: 2026-05-26
-next: Phase 06 — Time off + notifications
+  - phase: 06
+    status: completed
+    completed_at: 2026-05-26
+next: Phase 07 — Audit log UI + exports
