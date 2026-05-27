@@ -16,16 +16,25 @@ import { notifications } from '@mantine/notifications'
 import { createTimeEntry } from '@/actions/time-entries'
 import { getLocalDateString } from '@/lib/dates'
 
+/** Proyecto asignado al usuario que puede seleccionar para imputar horas */
 type AssignedProject = {
+  /** ID único del proyecto */
   id: string
+  /** Nombre visible del proyecto */
   name: string
+  /** Áreas habilitadas para el usuario en este proyecto */
   allowedAreas: string[]
 }
 
+/** Propiedades del componente TimeEntryForm */
 type Props = {
+  /** Controla si el drawer está abierto */
   opened: boolean
+  /** Callback invocado al cerrar o cancelar el formulario */
   onClose: () => void
+  /** Lista de proyectos asignados al usuario para seleccionar */
   assignedProjects: AssignedProject[]
+  /** Fecha preseleccionada al abrir el formulario, en formato ISO (YYYY-MM-DD) */
   defaultDate: string
 }
 
@@ -37,6 +46,7 @@ const AREA_LABELS: Record<string, string> = {
 
 const SOFT_CAP_HOURS = 14
 
+/** Drawer con formulario para registrar una nueva entrada de tiempo en un proyecto asignado */
 export default function TimeEntryForm({ opened, onClose, assignedProjects, defaultDate }: Props) {
   const [projectId, setProjectId] = useState<string | null>(null)
   const [date, setDate] = useState(defaultDate)

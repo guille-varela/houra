@@ -18,14 +18,23 @@ const STATUS_COLOR: Record<string, string> = {
   closed: 'red',
 }
 
+/** Propiedades del componente ProjectCard */
 type Props = {
+  /** ID único del proyecto */
   id: string
+  /** Nombre visible del proyecto */
   name: string
+  /** Tipo de contrato del proyecto (p. ej. fixed_bag, ongoing_capacity) */
   type: string
+  /** Estado actual del proyecto (draft, active, paused, closed) */
   status: string
+  /** Fecha de inicio del proyecto en formato ISO; puede ser null si no está definida */
   startDate: string | null
+  /** Fecha de fin del proyecto en formato ISO; puede ser null si no está definida */
   endDate: string | null
+  /** ID del workspace al que pertenece el proyecto; null si no tiene workspace */
   workspaceId: string | null
+  /** Nombre del workspace para mostrar como enlace; null si no tiene workspace */
   workspaceName: string | null
 }
 
@@ -35,6 +44,7 @@ const TYPE_LABELS: Record<string, string> = {
   ongoing_capacity: 'Capacidad continua',
 }
 
+/** Tarjeta de proyecto navegable que redirige a /projects/:id al hacer clic */
 export function ProjectCard({ id, name, type, status, endDate, workspaceId, workspaceName }: Props) {
   const router = useRouter()
 

@@ -11,6 +11,7 @@ import {
   IconSettings,
 } from '@tabler/icons-react'
 
+/** Elemento de navegación de la barra móvil inferior */
 type NavItem = { href: string; label: string; Icon: React.ComponentType<{ size: number; stroke: number; color: string; style: React.CSSProperties }> }
 
 const CONTRIBUTOR_NAV: NavItem[] = [
@@ -27,8 +28,13 @@ const MANAGER_NAV: NavItem[] = [
   { href: '/settings', label: 'Configuración', Icon: IconSettings },
 ]
 
-type Props = { appRole: string }
+/** Propiedades del componente MobileNav */
+type Props = {
+  /** Rol del usuario; determina si se muestra la navegación de contributor o de manager */
+  appRole: string
+}
 
+/** Barra de navegación inferior fija para dispositivos móviles, adaptada al rol del usuario */
 export default function MobileNav({ appRole }: Props) {
   const pathname = usePathname()
   const items = appRole === 'contributor' ? CONTRIBUTOR_NAV : MANAGER_NAV

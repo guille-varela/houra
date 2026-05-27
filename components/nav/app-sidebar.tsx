@@ -14,11 +14,17 @@ import {
   IconSettings,
 } from '@tabler/icons-react'
 
+/** Elemento de navegación de la barra lateral */
 type NavItem = {
+  /** Ruta de destino del enlace */
   href: string
+  /** Etiqueta visible en el tooltip */
   label: string
+  /** Componente de icono de Tabler */
   Icon: React.ComponentType<{ size: number; strokeWidth: number; style?: React.CSSProperties }>
+  /** Roles que pueden ver este ítem; si se omite, es visible para todos */
   roles?: string[]
+  /** Si es true, la ruta debe coincidir exactamente para marcar el ítem como activo */
   exact?: boolean
 }
 
@@ -37,8 +43,11 @@ const NAV_BOTTOM: NavItem[] = [
   { href: '/settings', label: 'Configuración', Icon: IconSettings, roles: ['admin'] },
 ]
 
+/** Propiedades del componente AppSidebar */
 type Props = {
+  /** Rol del usuario en la aplicación, determina los ítems visibles */
   appRole: string
+  /** Nombre completo de la persona, usado para el monograma de usuario */
   personName: string
 }
 
@@ -105,6 +114,7 @@ function Monogram({ name }: { name: string }) {
   )
 }
 
+/** Barra lateral de navegación vertical de escritorio con ítems filtrados por rol */
 export default function AppSidebar({ appRole, personName }: Props) {
   const pathname = usePathname()
 

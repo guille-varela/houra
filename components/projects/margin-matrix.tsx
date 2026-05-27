@@ -5,10 +5,13 @@ import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS } from '@/lib/matrix'
 import { type MarginCell, formatEur } from '@/lib/margin'
 import { marginColor } from '@/lib/tokens'
 
+/** Propiedades del componente MarginMatrix */
 type Props = {
+  /** Matriz bidimensional de celdas de margen, indexada por área y rol */
   matrix: MarginCell[][]
 }
 
+/** Grid de margen económico por área y rol, con código de colores y tooltip de detalle financiero */
 export default function MarginMatrix({ matrix }: Props) {
   const cols = ROLES.length + 1
   const colWidth = 90

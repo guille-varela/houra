@@ -19,11 +19,15 @@ const BADGE_COLOR: Record<MatrixCell['color'], string> = {
   empty: 'gray',
 }
 
+/** Propiedades del componente AllocationMatrix */
 type Props = {
+  /** Matriz bidimensional de celdas de asignación, indexada por área y rol */
   matrix: MatrixCell[][]
+  /** ID del proyecto al que pertenece la matriz */
   projectId: string
 }
 
+/** Tabla interactiva de consumo de horas por área y rol; abre el detalle de celda al hacer clic */
 export default function AllocationMatrix({ matrix, projectId }: Props) {
   const [selected, setSelected] = useState<MatrixCell | null>(null)
 

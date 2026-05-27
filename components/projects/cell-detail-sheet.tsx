@@ -5,19 +5,29 @@ import { Drawer, Stack, Text, Group, Badge, Loader, Card, Title } from '@mantine
 import { AREA_LABELS, ROLE_LABELS, type MatrixCell } from '@/lib/matrix'
 import { getCellEntries } from '@/actions/projects-query'
 
+/** Fila de entrada de tiempo para mostrar en el detalle de celda */
 type EntryRow = {
+  /** Nombre completo de la persona que imputó las horas */
   personName: string
+  /** Fecha de la imputación en formato ISO (YYYY-MM-DD) */
   date: string
+  /** Número de horas imputadas */
   hours: number
+  /** Descripción opcional de la tarea realizada */
   description: string | null
 }
 
+/** Propiedades del componente CellDetailSheet */
 type Props = {
+  /** Celda de la matriz cuyo detalle se muestra */
   cell: MatrixCell
+  /** ID del proyecto al que pertenece la celda */
   projectId: string
+  /** Callback invocado al cerrar el drawer */
   onClose: () => void
 }
 
+/** Drawer lateral que lista las entradas de tiempo asociadas a una celda área/rol de la matriz */
 export default function CellDetailSheet({ cell, projectId, onClose }: Props) {
   const [entries, setEntries] = useState<EntryRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)

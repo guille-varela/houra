@@ -19,15 +19,21 @@ import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS, type Allocation } from '@/lib/m
 import { notifications } from '@mantine/notifications'
 import { createAmendment } from '@/actions/amendments'
 
+/** Propiedades del componente AmendmentForm */
 type Props = {
+  /** ID del proyecto al que se aplica el amendment */
   projectId: string
+  /** Asignación vigente usada como referencia para mostrar los valores actuales */
   effectiveAllocation: Allocation
+  /** Controla si el drawer está abierto */
   opened: boolean
+  /** Callback invocado al cerrar o cancelar el formulario */
   onClose: () => void
 }
 
 type DeltaAllocation = Record<string, Record<string, number>>
 
+/** Drawer con formulario para crear un amendment de asignación de horas en un proyecto */
 export default function AmendmentForm({ projectId, effectiveAllocation, opened, onClose }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
