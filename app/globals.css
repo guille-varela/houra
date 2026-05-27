@@ -5,6 +5,23 @@
 
 @import "tailwindcss";
 
+/* ─── Grandis Extended ───────────────────────────────────────────────────────── */
+@font-face {
+  font-family: 'Grandis Extended';
+  src: url('/fonts/GrandisExtended-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Grandis Extended';
+  src: url('/fonts/GrandisExtended-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ─── Base ──────────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
