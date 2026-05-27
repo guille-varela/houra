@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { eq, sql } from 'drizzle-orm'
-import { Stack, Text, Card, Group, Badge, Anchor } from '@mantine/core'
-import Link from 'next/link'
+import { Stack, Text, Card, Group, Badge } from '@mantine/core'
+import { AnchorLink } from '@/components/ui/anchor-link'
 import { db } from '@/lib/db'
 import { persons, timeEntries } from '@/db/schema'
 import { requireRole } from '@/lib/auth-helpers'
@@ -59,9 +59,9 @@ export default async function PeoplePage() {
         <Group justify="space-between" align="flex-start">
           <div>
             <Group gap="xs" mb={4}>
-              <Anchor component={Link} href={`/people/${row.id}`} fw={600} size="sm" c="dark">
+              <AnchorLink href={`/people/${row.id}`} fw={600} size="sm" c="dark">
                 {row.name}
-              </Anchor>
+              </AnchorLink>
               {statusBadge(row)}
             </Group>
             <Group gap="xs">

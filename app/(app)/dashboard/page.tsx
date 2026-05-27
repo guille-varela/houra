@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { eq, sql } from 'drizzle-orm'
-import { Stack, Text, Card, Group, Badge, SimpleGrid, Anchor } from '@mantine/core'
-import Link from 'next/link'
+import { Stack, Text, Card, Group, Badge, SimpleGrid } from '@mantine/core'
+import { AnchorLink } from '@/components/ui/anchor-link'
 import { db } from '@/lib/db'
 import { amendments, persons, projects, timeEntries, workspaces } from '@/db/schema'
 import { requireRole } from '@/lib/auth-helpers'
@@ -141,9 +141,9 @@ export default async function DashboardPage() {
         {projectsByWorkspace.map((w) => (
           <Stack key={w.id} gap="sm">
             <Group gap="xs">
-              <Anchor component={Link} href={`/workspaces/${w.id}`} size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+              <AnchorLink href={`/workspaces/${w.id}`} size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
                 {w.name}
-              </Anchor>
+              </AnchorLink>
               <Text size="xs" c="dimmed">— {w.projects.length} proyecto{w.projects.length !== 1 ? 's' : ''}</Text>
             </Group>
             {w.projects.length === 0 && (
@@ -157,9 +157,9 @@ export default async function DashboardPage() {
                   <Group justify="space-between" align="flex-start" wrap="nowrap">
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <Group gap="xs" mb={4}>
-                        <Anchor component={Link} href={`/projects/${p.id}`} fw={600} size="sm" c="dark">
+                        <AnchorLink href={`/projects/${p.id}`} fw={600} size="sm" c="dark">
                           {p.name}
-                        </Anchor>
+                        </AnchorLink>
                         <Badge size="xs" color={STATUS_COLOR[p.status] ?? 'gray'} variant="light">
                           {STATUS_LABELS[p.status] ?? p.status}
                         </Badge>

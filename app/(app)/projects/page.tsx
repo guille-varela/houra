@@ -1,30 +1,10 @@
 import { redirect } from 'next/navigation'
 import { eq } from 'drizzle-orm'
-import { Stack, Title, Group, Badge, Card, Text, Anchor, SimpleGrid } from '@mantine/core'
-import Link from 'next/link'
+import { Stack, Title, Card, Text, SimpleGrid } from '@mantine/core'
 import { db } from '@/lib/db'
 import { requireRole } from '@/lib/auth-helpers'
 import { projects, workspaces } from '@/db/schema'
-
-const TYPE_LABELS: Record<string, string> = {
-  fixed_bag: 'Bolsa fija',
-  renewable_bag: 'Bolsa renovable',
-  ongoing_capacity: 'Capacidad continua',
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Borrador',
-  active: 'Activo',
-  paused: 'Pausado',
-  closed: 'Cerrado',
-}
-
-const STATUS_COLOR: Record<string, string> = {
-  draft: 'gray',
-  active: 'green',
-  paused: 'yellow',
-  closed: 'red',
-}
+import { ProjectCard } from '@/components/projects/project-card'
 
 export default async function ProjectsPage() {
   let person: Awaited<ReturnType<typeof requireRole>>
@@ -52,54 +32,6 @@ export default async function ProjectsPage() {
   const active = rows.filter((r) => r.status === 'active')
   const rest = rows.filter((r) => r.status !== 'active')
 
-  function ProjectCard({ project }: { project: (typeof rows)[number] }) {
-    return (
-      <Anchor href={`/projects/${project.id}`} underline="never">
-        <Card style={{ cursor: 'pointer', height: '100%' }}>
-          <Stack gap="xs" style={{ height: '100%' }}>
-            <Group justify="space-between" align="flex-start">
-              <Text fw={600} size="sm" style={{ flex: 1, lineHeight: 1.3 }}>
-                {project.name}
-              </Text>
-              <Badge
-                size="xs"
-                color={STATUS_COLOR[project.status] ?? 'gray'}
-                variant="light"
-                radius="sm"
-              >
-                {STATUS_LABELS[project.status] ?? project.status}
-              </Badge>
-            </Group>
-
-            {project.workspaceName && project.workspaceId && (
-              <Anchor
-                component={Link}
-                href={`/workspaces/${project.workspaceId}`}
-                size="xs"
-                c="dimmed"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {project.workspaceName}
-              </Anchor>
-            )}
-
-            <Group gap="xs" mt="auto">
-              <Text size="xs" c="dimmed">
-                {TYPE_LABELS[project.type] ?? project.type}
-              </Text>
-              {project.endDate && (
-                <>
-                  <Text size="xs" c="dimmed">·</Text>
-                  <Text size="xs" c="dimmed">hasta {project.endDate}</Text>
-                </>
-              )}
-            </Group>
-          </Stack>
-        </Card>
-      </Anchor>
-    )
-  }
-
   return (
     <Stack p="md" gap="xl">
       <Title order={3} style={{ letterSpacing: '-0.02em' }}>Proyectos</Title>
@@ -119,7 +51,7 @@ export default async function ProjectsPage() {
           </Text>
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
             {active.map((p) => (
-              <ProjectCard key={p.id} project={p} />
+              <ProjectCard key={p.id} {...p} />
             ))}
           </SimpleGrid>
         </Stack>
@@ -132,7 +64,7 @@ export default async function ProjectsPage() {
           </Text>
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
             {rest.map((p) => (
-              <ProjectCard key={p.id} project={p} />
+              <ProjectCard key={p.id} {...p} />
             ))}
           </SimpleGrid>
         </Stack>
