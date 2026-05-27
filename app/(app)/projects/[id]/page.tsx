@@ -128,7 +128,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
         team={isAdmin ? <TeamTab projectId={id} organizationId={person.organizationId} /> : null}
         settings={
           isAdmin ? (
-            <SettingsTab projectId={id} status={project.status} allocation={allocation} />
+            <SettingsTab projectId={id} projectName={project.name} status={project.status} allocation={allocation} />
           ) : null
         }
       />

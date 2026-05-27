@@ -14,6 +14,63 @@ import {
 
 type ActionResult = { ok: true } | { ok: false; error: string }
 
+export async function duplicateProject(
+  projectId: string,
+): Promise<{ ok: true; newProjectId: string } | { ok: false; error: string }> {
+  let actor
+  try {
+    actor = await requireRole('manager')
+  } catch {
+    return { ok: false, error: 'Sin permisos.' }
+  }
+
+  const [source] = await db
+    .select()
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1)
+
+  if (!source) return { ok: false, error: 'Proyecto no encontrado.' }
+  if (source.organizationId !== actor.organizationId) return { ok: false, error: 'Sin permisos.' }
+
+  const [inserted] = await db
+    .insert(projects)
+    .values({
+      organizationId: source.organizationId,
+      workspaceId: source.workspaceId,
+      name: `${source.name} (copia)`,
+      type: source.type,
+      areasEnabled: source.areasEnabled,
+      originalAllocation: source.originalAllocation,
+      weeklyHours: source.weeklyHours,
+      status: 'draft',
+      startDate: source.startDate,
+      endDate: source.endDate,
+      notificationSettings: source.notificationSettings,
+      contributorDashboardAccess: source.contributorDashboardAccess,
+      timezoneOverride: source.timezoneOverride,
+      departmentId: source.departmentId,
+    })
+    .returning({ id: projects.id })
+
+  if (!inserted) return { ok: false, error: 'Error al duplicar el proyecto.' }
+
+  await logAuditEvent({
+    organizationId: actor.organizationId,
+    actorId: actor.id,
+    action: 'project.duplicate',
+    entityType: 'project',
+    entityId: inserted.id,
+    diff: {
+      before: {},
+      after: { duplicatedFrom: projectId, name: `${source.name} (copia)` },
+    },
+  })
+
+  revalidatePath('/projects')
+  return { ok: true, newProjectId: inserted.id }
+}
+
 export async function updateProjectStatus(raw: unknown): Promise<ActionResult> {
   const parsed = updateProjectStatusSchema.safeParse(raw)
   if (!parsed.success) {

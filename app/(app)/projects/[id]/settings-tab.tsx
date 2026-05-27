@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Stack,
   Group,
@@ -12,8 +13,9 @@ import {
   Table,
   Divider,
   Badge,
+  Modal,
 } from '@mantine/core'
-import { updateProjectStatus, updateAllocation } from '@/actions/projects'
+import { updateProjectStatus, updateAllocation, duplicateProject } from '@/actions/projects'
 import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS, type Allocation } from '@/lib/matrix'
 import { isValidTransition, PROJECT_STATUSES } from '@/lib/schemas/project'
 
@@ -26,13 +28,17 @@ const STATUS_LABELS: Record<string, string> = {
 
 type Props = {
   projectId: string
+  projectName: string
   status: string
   allocation: Allocation
 }
 
-export default function SettingsTab({ projectId, status, allocation }: Props) {
+export default function SettingsTab({ projectId, projectName, status, allocation }: Props) {
+  const router = useRouter()
   const [statusError, setStatusError] = useState<string | null>(null)
   const [allocError, setAllocError] = useState<string | null>(null)
+  const [dupError, setDupError] = useState<string | null>(null)
+  const [dupModalOpen, setDupModalOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
 
@@ -74,6 +80,19 @@ export default function SettingsTab({ projectId, status, allocation }: Props) {
     startTransition(async () => {
       const result = await updateAllocation({ projectId, allocation: editAlloc })
       if (!result.ok) setAllocError(result.error)
+    })
+  }
+
+  function handleDuplicate() {
+    setDupError(null)
+    startTransition(async () => {
+      const result = await duplicateProject(projectId)
+      if (!result.ok) {
+        setDupError(result.error)
+      } else {
+        setDupModalOpen(false)
+        router.push(`/projects/${result.newProjectId}`)
+      }
     })
   }
 
@@ -197,6 +216,54 @@ export default function SettingsTab({ projectId, status, allocation }: Props) {
           </Button>
         )}
       </Stack>
+
+      <Divider />
+
+      {/* Duplicate */}
+      <Stack gap="sm">
+        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+          Duplicar proyecto
+        </Text>
+        <Text size="xs" c="dimmed">
+          Crea una copia con la misma configuración (tipo, áreas, asignación, tarifas). Estado reiniciado a Borrador, sin entradas ni equipo.
+        </Text>
+        {dupError && (
+          <Alert color="red" variant="light" withCloseButton onClose={() => setDupError(null)}>
+            {dupError}
+          </Alert>
+        )}
+        <Button
+          size="sm"
+          variant="light"
+          color="gray"
+          onClick={() => setDupModalOpen(true)}
+          style={{ alignSelf: 'flex-start' }}
+        >
+          Duplicar proyecto
+        </Button>
+      </Stack>
+
+      <Modal
+        opened={dupModalOpen}
+        onClose={() => setDupModalOpen(false)}
+        title="Duplicar proyecto"
+        size="sm"
+      >
+        <Stack gap="md">
+          <Text size="sm">
+            Se creará <strong>&quot;{projectName} (copia)&quot;</strong> con la configuración actual.
+            El nuevo proyecto empieza en estado Borrador sin entradas ni equipo asignado.
+          </Text>
+          <Group justify="flex-end" gap="sm">
+            <Button variant="subtle" color="gray" onClick={() => setDupModalOpen(false)} disabled={isPending}>
+              Cancelar
+            </Button>
+            <Button loading={isPending} onClick={handleDuplicate}>
+              Duplicar
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Stack>
   )
 }
