@@ -124,6 +124,15 @@ export async function takeManualSnapshot(reportId: string, label: string) {
     label: label || new Date().toLocaleDateString('es-ES'),
   })
 
+  await logAuditEvent({
+    organizationId: report.organizationId,
+    actorId: person.id,
+    action: 'report.snapshot.create',
+    entityType: 'report',
+    entityId: reportId,
+    diff: { before: null, after: { label, scope: report.scope } },
+  })
+
   return { ok: true as const }
 }
 

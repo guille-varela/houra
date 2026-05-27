@@ -5,6 +5,7 @@ import { and, eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { timeOffEntries } from '@/db/schema'
 import { getCurrentPerson } from '@/lib/auth-helpers'
+import { logAuditEvent } from '@/lib/audit'
 import { createTimeOffEntrySchema, deleteTimeOffEntrySchema } from '@/lib/schemas/time-off'
 
 function eachDayInRange(start: string, end: string): string[] {
@@ -46,6 +47,15 @@ export async function createTimeOffEntry(raw: unknown) {
     })),
   )
 
+  await logAuditEvent({
+    organizationId: person.organizationId,
+    actorId: person.id,
+    action: 'time_off.create',
+    entityType: 'timeOffEntry',
+    entityId: person.id,
+    diff: { before: null, after: { startDate, endDate, type, hoursPerDay, days: dates.length } },
+  })
+
   revalidatePath('/time-off')
   return { ok: true as const, created: dates.length }
 }
@@ -62,6 +72,15 @@ export async function deleteTimeOffEntry(raw: unknown) {
     .where(
       and(eq(timeOffEntries.id, parsed.data.id), eq(timeOffEntries.personId, person.id)),
     )
+
+  await logAuditEvent({
+    organizationId: person.organizationId,
+    actorId: person.id,
+    action: 'time_off.delete',
+    entityType: 'timeOffEntry',
+    entityId: parsed.data.id,
+    diff: { before: { id: parsed.data.id }, after: null },
+  })
 
   revalidatePath('/time-off')
   return { ok: true as const }

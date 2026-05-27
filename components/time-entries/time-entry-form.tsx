@@ -12,6 +12,7 @@ import {
   Text,
   Group,
 } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import { createTimeEntry } from '@/actions/time-entries'
 import { getLocalDateString } from '@/lib/dates'
 
@@ -84,7 +85,7 @@ export default function TimeEntryForm({ opened, onClose, assignedProjects, defau
         description: description.trim() || undefined,
       })
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
         return
       }
       handleClose()

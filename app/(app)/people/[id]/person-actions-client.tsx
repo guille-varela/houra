@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Button, Group, Modal, Text, Alert, Stack } from '@mantine/core'
 import { IconUserOff, IconShieldOff } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
 import { deactivatePerson, anonymizePerson } from '@/actions/people'
 
 type Props = {
@@ -14,15 +15,13 @@ type Props = {
 export default function PersonActionsClient({ personId, isDeactivated, isAnonymized }: Props) {
   const [deactivateOpen, setDeactivateOpen] = useState(false)
   const [anonymizeOpen, setAnonymizeOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function handleDeactivate() {
-    setError(null)
     startTransition(async () => {
       const result = await deactivatePerson(personId)
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
         setDeactivateOpen(false)
       }
@@ -30,11 +29,10 @@ export default function PersonActionsClient({ personId, isDeactivated, isAnonymi
   }
 
   function handleAnonymize() {
-    setError(null)
     startTransition(async () => {
       const result = await anonymizePerson(personId)
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
         setAnonymizeOpen(false)
       }
@@ -45,12 +43,6 @@ export default function PersonActionsClient({ personId, isDeactivated, isAnonymi
 
   return (
     <>
-      {error && (
-        <Alert color="red" variant="light" withCloseButton onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
       <Group gap="sm">
         {!isDeactivated && (
           <Button

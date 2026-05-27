@@ -16,6 +16,7 @@ import {
   Anchor,
 } from '@mantine/core'
 import { IconLink, IconCopy, IconX, IconLock } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
 import { createReport, closeReport } from '@/actions/reports'
 
 type Report = {
@@ -34,14 +35,12 @@ type Props = {
 export default function ShareTabClient({ projectId, reports: initialReports }: Props) {
   const [reports, setReports] = useState<Report[]>(initialReports)
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [newSlug, setNewSlug] = useState<string | null>(null)
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
   function handleCreate() {
-    setError(null)
     setNewSlug(null)
     startTransition(async () => {
       const result = await createReport({
@@ -50,7 +49,7 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
         password: password || undefined,
       })
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
         setNewSlug(result.slug)
         setPassword('')
@@ -72,7 +71,7 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
     startTransition(async () => {
       const result = await closeReport(id)
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
         setReports((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'closed' } : r)))
       }
@@ -94,11 +93,6 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
             onChange={(e) => setPassword(e.currentTarget.value)}
             disabled={isPending}
           />
-          {error && (
-            <Alert color="red" variant="light" withCloseButton onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
           {newSlug && (
             <Alert color="green" variant="light" icon={<IconLink size={16} />}>
               <Group gap="xs" wrap="nowrap">

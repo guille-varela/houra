@@ -18,6 +18,7 @@ import {
 } from '@mantine/core'
 import { IconTrash, IconPlus } from '@tabler/icons-react'
 import { DateInput } from '@mantine/dates'
+import { notifications } from '@mantine/notifications'
 import { createTimeOffEntry, deleteTimeOffEntry } from '@/actions/time-off'
 
 type Entry = {
@@ -71,7 +72,6 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
   const [isPending, startTransition] = useTransition()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
 
   const [startDate, setStartDate] = useState<string | null>(null)
   const [endDate, setEndDate] = useState<string | null>(null)
@@ -100,12 +100,14 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
         note: note || undefined,
       })
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
-        setSuccess(`${result.created} ${result.created === 1 ? 'día añadido' : 'días añadidos'}`)
+        notifications.show({
+          color: 'green',
+          message: `${result.created} ${result.created === 1 ? 'día añadido' : 'días añadidos'}`,
+        })
         resetForm()
         close()
-        setTimeout(() => setSuccess(null), 3000)
       }
     })
   }
@@ -114,7 +116,7 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
     setDeletingId(id)
     const result = await deleteTimeOffEntry({ id })
     setDeletingId(null)
-    if (!result.ok) setError(result.error)
+    if (!result.ok) notifications.show({ color: 'red', title: 'Error', message: result.error })
   }
 
   const groups = groupByMonth(entries)
@@ -130,18 +132,6 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
           {totalDays} {totalDays === 1 ? 'día' : 'días'}
         </Badge>
       </Group>
-
-      {success && (
-        <Alert color="green" variant="light">
-          {success}
-        </Alert>
-      )}
-
-      {error && !opened && (
-        <Alert color="red" variant="light" withCloseButton onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
 
       {entries.length === 0 ? (
         <Card>

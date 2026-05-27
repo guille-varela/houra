@@ -16,6 +16,7 @@ import {
   Divider,
 } from '@mantine/core'
 import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS, type Allocation } from '@/lib/matrix'
+import { notifications } from '@mantine/notifications'
 import { createAmendment } from '@/actions/amendments'
 
 type Props = {
@@ -86,7 +87,7 @@ export default function AmendmentForm({ projectId, effectiveAllocation, opened, 
         effectiveDate,
       })
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
         handleClose()
       }

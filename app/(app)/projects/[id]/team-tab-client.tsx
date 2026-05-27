@@ -14,6 +14,7 @@ import {
   Divider,
 } from '@mantine/core'
 import { IconPlus, IconUserMinus } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
 import { upsertAssignment, deactivateAssignment } from '@/actions/project-assignments'
 
 const AREA_LABELS: Record<string, string> = {
@@ -79,7 +80,7 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
     startTransition(async () => {
       const result = await upsertAssignment({ projectId, personId: addPersonId, allowedAreas: addAreas })
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
         return
       }
       setShowAddForm(false)
@@ -89,15 +90,13 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
   }
 
   function handleDeactivate(assignmentId: string) {
-    setError(null)
     startTransition(async () => {
       const result = await deactivateAssignment({ assignmentId })
-      if (!result.ok) setError(result.error)
+      if (!result.ok) notifications.show({ color: 'red', title: 'Error', message: result.error })
     })
   }
 
   function handleReactivate(personId: string) {
-    setError(null)
     const person = allPersons.find((p) => p.id === personId)
     startTransition(async () => {
       const result = await upsertAssignment({
@@ -105,7 +104,7 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
         personId,
         allowedAreas: person ? [person.primaryArea] : ['ux'],
       })
-      if (!result.ok) setError(result.error)
+      if (!result.ok) notifications.show({ color: 'red', title: 'Error', message: result.error })
     })
   }
 

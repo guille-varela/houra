@@ -18,6 +18,7 @@ import {
 } from '@mantine/core'
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react'
 import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS } from '@/lib/matrix'
+import { notifications } from '@mantine/notifications'
 import { upsertRate, deleteRate } from '@/actions/rates'
 
 type Rate = {
@@ -48,7 +49,6 @@ export default function RatesClient({ rates: initialRates }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editCost, setEditCost] = useState<number | string>('')
   const [editSold, setEditSold] = useState<number | string>('')
-  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   // New rate modal
@@ -63,11 +63,9 @@ export default function RatesClient({ rates: initialRates }: Props) {
     setEditingId(rate.id)
     setEditCost(rate.costRateCents !== null ? rate.costRateCents / 100 : '')
     setEditSold(rate.soldRateCents !== null ? rate.soldRateCents / 100 : '')
-    setError(null)
   }
 
   function handleSaveEdit(rate: Rate) {
-    setError(null)
     startTransition(async () => {
       const result = await upsertRate({
         id: rate.id,
@@ -79,7 +77,7 @@ export default function RatesClient({ rates: initialRates }: Props) {
         effectiveTo: rate.effectiveTo,
       })
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
         setRates((prev) =>
           prev.map((r) =>
@@ -97,7 +95,7 @@ export default function RatesClient({ rates: initialRates }: Props) {
     startTransition(async () => {
       const result = await deleteRate({ id })
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
         setRates((prev) => prev.filter((r) => r.id !== id))
       }
@@ -106,7 +104,6 @@ export default function RatesClient({ rates: initialRates }: Props) {
 
   function handleAddRate() {
     if (!newArea || !newRole) return
-    setError(null)
     startTransition(async () => {
       const result = await upsertRate({
         area: newArea,
@@ -116,7 +113,7 @@ export default function RatesClient({ rates: initialRates }: Props) {
         effectiveFrom: newFrom,
       })
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
         setAddOpen(false)
         setNewArea(null)
@@ -129,12 +126,6 @@ export default function RatesClient({ rates: initialRates }: Props) {
 
   return (
     <Stack gap="md">
-      {error && (
-        <Alert color="red" variant="light" withCloseButton onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
       <Group justify="flex-end">
         <Button size="sm" leftSection={<IconPlus size={14} />} onClick={() => setAddOpen(true)}>
           Nueva tarifa
