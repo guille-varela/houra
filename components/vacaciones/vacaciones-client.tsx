@@ -3,11 +3,13 @@
 import { useState, useMemo } from 'react'
 import {
   Stack, Group, Text, Badge, Alert, Progress, SimpleGrid,
-  Card, SegmentedControl, TextInput, Anchor, Divider,
+  Card, SegmentedControl, TextInput, Anchor, Divider, Drawer,
   Table, TableThead, TableTbody, TableTr, TableTh, TableTd, ScrollArea,
+  RingProgress, ThemeIcon,
 } from '@mantine/core'
 import {
   IconSearch, IconAlertTriangle, IconExternalLink, IconBrandGoogleBigQuery,
+  IconCalendar, IconCheck, IconClock, IconAlertCircle,
 } from '@tabler/icons-react'
 import type { VacationEvent } from '@/lib/vacation-calendar'
 import { GanttVacaciones } from './gantt-vacaciones'
@@ -209,6 +211,148 @@ function CalEventCard({ event, today }: { event: VacationEvent; today: string })
   )
 }
 
+// ─── Person drawer ────────────────────────────────────────────────────────────
+
+function PersonDrawer({
+  person,
+  today,
+  year,
+  overlaps,
+  onClose,
+}: {
+  person: PersonBalance | null
+  today: string
+  year: number
+  overlaps: OverlapWarning[]
+  onClose: () => void
+}) {
+  if (!person) return null
+
+  const pct      = person.diasTotal > 0 ? Math.round((person.diasUsados / person.diasTotal) * 100) : 0
+  const activeNow = person.vacations.some((v) => isActive(v, today))
+  const myOverlaps = overlaps.filter((o) => o.names.includes(person.name))
+
+  const past     = person.vacations.filter((v) => v.end < today && v.status !== 'bloqueado').sort((a, b) => b.start.localeCompare(a.start))
+  const current  = person.vacations.filter((v) => isActive(v, today) && v.status !== 'bloqueado')
+  const upcoming = person.vacations.filter((v) => isUpcoming(v, today) && v.status !== 'bloqueado').sort((a, b) => a.start.localeCompare(b.start))
+
+  const statusColor = (s: string) => s === 'aprobado' ? 'green' : s === 'baja_paternal' ? 'violet' : 'yellow'
+  const statusLabel = (s: string) => s === 'aprobado' ? 'Aprobado' : s === 'baja_paternal' ? 'Paternal' : 'Pendiente'
+
+  return (
+    <Drawer
+      opened={!!person}
+      onClose={onClose}
+      title={
+        <Group gap={8}>
+          <Text fw={700} size="lg">{person.name}</Text>
+          {person.isBaja && <Badge color="gray" variant="light" size="sm">Baja</Badge>}
+          {activeNow && <Badge color="teal" variant="filled" size="sm">De vacaciones</Badge>}
+        </Group>
+      }
+      position="right"
+      size="sm"
+      padding="lg"
+    >
+      <Stack gap="lg">
+
+        {/* Ring + saldos */}
+        <Group align="flex-start" gap="xl">
+          <RingProgress
+            size={100}
+            thickness={8}
+            roundCaps
+            sections={[{ value: pct, color: pct > 80 ? 'orange' : 'blue' }]}
+            label={
+              <Text ta="center" fw={700} size="sm">{pct}%</Text>
+            }
+          />
+          <Stack gap={4} style={{ flex: 1 }}>
+            <Group justify="space-between">
+              <Text size="sm" c="dimmed">Días {year}</Text>
+              <Text size="sm" fw={600}>{person.diasN}</Text>
+            </Group>
+            <Group justify="space-between">
+              <Text size="sm" c="dimmed">Arrastre n-1</Text>
+              <Group gap={6}>
+                <Text size="sm" fw={600} {...(person.diasN1 > 0 && { c: 'red' })}>{person.diasN1 || '—'}</Text>
+                {person.diasN1 > 0 && <Text size="xs" c="red">vence mar {year + 1}</Text>}
+              </Group>
+            </Group>
+            <Group justify="space-between">
+              <Text size="sm" c="dimmed">Usados</Text>
+              <Text size="sm" fw={600}>{person.diasUsados}</Text>
+            </Group>
+            <Group justify="space-between">
+              <Text size="sm" c="dimmed">Restantes</Text>
+              <Text size="sm" fw={700} {...(person.diasDisponibles <= 5 && { c: 'red' })}>{person.diasDisponibles}</Text>
+            </Group>
+          </Stack>
+        </Group>
+
+        {/* Alertas */}
+        {myOverlaps.length > 0 && (
+          <Stack gap={4}>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed">Alertas</Text>
+            {myOverlaps.map((o, i) => (
+              <Alert key={i} icon={<IconAlertTriangle size={14} />} color="orange" variant="light" p="xs">
+                <Text size="xs">{o.reason} · {formatRange({ start: o.start, end: o.end })}</Text>
+              </Alert>
+            ))}
+          </Stack>
+        )}
+
+        {/* Ahora */}
+        {current.length > 0 && (
+          <Stack gap={4}>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed">Ahora</Text>
+            {current.map((v, i) => (
+              <Group key={i} gap={8} align="center">
+                <ThemeIcon size="xs" color={statusColor(v.status)} variant="filled" radius="xl">
+                  <IconCheck size={8} />
+                </ThemeIcon>
+                <Text size="sm">{formatRange(v)} · {v.days}d</Text>
+              </Group>
+            ))}
+          </Stack>
+        )}
+
+        {/* Próximas */}
+        {upcoming.length > 0 && (
+          <Stack gap={4}>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed">Próximas</Text>
+            {upcoming.map((v, i) => (
+              <Group key={i} gap={8} align="center" wrap="nowrap">
+                <Badge size="xs" color={statusColor(v.status)} variant="dot" style={{ flexShrink: 0 }}>
+                  {statusLabel(v.status)}
+                </Badge>
+                <Text size="sm" style={{ minWidth: 0 }}>{formatRange(v)} · {v.days}d</Text>
+              </Group>
+            ))}
+          </Stack>
+        )}
+
+        {/* Historial */}
+        {past.length > 0 && (
+          <Stack gap={4}>
+            <Text size="xs" fw={700} tt="uppercase" c="dimmed">Historial {year}</Text>
+            {past.slice(0, 5).map((v, i) => (
+              <Group key={i} gap={8} align="center" wrap="nowrap">
+                <Badge size="xs" color="gray" variant="light" style={{ flexShrink: 0 }}>
+                  {statusLabel(v.status)}
+                </Badge>
+                <Text size="sm" c="dimmed" style={{ minWidth: 0 }}>{formatRange(v)} · {v.days}d</Text>
+              </Group>
+            ))}
+            {past.length > 5 && <Text size="xs" c="dimmed">+{past.length - 5} periodos anteriores</Text>}
+          </Stack>
+        )}
+
+      </Stack>
+    </Drawer>
+  )
+}
+
 // ─── Main client component ────────────────────────────────────────────────────
 
 export function VacacionesClient({
@@ -232,8 +376,9 @@ export function VacacionesClient({
   sheetUrl: string
   calEvents?: VacationEvent[]
 }) {
-  const [view, setView]       = useState<View>('gantt')
-  const [search, setSearch]   = useState('')
+  const [view, setView]           = useState<View>('gantt')
+  const [search, setSearch]       = useState('')
+  const [selected, setSelected]   = useState<PersonBalance | null>(null)
 
   const filtered = useMemo(
     () => filterPeople(productPeople, search, overlaps, today),
@@ -253,8 +398,20 @@ export function VacacionesClient({
     ? overlaps.filter((o) => o.names.some((n) => filtered.some((p) => p.name === n)))
     : overlaps
 
+  const calActive   = calEvents.filter((e) => e.start <= today && e.end >= today)
+  const calUpcoming = calEvents.filter((e) => e.start > today)
+  const calPast     = calEvents.filter((e) => e.end < today)
+
   return (
     <Stack p="md" gap="xl">
+
+      <PersonDrawer
+        person={selected}
+        today={today}
+        year={year}
+        overlaps={overlaps}
+        onClose={() => setSelected(null)}
+      />
 
       {/* Header */}
       <Group justify="space-between" align="center" wrap="nowrap">
@@ -289,6 +446,22 @@ export function VacacionesClient({
           ))}
         </Stack>
       )}
+
+      {/* Calendario iCal — siempre visible, arriba */}
+      {calEvents.length > 0 && (
+        <Stack gap="xs">
+          <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.08em' }}>
+            Calendario · Vacaciones Product
+          </Text>
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
+            {calActive.length > 0 && calActive.map((e) => <CalEventCard key={e.uid} event={e} today={today} />)}
+            {calUpcoming.map((e) => <CalEventCard key={e.uid} event={e} today={today} />)}
+            {calPast.map((e) => <CalEventCard key={e.uid} event={e} today={today} />)}
+          </SimpleGrid>
+        </Stack>
+      )}
+
+      <Divider />
 
       {/* Controls */}
       <Group justify="space-between" align="center" wrap="wrap" gap="sm">
@@ -327,52 +500,24 @@ export function VacacionesClient({
       {view === 'equipo' && (
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
           {sortedForCards.map((p) => (
-            <BalanceCard key={p.name} person={p} today={today} />
+            <div key={p.name} onClick={() => setSelected(p)} style={{ cursor: 'pointer' }}>
+              <BalanceCard person={p} today={today} />
+            </div>
           ))}
         </SimpleGrid>
       )}
 
-      {/* Calendario iCal */}
-      {calEvents.length > 0 && (() => {
-        const active   = calEvents.filter((e) => e.start <= today && e.end >= today)
-        const upcoming = calEvents.filter((e) => e.start > today)
-        const past     = calEvents.filter((e) => e.end < today)
-        return (
-          <>
-            <Divider />
-            <Stack gap="sm">
-              <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.08em' }}>
-                Calendario · Vacaciones Product
-              </Text>
-              {active.length > 0 && (
-                <Stack gap="xs">
-                  <Text size="xs" c="dimmed" fw={600}>Ahora</Text>
-                  {active.map((e) => <CalEventCard key={e.uid} event={e} today={today} />)}
-                </Stack>
-              )}
-              {upcoming.length > 0 && (
-                <Stack gap="xs">
-                  <Text size="xs" c="dimmed" fw={600}>Próximas</Text>
-                  {upcoming.map((e) => <CalEventCard key={e.uid} event={e} today={today} />)}
-                </Stack>
-              )}
-              {past.length > 0 && (
-                <Stack gap="xs">
-                  <Text size="xs" c="dimmed" fw={600}>Últimas 2 semanas</Text>
-                  {past.map((e) => <CalEventCard key={e.uid} event={e} today={today} />)}
-                </Stack>
-              )}
-            </Stack>
-          </>
-        )
-      })()}
 
       {/* CRO */}
       {croPeople.length > 0 && (
         <Stack gap="sm">
           <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.08em' }}>CRO</Text>
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
-            {croPeople.map((p) => <BalanceCard key={p.name} person={p} today={today} />)}
+            {croPeople.map((p) => (
+              <div key={p.name} onClick={() => setSelected(p)} style={{ cursor: 'pointer' }}>
+                <BalanceCard person={p} today={today} />
+              </div>
+            ))}
           </SimpleGrid>
         </Stack>
       )}
