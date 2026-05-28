@@ -2,6 +2,8 @@ import { Stack, Group, Text, Card, Badge, Alert, Progress, SimpleGrid, Divider, 
 import { IconInfoCircle, IconSun, IconAlertTriangle } from '@tabler/icons-react'
 import { fetchVacationEvents } from '@/lib/vacation-calendar'
 import { fetchSheetVacaciones } from '@/lib/sheets-vacaciones'
+import { GanttVacaciones } from '@/components/vacaciones/gantt-vacaciones'
+import { requireRole } from '@/lib/auth-helpers'
 import type { VacationEvent } from '@/lib/vacation-calendar'
 import type { PersonBalance, VacationRange } from '@/lib/sheets-vacaciones'
 
@@ -33,6 +35,62 @@ function isActive(r: VacationRange, today: string) {
 
 function isUpcoming(r: VacationRange, today: string) {
   return r.start > today
+}
+
+// ─── Overlap warnings ────────────────────────────────────────────────────────
+
+type OverlapWarning = { start: string; end: string; names: string[] }
+
+function addDaysStr(iso: string, n: number): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(Date.UTC(y!, m! - 1, d! + n)).toISOString().split('T')[0]!
+}
+
+function computeOverlaps(people: PersonBalance[], today: string): OverlapWarning[] {
+  const windowEnd = addDaysStr(today, 60)
+  const dayMap = new Map<string, string[]>()
+
+  for (const p of people) {
+    if (p.isBaja) continue
+    for (const v of p.vacations) {
+      if (v.status === 'bloqueado') continue
+      if (v.end < today || v.start > windowEnd) continue
+      const from = v.start < today ? today : v.start
+      const to   = v.end > windowEnd ? windowEnd : v.end
+      let d = from
+      while (d <= to) {
+        const list = dayMap.get(d) ?? []
+        list.push(p.name)
+        dayMap.set(d, list)
+        d = addDaysStr(d, 1)
+      }
+    }
+  }
+
+  const overlapDays = [...dayMap.entries()]
+    .filter(([, names]) => names.length > 1)
+    .sort(([a], [b]) => a.localeCompare(b))
+
+  if (overlapDays.length === 0) return []
+
+  const warnings: OverlapWarning[] = []
+  let cur = { start: overlapDays[0]![0], end: overlapDays[0]![0], names: overlapDays[0]![1] }
+
+  for (let i = 1; i < overlapDays.length; i++) {
+    const [day, names] = overlapDays[i]!
+    const sameNames =
+      names.length === cur.names.length &&
+      names.every((n) => cur.names.includes(n))
+
+    if (addDaysStr(cur.end, 1) === day && sameNames) {
+      cur.end = day
+    } else {
+      warnings.push(cur)
+      cur = { start: day, end: day, names }
+    }
+  }
+  warnings.push(cur)
+  return warnings
 }
 
 // ─── Balance table ────────────────────────────────────────────────────────────
@@ -220,10 +278,16 @@ export default async function VacacionesPage() {
     const d = new Date(today); d.setDate(d.getDate() + 90); return d.toISOString().split('T')[0]!
   })()
 
+  const person = await requireRole('contributor').catch(() => null)
+  const isManager = person?.appRole === 'manager' || person?.appRole === 'admin'
+
   const [calEvents, sheetPeople] = await Promise.all([
     fetchVacationEvents(),
     fetchSheetVacaciones(year),
   ])
+
+  // Baja solo visible a manager/admin
+  const visiblePeople = isManager ? sheetPeople : sheetPeople.filter((p) => !p.isBaja)
 
   const visibleEvents = calEvents
     .filter((e) => e.end >= windowStart && e.start <= windowEnd)
@@ -234,11 +298,13 @@ export default async function VacacionesPage() {
   const pastEvents     = visibleEvents.filter((e) => e.end < today)
 
   // Sheet people sorted: on vacation first, then alphabetical
-  const sortedPeople = [...sheetPeople].sort((a, b) => {
+  const sortedPeople = [...visiblePeople].sort((a, b) => {
     const aActive = a.vacations.some((r) => isActive(r, today)) ? 0 : 1
     const bActive = b.vacations.some((r) => isActive(r, today)) ? 0 : 1
     return aActive - bActive || a.name.localeCompare(b.name)
   })
+
+  const overlaps = computeOverlaps(visiblePeople, today)
 
   const noSheet = !process.env.GOOGLE_SHEETS_SPREADSHEET_ID
   const noCal   = !process.env.VACATION_CALENDAR_ICAL_URL
@@ -275,7 +341,22 @@ export default async function VacacionesPage() {
 
         {sortedPeople.length > 0 && (
           <Stack gap="lg">
-            <SaldosTable people={sheetPeople} year={year} />
+            <SaldosTable people={visiblePeople} year={year} />
+            <GanttVacaciones people={visiblePeople} today={today} />
+
+            {overlaps.length > 0 && (
+              <Stack gap="xs">
+                {overlaps.map((o, i) => (
+                  <Alert key={i} icon={<IconAlertTriangle size={16} />} color="orange" variant="light" p="xs">
+                    <Text size="sm">
+                      <Text span fw={600}>{formatRange({ start: o.start, end: o.end })}</Text>
+                      {' '}— {o.names.join(' + ')} coinciden en vacaciones
+                    </Text>
+                  </Alert>
+                ))}
+              </Stack>
+            )}
+
             <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
               {sortedPeople.map((p) => (
                 <BalanceCard key={p.name} person={p} today={today} />

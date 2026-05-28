@@ -14,6 +14,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx --env-file=.env.local db/seed.ts",
     "db:seed-2027": "tsx --env-file=.env.local db/seed-2027.ts",
+    "db:seed-fernando": "tsx --env-file=.env.local db/seed-fernando.ts",
     "db:fixtures": "tsx --env-file=.env.local db/fixtures.ts",
     "db:studio": "drizzle-kit studio",
     "build:cf": "opennextjs-cloudflare build",

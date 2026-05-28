@@ -18,9 +18,9 @@ import {
   updateProposalStatus,
   duplicateProposal,
   convertProposalToProject,
-  isValidProposalTransition,
 } from '@/actions/proposals'
-import type { ProposalStatus } from '@/actions/proposals'
+import { isValidProposalTransition } from '@/lib/schemas/proposal'
+import type { ProposalStatus } from '@/lib/schemas/proposal'
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador',
