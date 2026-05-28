@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { eq, and } from 'drizzle-orm'
-import { Stack, Group, Badge, Text, Card } from '@mantine/core'
+import { Stack, Group, Badge, Text, Card, Anchor } from '@mantine/core'
+import { IconFileText } from '@tabler/icons-react'
 import { db } from '@/lib/db'
 import { requireRole, getOrganizationContext } from '@/lib/auth-helpers'
 import { persons, holidayPresets, organizations } from '@/db/schema'
@@ -62,16 +63,11 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
       .where(eq(organizations.id, person.organizationId))
       .limit(1)
       .then((r) => r[0] ?? null),
-    // Fetch current + next year holidays for ES-MD
+    // All years for ES-MD — covers multi-year proposal spans
     db
       .select({ dates: holidayPresets.dates, year: holidayPresets.year })
       .from(holidayPresets)
-      .where(
-        and(
-          eq(holidayPresets.region, 'ES-MD'),
-          // current year and next year
-        ),
-      ),
+      .where(eq(holidayPresets.region, 'ES-MD')),
   ])
 
   // Build flat holiday set from all fetched years
@@ -91,9 +87,30 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
           <Text style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
             {proposal.name}
           </Text>
-          <Badge color={STATUS_COLOR[proposal.status] ?? 'gray'} variant="light">
-            {STATUS_LABELS[proposal.status] ?? proposal.status}
-          </Badge>
+          <Group gap="sm" align="center">
+            <Anchor
+              href={`/proposals/${id}/carta-oferta`}
+              target="_blank"
+              underline="never"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 13,
+                fontWeight: 500,
+                color: 'var(--h-t2)',
+                padding: '4px 10px',
+                borderRadius: 6,
+                border: '1px solid var(--h-bd)',
+              }}
+            >
+              <IconFileText size={14} />
+              Carta oferta
+            </Anchor>
+            <Badge color={STATUS_COLOR[proposal.status] ?? 'gray'} variant="light">
+              {STATUS_LABELS[proposal.status] ?? proposal.status}
+            </Badge>
+          </Group>
         </Group>
         {proposal.convertedProjectId && (
           <Text size="xs" c="dimmed" mt={4}>

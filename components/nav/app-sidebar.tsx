@@ -15,6 +15,7 @@ import {
   IconSettings,
   IconCommand,
   IconFileText,
+  IconBeach,
 } from '@tabler/icons-react'
 import RoleSwitcher from './role-switcher'
 import ThemeToggle from './theme-toggle'
@@ -42,6 +43,7 @@ const NAV_TOP: NavItem[] = [
   { href: '/clients', label: 'Clientes', Icon: IconBuilding, roles: ['admin', 'manager'] },
   { href: '/people', label: 'Personas', Icon: IconUsers, roles: ['admin'] },
   { href: '/time-off', label: 'Libre', Icon: IconUmbrella },
+  { href: '/vacaciones', label: 'Vacaciones', Icon: IconBeach },
 ]
 
 const NAV_BOTTOM: NavItem[] = [
