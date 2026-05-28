@@ -174,9 +174,11 @@ const REGIONAL_2026: Record<string, HolidayDay[]> = {
   ],
   'ES-MD': [
     ...NATIONAL_2026,
+    { date: '2026-01-30', name: 'San Publicito (Convenio Publicidad)' },
     { date: '2026-04-02', name: 'Jueves Santo' },
     { date: '2026-05-02', name: 'Fiesta de la Comunidad de Madrid' },
     { date: '2026-11-09', name: 'Nuestra Señora de la Almudena' },
+    { date: '2026-12-31', name: 'Nochevieja (Convenio Publicidad)' },
   ],
   'ES-MC': [
     ...NATIONAL_2026,
