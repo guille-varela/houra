@@ -4,6 +4,7 @@ Documentación técnica del proyecto para el equipo.
 
 ## Contenido
 
+- [architecture.md](architecture.md) — **Mapa completo del sistema**: entidades, relaciones, permisos, rutas, reglas de negocio y Sprint 2 proyectado
 - [phases.md](phases.md) — Qué se construyó en cada fase de desarrollo
 - [adr/](adr/) — Architecture Decision Records: por qué el stack es como es
 
@@ -19,3 +20,4 @@ Documentación técnica del proyecto para el equipo.
 | [0006](adr/0006-dm-sans-palette.md) | DM Sans + paleta azul-gris | Aceptado |
 | [0007](adr/0007-sheetjs-exports.md) | SheetJS para exports CSV/XLSX | Aceptado |
 | [0008](adr/0008-error-handling.md) | Patrón de error handling: toasts vs. Alert inline | Aceptado |
+| [0009](adr/0009-billing-model-and-project-typology.md) | Modelos de facturación, acuerdo marco, niveles de categoría | Aceptado — pendiente Sprint 2 |
