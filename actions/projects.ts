@@ -170,3 +170,40 @@ export async function updateAllocation(raw: unknown): Promise<ActionResult> {
   revalidatePath(`/projects/${projectId}`)
   return { ok: true }
 }
+
+export async function updateProjectMeta(
+  projectId: string,
+  data: { clientId: string | null; billingModel: 'hour_bag' | 'monthly_fee' | 'by_phase' },
+): Promise<ActionResult> {
+  const person = await requireRole('admin')
+  const org = await getOrganizationContext()
+  if (!org) return { ok: false, error: 'Organización no encontrada.' }
+
+  const [project] = await db
+    .select({ id: projects.id, clientId: projects.clientId, billingModel: projects.billingModel })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1)
+
+  if (!project) return { ok: false, error: 'Proyecto no encontrado.' }
+
+  await db
+    .update(projects)
+    .set({ clientId: data.clientId, billingModel: data.billingModel, updatedAt: new Date() })
+    .where(eq(projects.id, projectId))
+
+  await logAuditEvent({
+    organizationId: org.id,
+    actorId: person.id,
+    action: 'project.meta_update',
+    entityType: 'project',
+    entityId: projectId,
+    diff: {
+      before: { clientId: project.clientId, billingModel: project.billingModel },
+      after: data,
+    },
+  })
+
+  revalidatePath(`/projects/${projectId}`)
+  return { ok: true }
+}

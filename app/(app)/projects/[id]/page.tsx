@@ -3,7 +3,8 @@ import { eq } from 'drizzle-orm'
 import { Stack, Group, Badge, Text, Card } from '@mantine/core'
 import { db } from '@/lib/db'
 import { getCurrentPerson } from '@/lib/auth-helpers'
-import { projects, workspaces } from '@/db/schema'
+import { projects, workspaces, clients } from '@/db/schema'
+import { getClients } from '@/actions/clients'
 import OverviewTab from './overview-tab'
 import TeamTab from './team-tab'
 import TimeEntriesTab from './time-entries-tab'
@@ -61,6 +62,8 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
       originalAllocation: projects.originalAllocation,
       areasEnabled: projects.areasEnabled,
       weeklyHours: projects.weeklyHours,
+      billingModel: projects.billingModel,
+      clientId: projects.clientId,
       workspaceName: workspaces.name,
     })
     .from(projects)
@@ -72,6 +75,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
 
   const allocation = project.originalAllocation as Record<string, Record<string, number>>
   const activeTab = tab ?? 'overview'
+  const clientList = isAdmin ? await getClients() : []
 
   return (
     <Stack p="md" gap="md">
@@ -128,7 +132,15 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
         team={isAdmin ? <TeamTab projectId={id} organizationId={person.organizationId} /> : null}
         settings={
           isAdmin ? (
-            <SettingsTab projectId={id} projectName={project.name} status={project.status} allocation={allocation} />
+            <SettingsTab
+              projectId={id}
+              projectName={project.name}
+              status={project.status}
+              allocation={allocation}
+              billingModel={project.billingModel}
+              clientId={project.clientId ?? null}
+              clients={clientList.map((c) => ({ id: c.id, name: c.name }))}
+            />
           ) : null
         }
       />

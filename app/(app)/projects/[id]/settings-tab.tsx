@@ -15,7 +15,7 @@ import {
   Badge,
   Modal,
 } from '@mantine/core'
-import { updateProjectStatus, updateAllocation, duplicateProject } from '@/actions/projects'
+import { updateProjectStatus, updateAllocation, duplicateProject, updateProjectMeta } from '@/actions/projects'
 import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS, type Allocation } from '@/lib/matrix'
 import { isValidTransition, PROJECT_STATUSES } from '@/lib/schemas/project'
 
@@ -26,21 +26,33 @@ const STATUS_LABELS: Record<string, string> = {
   closed: 'Cerrado',
 }
 
+const BILLING_MODEL_OPTIONS = [
+  { value: 'hour_bag', label: 'Bolsa de horas' },
+  { value: 'monthly_fee', label: 'Fee mensual' },
+  { value: 'by_phase', label: 'Por entregable' },
+]
+
 type Props = {
   projectId: string
   projectName: string
   status: string
   allocation: Allocation
+  billingModel: string
+  clientId: string | null
+  clients: Array<{ id: string; name: string }>
 }
 
-export default function SettingsTab({ projectId, projectName, status, allocation }: Props) {
+export default function SettingsTab({ projectId, projectName, status, allocation, billingModel, clientId, clients }: Props) {
   const router = useRouter()
   const [statusError, setStatusError] = useState<string | null>(null)
   const [allocError, setAllocError] = useState<string | null>(null)
+  const [metaError, setMetaError] = useState<string | null>(null)
   const [dupError, setDupError] = useState<string | null>(null)
   const [dupModalOpen, setDupModalOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
+  const [selectedClient, setSelectedClient] = useState<string | null>(clientId)
+  const [selectedBilling, setSelectedBilling] = useState<string | null>(billingModel)
 
   const isDraft = status === 'draft'
 
@@ -83,6 +95,17 @@ export default function SettingsTab({ projectId, projectName, status, allocation
     })
   }
 
+  function handleSaveMeta() {
+    setMetaError(null)
+    startTransition(async () => {
+      const result = await updateProjectMeta(projectId, {
+        clientId: selectedClient,
+        billingModel: (selectedBilling ?? 'hour_bag') as 'hour_bag' | 'monthly_fee' | 'by_phase',
+      })
+      if (!result.ok) setMetaError(result.error)
+    })
+  }
+
   function handleDuplicate() {
     setDupError(null)
     startTransition(async () => {
@@ -98,6 +121,39 @@ export default function SettingsTab({ projectId, projectName, status, allocation
 
   return (
     <Stack gap="xl">
+      {/* Cliente + modelo de facturación */}
+      <Stack gap="sm">
+        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+          Facturación
+        </Text>
+        <Group grow align="flex-start">
+          <Select
+            label="Cliente"
+            placeholder="Proyecto interno (sin cliente)"
+            data={clients.map((c) => ({ value: c.id, label: c.name }))}
+            value={selectedClient}
+            onChange={setSelectedClient}
+            clearable
+          />
+          <Select
+            label="Modelo de facturación"
+            data={BILLING_MODEL_OPTIONS}
+            value={selectedBilling}
+            onChange={setSelectedBilling}
+          />
+        </Group>
+        {metaError && (
+          <Alert color="red" variant="light" withCloseButton onClose={() => setMetaError(null)}>
+            {metaError}
+          </Alert>
+        )}
+        <Button size="sm" variant="light" loading={isPending} onClick={handleSaveMeta} style={{ alignSelf: 'flex-start' }}>
+          Guardar
+        </Button>
+      </Stack>
+
+      <Divider />
+
       {/* Status transition */}
       <Stack gap="sm">
         <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
