@@ -290,6 +290,34 @@ function PersonDrawer({
           </Stack>
         </Group>
 
+        {/* Baja de larga duración */}
+        {(person.isBaja || person.isExcedencia || upcoming.some((v) => v.status === 'baja_paternal')) && (
+          <Alert
+            color={person.isBaja ? 'gray' : person.isExcedencia ? 'orange' : 'violet'}
+            variant="light"
+            icon={<IconAlertCircle size={16} />}
+          >
+            <Stack gap={2}>
+              {person.isBaja && (
+                <Text size="sm" fw={600}>Baja permanente</Text>
+              )}
+              {person.isExcedencia && (
+                <Text size="sm" fw={600}>Excedencia activa</Text>
+              )}
+              {upcoming.filter((v) => v.status === 'baja_paternal').map((v, i) => (
+                <Text key={i} size="sm" fw={600}>
+                  Baja paternal · {formatRange(v)} ({v.days} días)
+                </Text>
+              ))}
+              {current.filter((v) => v.status === 'baja_paternal').map((v, i) => (
+                <Text key={i} size="sm" fw={600}>
+                  Baja paternal en curso · hasta {formatRange({ start: v.end, end: v.end })}
+                </Text>
+              ))}
+            </Stack>
+          </Alert>
+        )}
+
         {/* Alertas */}
         {myOverlaps.length > 0 && (
           <Stack gap={4}>
