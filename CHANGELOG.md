@@ -10,6 +10,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.9.0] — 2026-05-28
+
+### Phase 09 — Brand tokens + visual identity
+
+Activates the design language approved in the Phase 08 PoC. Single font, consistent color palette, and team-facing documentation.
+
+### Changed
+
+- **Font**: DM Sans (300–700) is now the sole typeface. Inter, Roboto, and Encode Sans removed from the bundle.
+- **Color palette**: CSS custom properties (`--h-*`) updated from wireframe grays to the approved blue-gray palette (`#F2F5FA` page, `#EEF2FA` surface, `#DDE1EC` borders, `#111111` text)
+- **Page shell**: outer background `#F2F5FA` (was `#f5f5f5`)
+- **Sidebar**: active nav item background → `#EEF2FA`; icon colors → `#111111` / `#9A9A9A`
+
+### Added
+
+- `docs/` — team-facing documentation folder
+  - `docs/README.md` — index
+  - `docs/phases.md` — what was built in each phase
+  - `docs/adr/0001` – `0008` — Architecture Decision Records
+
+[0.9.0]: https://github.com/guille-varela/houra/releases/tag/v0.9.0
+
+---
+
 ## [0.7.0] — 2026-05-28
 
 ### Phase 07 — Audit log UI + exports + error handling

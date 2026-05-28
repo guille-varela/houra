@@ -2,7 +2,7 @@
 
 Internal time tracker for Gut. Tracks hours per project, per person, and per cost matrix (area × role) to give real-time margin visibility.
 
-> Phase 07 complete — audit log UI + CSV/XLSX exports. Production: [houra.guillermo-varela.workers.dev](https://houra.guillermo-varela.workers.dev)
+> All phases complete — production-ready. Production: [houra.guillermo-varela.workers.dev](https://houra.guillermo-varela.workers.dev)
 
 ---
 
@@ -133,7 +133,7 @@ Secrets are managed with `wrangler secret put` — never stored in the repositor
 | Visual design pass | DM Sans + color palette (adelantado de Phase 09) | ✅ Done |
 | 08 | Polish — loading states, toasts, mobile, microcopy, E2E | ✅ Done |
 | 07 | Audit log UI, exports (CSV/XLSX) | ✅ Done |
-| 09 | Brand tokens + final design | — |
+| 09 | Brand tokens + visual identity (DM Sans + paleta azul-gris) | ✅ Done |
 
 ---
 
