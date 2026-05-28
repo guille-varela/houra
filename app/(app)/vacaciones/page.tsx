@@ -4,6 +4,9 @@ import { fetchVacationEvents } from '@/lib/vacation-calendar'
 import { fetchSheetVacaciones } from '@/lib/sheets-vacaciones'
 import { GanttVacaciones } from '@/components/vacaciones/gantt-vacaciones'
 import { requireRole } from '@/lib/auth-helpers'
+import { db } from '@/lib/db'
+import { holidayPresets } from '@/db/schema'
+import { or, eq } from 'drizzle-orm'
 import type { VacationEvent } from '@/lib/vacation-calendar'
 import type { PersonBalance, VacationRange } from '@/lib/sheets-vacaciones'
 
@@ -329,10 +332,28 @@ export default async function VacacionesPage() {
   const person = await requireRole('contributor').catch(() => null)
   const isManager = person?.appRole === 'manager' || person?.appRole === 'admin'
 
-  const [calEvents, sheetPeople] = await Promise.all([
+  const [calEvents, sheetPeople, holidayRows] = await Promise.all([
     fetchVacationEvents(),
     fetchSheetVacaciones(year),
+    db.select({ region: holidayPresets.region, dates: holidayPresets.dates })
+      .from(holidayPresets)
+      .where(or(eq(holidayPresets.year, year), eq(holidayPresets.year, year + 1))),
   ])
+
+  // date → regions[]
+  const holidays: Record<string, string[]> = {}
+  for (const row of holidayRows) {
+    for (const { date } of row.dates) {
+      holidays[date] = [...(holidays[date] ?? []), row.region]
+    }
+  }
+
+  // Regiones no-Madrid (el resto por defecto a ES-MD)
+  const personRegions: Record<string, string> = {
+    'Jordi':    'ES-CT',
+    'Bego':     'ES-IB',
+    'Fernando': 'ES-CL',
+  }
 
     // Baja y excedencia solo visibles a manager/admin
   const visiblePeople = isManager
@@ -411,7 +432,7 @@ export default async function VacacionesPage() {
             )}
 
             <SaldosTable people={productPeople} year={year} />
-            <GanttVacaciones people={productPeople} today={today} />
+            <GanttVacaciones people={productPeople} today={today} holidays={holidays} personRegions={personRegions} />
 
             <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
               {sortedProduct.map((p) => (
