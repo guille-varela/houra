@@ -82,10 +82,14 @@ export async function fetchVacationEvents(): Promise<VacationEvent[]> {
   if (!url) return []
 
   try {
-    const res = await fetch(url, {
-      next: { revalidate: 3600 }, // revalidar cada hora
-    })
-    if (!res.ok) return []
+    const timeout = new Promise<null>((_, reject) =>
+      setTimeout(() => reject(new Error('[vacation-calendar] fetch timeout')), 8_000),
+    )
+    const res = await Promise.race([
+      fetch(url, { next: { revalidate: 3600 } }) as Promise<Response>,
+      timeout,
+    ])
+    if (!res || !res.ok) return []
     const text = await res.text()
     const all = parseIcal(text)
     // Filtrar cancelados

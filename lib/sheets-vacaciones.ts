@@ -87,6 +87,21 @@ function classifyBg(bg: RGB | null | undefined): DayStatus | null {
   return null
 }
 
+// ─── Fetch helper ────────────────────────────────────────────────────────────
+
+function fetchWithTimeout(
+  url: string,
+  options: RequestInit & { next?: { revalidate?: number } },
+  ms = 8_000,
+): Promise<Response> {
+  return Promise.race([
+    fetch(url, options) as Promise<Response>,
+    new Promise<Response>((_, reject) =>
+      setTimeout(() => reject(new Error(`[sheets-vacaciones] fetch timeout ${ms}ms: ${url}`)), ms),
+    ),
+  ])
+}
+
 // ─── Google Auth ──────────────────────────────────────────────────────────────
 
 async function getAccessToken(): Promise<string> {
@@ -107,7 +122,7 @@ async function getAccessToken(): Promise<string> {
   sign.update(`${hdr}.${pay}`)
   const jwt = `${hdr}.${pay}.${sign.sign(privateKey, 'base64url')}`
 
-  const res = await fetch('https://oauth2.googleapis.com/token', {
+  const res = await fetchWithTimeout('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
@@ -129,7 +144,7 @@ async function fetchValues(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}` +
     `/values/${range}?valueRenderOption=UNFORMATTED_VALUE`
 
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 3600 },
   })
@@ -154,7 +169,7 @@ async function fetchColors(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}` +
     `?includeGridData=true&ranges=${range}&fields=${fields}`
 
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 3600 },
   })
