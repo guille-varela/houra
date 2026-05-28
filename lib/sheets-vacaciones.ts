@@ -23,6 +23,7 @@ const NAME_MAP: Record<string, string> = {
   'Dani Zilch':       'Zilch',
 }
 
+const REMOVED_NAMES   = new Set(['Marta'])            // ya no en el equipo
 const BAJA_NAMES      = new Set(['Jessica López'])
 const EXCEDENCIA_NAMES = new Set(['Antonio Díaz'])  // Toni — excedencia desde 2026-05-29
 const CRO_NAMES        = new Set(['Josefa Inostroza', 'Carlos Ochoa', 'Emilio Cuchillo', 'Agostina Giannelli', 'Joaquín Briceño'])
@@ -257,7 +258,7 @@ function parseData(
   for (let r = 2; r < values.length; r++) {
     const row = values[r] ?? []
     const nameRaw = String(row[0] ?? '').trim()
-    if (!nameRaw) continue
+    if (!nameRaw || REMOVED_NAMES.has(nameRaw)) continue
 
     const diasDisp = Number(row[1])
     if (isNaN(diasDisp)) continue
