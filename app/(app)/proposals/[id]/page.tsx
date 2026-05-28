@@ -9,6 +9,7 @@ import { getClients } from '@/actions/clients'
 import ProposalTabs from './proposal-tabs'
 import SummaryTab from './summary-tab'
 import StaffingTab from './staffing-tab'
+import MarginTab from './margin-tab'
 import ProposalSettingsTab from './settings-tab'
 import type { ProposalStatus } from '@/actions/proposals'
 
@@ -113,6 +114,7 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
             billingModel={proposal.billingModel}
           />
         }
+        margin={<MarginTab proposalId={id} />}
         settings={
           <ProposalSettingsTab
             proposalId={id}
