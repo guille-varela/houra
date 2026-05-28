@@ -15,8 +15,6 @@ import { logAuditEvent } from '@/lib/audit'
 import { isValidProposalTransition } from '@/lib/schemas/proposal'
 import type { ProposalStatus } from '@/lib/schemas/proposal'
 
-export type { ProposalStatus }
-
 // ─── Queries ────────────────────────────────────────────────────────────────
 
 export async function getProposals() {

@@ -12,7 +12,7 @@ import SummaryTab from './summary-tab'
 import StaffingTab from './staffing-tab'
 import MarginTab from './margin-tab'
 import ProposalSettingsTab from './settings-tab'
-import type { ProposalStatus } from '@/actions/proposals'
+import type { ProposalStatus } from '@/lib/schemas/proposal'
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador',
