@@ -1,0 +1,1 @@
+ALTER TYPE "public"."area" ADD VALUE 'cro';

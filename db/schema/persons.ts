@@ -11,7 +11,7 @@ export const professionalCategoryEnum = pgEnum('professional_category', [
   'lead',
   'head',
 ])
-export const areaEnum = pgEnum('area', ['research', 'ux', 'ui'])
+export const areaEnum = pgEnum('area', ['research', 'ux', 'ui', 'cro'])
 
 export const persons = pgTable(
   'persons',

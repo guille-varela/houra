@@ -18,7 +18,7 @@ const TEAM: Array<{
   name: string
   holidayRegion: string
   professionalCategory: 'lead' | 'senior' | 'mid' | 'junior' | 'trainee' | 'head'
-  primaryArea: 'ux' | 'ui' | 'research' | 'pm' | 'dev' | 'ops' | 'strategy'
+  primaryArea: 'ux' | 'ui' | 'research' | 'cro'
 }> = [
   { email: 'agostina.giannelli@houra.com', name: 'Agostina',   holidayRegion: 'ES',    professionalCategory: 'mid',    primaryArea: 'ux' },
   { email: 'alberto.prieto@houra.com',     name: 'Alberto',    holidayRegion: 'ES',    professionalCategory: 'mid',    primaryArea: 'ux' },

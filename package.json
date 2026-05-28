@@ -16,6 +16,7 @@
     "db:seed-2027": "tsx --env-file=.env.local db/seed-2027.ts",
     "db:seed-fernando": "tsx --env-file=.env.local db/seed-fernando.ts",
     "db:seed-team": "tsx --env-file=.env.local db/seed-team.ts",
+    "db:seed-roles": "tsx --env-file=.env.local db/seed-roles.ts",
     "db:fixtures": "tsx --env-file=.env.local db/fixtures.ts",
     "db:studio": "drizzle-kit studio",
     "build:cf": "opennextjs-cloudflare build",

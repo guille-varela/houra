@@ -39,7 +39,11 @@ function isUpcoming(r: VacationRange, today: string) {
 
 // ─── Overlap warnings ────────────────────────────────────────────────────────
 
-type OverlapWarning = { start: string; end: string; names: string[] }
+type OverlapWarning = { start: string; end: string; names: string[]; reason: string }
+
+// Leads por disciplina (nombres de display del sheet)
+const LEADS_UX = new Set(['Ion', 'Carla'])
+const LEADS_UI = new Set(['Dani Peña', 'Guille'])
 
 function addDaysStr(iso: string, n: number): string {
   const [y, m, d] = iso.split('-').map(Number)
@@ -48,16 +52,48 @@ function addDaysStr(iso: string, n: number): string {
 
 function computeOverlaps(people: PersonBalance[], today: string): OverlapWarning[] {
   const windowEnd = addDaysStr(today, 60)
-  const dayMap = new Map<string, string[]>()
+  const warnings: OverlapWarning[] = []
 
+  // Regla 1: dos leads del mismo departamento nunca pueden coincidir
+  const checkLeadConflicts = (leads: Set<string>, dept: string) => {
+    const leadPeople = people.filter((p) => leads.has(p.name) && !p.isBaja && !p.isExcedencia)
+    if (leadPeople.length < 2) return
+    for (let i = 0; i < leadPeople.length; i++) {
+      for (let j = i + 1; j < leadPeople.length; j++) {
+        const a = leadPeople[i]!
+        const b = leadPeople[j]!
+        for (const va of a.vacations) {
+          if (va.status === 'bloqueado' || va.end < today || va.start > windowEnd) continue
+          for (const vb of b.vacations) {
+            if (vb.status === 'bloqueado' || vb.end < today || vb.start > windowEnd) continue
+            const start = va.start > vb.start ? va.start : vb.start
+            const end   = va.end < vb.end ? va.end : vb.end
+            if (start <= end) {
+              warnings.push({
+                start,
+                end,
+                names: [a.name, b.name],
+                reason: `⚠️ Dos leads ${dept} coinciden`,
+              })
+            }
+          }
+        }
+      }
+    }
+  }
+
+  checkLeadConflicts(LEADS_UX, 'UX')
+  checkLeadConflicts(LEADS_UI, 'UI')
+
+  // Regla 2: general — más de 1 persona coincide el mismo día
+  const dayMap = new Map<string, string[]>()
   for (const p of people) {
-    if (p.isBaja) continue
+    if (p.isBaja || p.isExcedencia || p.isCro) continue
     for (const v of p.vacations) {
       if (v.status === 'bloqueado') continue
       if (v.end < today || v.start > windowEnd) continue
-      const from = v.start < today ? today : v.start
-      const to   = v.end > windowEnd ? windowEnd : v.end
-      let d = from
+      let d = v.start < today ? today : v.start
+      const to = v.end > windowEnd ? windowEnd : v.end
       while (d <= to) {
         const list = dayMap.get(d) ?? []
         list.push(p.name)
@@ -71,26 +107,22 @@ function computeOverlaps(people: PersonBalance[], today: string): OverlapWarning
     .filter(([, names]) => names.length > 1)
     .sort(([a], [b]) => a.localeCompare(b))
 
-  if (overlapDays.length === 0) return []
-
-  const warnings: OverlapWarning[] = []
-  let cur = { start: overlapDays[0]![0], end: overlapDays[0]![0], names: overlapDays[0]![1] }
-
-  for (let i = 1; i < overlapDays.length; i++) {
-    const [day, names] = overlapDays[i]!
-    const sameNames =
-      names.length === cur.names.length &&
-      names.every((n) => cur.names.includes(n))
-
-    if (addDaysStr(cur.end, 1) === day && sameNames) {
-      cur.end = day
-    } else {
-      warnings.push(cur)
-      cur = { start: day, end: day, names }
+  if (overlapDays.length > 0) {
+    let cur = { start: overlapDays[0]![0], end: overlapDays[0]![0], names: overlapDays[0]![1] }
+    for (let i = 1; i < overlapDays.length; i++) {
+      const [day, names] = overlapDays[i]!
+      const sameNames = names.length === cur.names.length && names.every((n) => cur.names.includes(n))
+      if (addDaysStr(cur.end, 1) === day && sameNames) {
+        cur.end = day
+      } else {
+        warnings.push({ ...cur, reason: 'Coincidencia' })
+        cur = { start: day, end: day, names }
+      }
     }
+    warnings.push({ ...cur, reason: 'Coincidencia' })
   }
-  warnings.push(cur)
-  return warnings
+
+  return warnings.sort((a, b) => a.start.localeCompare(b.start))
 }
 
 // ─── Balance table ────────────────────────────────────────────────────────────
@@ -286,8 +318,10 @@ export default async function VacacionesPage() {
     fetchSheetVacaciones(year),
   ])
 
-  // Baja solo visible a manager/admin
-  const visiblePeople = isManager ? sheetPeople : sheetPeople.filter((p) => !p.isBaja)
+    // Baja y excedencia solo visibles a manager/admin
+  const visiblePeople = isManager
+    ? sheetPeople
+    : sheetPeople.filter((p) => !p.isBaja && !p.isExcedencia)
 
   const visibleEvents = calEvents
     .filter((e) => e.end >= windowStart && e.start <= windowEnd)
@@ -297,14 +331,17 @@ export default async function VacacionesPage() {
   const upcomingEvents = visibleEvents.filter((e) => e.start > today)
   const pastEvents     = visibleEvents.filter((e) => e.end < today)
 
+  const productPeople = visiblePeople.filter((p) => !p.isCro)
+  const croPeople     = visiblePeople.filter((p) => p.isCro)
+
   // Sheet people sorted: on vacation first, then alphabetical
-  const sortedPeople = [...visiblePeople].sort((a, b) => {
+  const sortedProduct = [...productPeople].sort((a, b) => {
     const aActive = a.vacations.some((r) => isActive(r, today)) ? 0 : 1
     const bActive = b.vacations.some((r) => isActive(r, today)) ? 0 : 1
     return aActive - bActive || a.name.localeCompare(b.name)
   })
 
-  const overlaps = computeOverlaps(visiblePeople, today)
+  const overlaps = computeOverlaps(productPeople, today)
 
   const noSheet = !process.env.GOOGLE_SHEETS_SPREADSHEET_ID
   const noCal   = !process.env.VACATION_CALENDAR_ICAL_URL
@@ -335,33 +372,52 @@ export default async function VacacionesPage() {
           </Alert>
         )}
 
-        {!noSheet && sortedPeople.length === 0 && (
+        {!noSheet && productPeople.length === 0 && (
           <Text c="dimmed" size="sm">No se encontraron datos para {year}.</Text>
         )}
 
-        {sortedPeople.length > 0 && (
+        {productPeople.length > 0 && (
           <Stack gap="lg">
-            <SaldosTable people={visiblePeople} year={year} />
-            <GanttVacaciones people={visiblePeople} today={today} />
-
+            {/* Warnings arriba */}
             {overlaps.length > 0 && (
               <Stack gap="xs">
                 {overlaps.map((o, i) => (
                   <Alert key={i} icon={<IconAlertTriangle size={16} />} color="orange" variant="light" p="xs">
                     <Text size="sm">
+                      <Text span fw={600}>{o.reason}</Text>
+                      {' · '}
                       <Text span fw={600}>{formatRange({ start: o.start, end: o.end })}</Text>
-                      {' '}— {o.names.join(' + ')} coinciden en vacaciones
+                      {' '}— {o.names.join(' + ')}
                     </Text>
                   </Alert>
                 ))}
               </Stack>
             )}
 
+            <SaldosTable people={productPeople} year={year} />
+            <GanttVacaciones people={productPeople} today={today} />
+
             <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
-              {sortedPeople.map((p) => (
+              {sortedProduct.map((p) => (
                 <BalanceCard key={p.name} person={p} today={today} />
               ))}
             </SimpleGrid>
+
+            {/* CRO — grupo separado */}
+            {croPeople.length > 0 && (
+              <Stack gap="sm">
+                <Group gap={6} align="center">
+                  <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.08em' }}>
+                    CRO
+                  </Text>
+                </Group>
+                <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
+                  {croPeople.map((p) => (
+                    <BalanceCard key={p.name} person={p} today={today} />
+                  ))}
+                </SimpleGrid>
+              </Stack>
+            )}
           </Stack>
         )}
       </Stack>

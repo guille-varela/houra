@@ -23,7 +23,9 @@ const NAME_MAP: Record<string, string> = {
   'Dani Zilch':       'Zilch',
 }
 
-const BAJA_NAMES = new Set(['Jessica López'])
+const BAJA_NAMES      = new Set(['Jessica López'])
+const EXCEDENCIA_NAMES = new Set(['Antonio Díaz'])  // Toni — excedencia desde 2026-05-29
+const CRO_NAMES        = new Set(['Josefa Inostroza', 'Carlos Ochoa', 'Emilio Cuchillo'])
 
 function displayName(raw: string): string {
   return NAME_MAP[raw] ?? raw
@@ -50,6 +52,8 @@ export type PersonBalance = {
   diasN: number
   diasN1: number
   isBaja: boolean
+  isExcedencia: boolean
+  isCro: boolean
   vacations: VacationRange[]
 }
 
@@ -281,6 +285,8 @@ function parseData(
       diasN,
       diasN1,
       isBaja:          BAJA_NAMES.has(nameRaw),
+      isExcedencia:    EXCEDENCIA_NAMES.has(nameRaw),
+      isCro:           CRO_NAMES.has(nameRaw),
       vacations:       groupRanges(vacDays, year),
     })
   }
