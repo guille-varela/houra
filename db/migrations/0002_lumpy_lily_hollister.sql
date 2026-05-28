@@ -1,0 +1,2 @@
+CREATE INDEX "project_assignments_person_active_idx" ON "project_assignments" USING btree ("person_id","is_active");--> statement-breakpoint
+CREATE INDEX "time_entries_project_area_idx" ON "time_entries" USING btree ("project_id","area");

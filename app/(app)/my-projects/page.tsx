@@ -5,6 +5,13 @@ import { db } from '@/lib/db'
 import { getCurrentPerson } from '@/lib/auth-helpers'
 import { projectAssignments, projects } from '@/db/schema'
 
+const STATUS_LABELS: Record<string, string> = {
+  draft: 'Borrador',
+  active: 'Activo',
+  paused: 'Pausado',
+  closed: 'Cerrado',
+}
+
 const PROJECT_TYPE_LABELS: Record<string, string> = {
   fixed_bag: 'Bolsa fija',
   renewable_bag: 'Bolsa renovable',
@@ -58,7 +65,7 @@ export default async function MyProjectsPage() {
       {rows.length === 0 && (
         <Card>
           <Text c="dimmed" size="sm" ta="center" py="lg">
-            No tienes proyectos asignados.
+            Aún no tienes proyectos asignados. Pide a tu manager que te añada a uno.
           </Text>
         </Card>
       )}
@@ -108,7 +115,7 @@ export default async function MyProjectsPage() {
                 <Group justify="space-between">
                   <Text fw={500} size="sm">{project.name}</Text>
                   <Badge size="xs" color="gray" variant="light" radius="sm">
-                    {project.status}
+                    {STATUS_LABELS[project.status] ?? project.status}
                   </Badge>
                 </Group>
               </Card>

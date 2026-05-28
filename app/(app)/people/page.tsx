@@ -56,23 +56,23 @@ export default async function PeoplePage() {
   function PersonCard({ row }: { row: typeof rows[0] }) {
     return (
       <Card p="md">
-        <Group justify="space-between" align="flex-start">
-          <div>
+        <Group justify="space-between" align="flex-start" wrap="wrap" gap="xs">
+          <div style={{ flex: 1, minWidth: 0 }}>
             <Group gap="xs" mb={4}>
               <AnchorLink href={`/people/${row.id}`} fw={600} size="sm" c="dark">
                 {row.name}
               </AnchorLink>
               {statusBadge(row)}
             </Group>
-            <Group gap="xs">
-              <Text size="xs" c="dimmed">{row.email}</Text>
+            <Group gap="xs" wrap="wrap">
+              <Text size="xs" c="dimmed" truncate style={{ maxWidth: '100%' }}>{row.email}</Text>
               <Text size="xs" c="dimmed">·</Text>
               <Text size="xs" c="dimmed">{CATEGORY_LABELS[row.professionalCategory] ?? row.professionalCategory}</Text>
               <Text size="xs" c="dimmed">·</Text>
               <Text size="xs" c="dimmed">{AREA_LABELS[row.primaryArea] ?? row.primaryArea}</Text>
             </Group>
           </div>
-          <div style={{ textAlign: 'right' }}>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <Badge size="xs" variant="light" color="gray">{ROLE_LABELS[row.appRole] ?? row.appRole}</Badge>
             {row.lastEntryDate && (
               <Text size="xs" c="dimmed" mt={4}>Última entrada: {row.lastEntryDate}</Text>

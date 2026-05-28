@@ -11,6 +11,7 @@ import {
   Alert,
   CopyButton,
 } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import { shareWithCommittee } from '@/actions/reports'
 
 type ExistingReport = { id: string; slug: string; status: string; createdAt: string }
@@ -23,17 +24,15 @@ type Props = {
 export default function WorkspaceShareClient({ workspaceId, existingReports }: Props) {
   const [reports, setReports] = useState<ExistingReport[]>(existingReports)
   const [newSlug, setNewSlug] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
   function handleShare() {
-    setError(null)
     startTransition(async () => {
       const result = await shareWithCommittee(workspaceId)
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
         setNewSlug(result.slug)
         setReports((prev) => [
@@ -49,12 +48,6 @@ export default function WorkspaceShareClient({ workspaceId, existingReports }: P
       <Button size="sm" loading={isPending} onClick={handleShare}>
         Compartir con comité
       </Button>
-
-      {error && (
-        <Alert color="red" variant="light" withCloseButton onClose={() => setError(null)} w={320}>
-          {error}
-        </Alert>
-      )}
 
       {newSlug && (
         <Alert color="green" variant="light" w={320}>

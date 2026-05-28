@@ -136,7 +136,7 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
       {entries.length === 0 ? (
         <Card>
           <Text c="dimmed" size="sm" ta="center" py="md">
-            No hay ausencias registradas.
+            Todavía no tienes días libres registrados. Usa el botón de abajo para añadir vacaciones, festivos o bajas.
           </Text>
         </Card>
       ) : (
@@ -184,12 +184,12 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
                     <ActionIcon
                       variant="subtle"
                       color="red"
-                      size="sm"
+                      size="lg"
                       loading={deletingId === entry.id}
                       onClick={() => handleDelete(entry.id)}
-                      aria-label="Eliminar"
+                      aria-label="Eliminar ausencia"
                     >
-                      <IconTrash size={14} />
+                      <IconTrash size={15} />
                     </ActionIcon>
                   </Group>
                 </Card>
@@ -199,7 +199,7 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
         </Stack>
       )}
 
-      <Button leftSection={<IconPlus size={14} />} onClick={open}>
+      <Button leftSection={<IconPlus size={14} />} onClick={open} fullWidth size="md">
         Añadir ausencia
       </Button>
 

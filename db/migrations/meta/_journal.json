@@ -15,6 +15,13 @@
       "when": 1779787864691,
       "tag": "0001_past_wilson_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779921294871,
+      "tag": "0002_lumpy_lily_hollister",
+      "breakpoints": true
     }
   ]
 }

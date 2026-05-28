@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { desc, eq, sql } from 'drizzle-orm'
-import { Stack, Text, Group, Card, SimpleGrid } from '@mantine/core'
+import { Stack, Text, Group, Card, SimpleGrid, Button } from '@mantine/core'
+import { IconDownload } from '@tabler/icons-react'
 import { db } from '@/lib/db'
 import {
   amendments,
@@ -134,7 +135,7 @@ export default async function WorkspacePage({ params }: Props) {
 
   return (
     <Stack p="md" gap="xl">
-      <Group justify="space-between" align="flex-start">
+      <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
         <div>
           <Text style={{ fontSize: '1.0625rem', fontWeight: 600, letterSpacing: '-0.02em' }}>
             {workspace.name}
@@ -143,15 +144,41 @@ export default async function WorkspacePage({ params }: Props) {
             {projectRows.length} proyecto{projectRows.length !== 1 ? 's' : ''}
           </Text>
         </div>
-        <WorkspaceShareClient
-          workspaceId={id}
-          existingReports={existingReports.map((r) => ({
-            id: r.id,
-            slug: r.shareUrlSlug,
-            status: r.status,
-            createdAt: r.createdAt.toISOString(),
-          }))}
-        />
+        <Group gap="xs" align="flex-start">
+          <Group gap="xs">
+            <Button
+              component="a"
+              href={`/api/export/workspace/${id}?format=csv`}
+              download
+              size="xs"
+              variant="light"
+              color="gray"
+              leftSection={<IconDownload size={12} />}
+            >
+              CSV
+            </Button>
+            <Button
+              component="a"
+              href={`/api/export/workspace/${id}?format=xlsx`}
+              download
+              size="xs"
+              variant="light"
+              color="gray"
+              leftSection={<IconDownload size={12} />}
+            >
+              Excel
+            </Button>
+          </Group>
+          <WorkspaceShareClient
+            workspaceId={id}
+            existingReports={existingReports.map((r) => ({
+              id: r.id,
+              slug: r.shareUrlSlug,
+              status: r.status,
+              createdAt: r.createdAt.toISOString(),
+            }))}
+          />
+        </Group>
       </Group>
 
       <SimpleGrid cols={2} spacing="sm">

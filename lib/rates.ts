@@ -15,7 +15,7 @@ export async function resolveRate(
     .where(eq(projects.id, projectId))
     .limit(1)
 
-  if (!project) throw new Error('Project not found')
+  if (!project) throw new Error('Proyecto no encontrado.')
 
   const { workspaceId, organizationId } = project
 
@@ -60,7 +60,7 @@ export async function resolveRate(
 
   if (costRateCents === null || soldRateCents === null) {
     throw new Error(
-      `No rate configured for area=${area} role=${role} date=${date}. Add org-level rate defaults.`,
+      `No hay tarifa configurada para el área ${area} y rol ${role}. Pide al admin que añada tarifas base para la organización.`,
     )
   }
 

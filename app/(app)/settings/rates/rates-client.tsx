@@ -199,12 +199,12 @@ export default function RatesClient({ rates: initialRates }: Props) {
                   ) : (
                     <>
                       <Tooltip label="Editar">
-                        <ActionIcon size="sm" variant="subtle" color="gray" onClick={() => startEdit(rate)} disabled={isPending}>
+                        <ActionIcon size="md" variant="subtle" color="gray" onClick={() => startEdit(rate)} disabled={isPending}>
                           <IconEdit size={13} />
                         </ActionIcon>
                       </Tooltip>
                       <Tooltip label="Eliminar">
-                        <ActionIcon size="sm" variant="subtle" color="red" onClick={() => handleDelete(rate.id)} disabled={isPending}>
+                        <ActionIcon size="md" variant="subtle" color="red" onClick={() => handleDelete(rate.id)} disabled={isPending}>
                           <IconTrash size={13} />
                         </ActionIcon>
                       </Tooltip>

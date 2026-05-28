@@ -7,6 +7,7 @@ import {
   IconUsers,
   IconLayoutDashboard,
   IconBriefcase,
+  IconHistory,
 } from '@tabler/icons-react'
 import { getCurrentPerson } from '@/lib/auth-helpers'
 
@@ -47,6 +48,20 @@ export default async function SettingsPage() {
                 <div>
                   <Text size="sm" fw={500}>Personas</Text>
                   <Text size="xs" c="dimmed">Gestión, desactivación y GDPR</Text>
+                </div>
+              </Group>
+              <IconChevronRight size={16} color="var(--mantine-color-gray-4)" />
+            </Group>
+          </Card>
+        </Link>
+        <Link href="/audit" style={{ textDecoration: 'none', display: 'block' }}>
+          <Card p="md" style={{ cursor: 'pointer' }}>
+            <Group justify="space-between" align="center">
+              <Group gap="sm">
+                <IconHistory size={18} stroke={1.5} color="var(--mantine-color-gray-6)" />
+                <div>
+                  <Text size="sm" fw={500}>Registro de actividad</Text>
+                  <Text size="xs" c="dimmed">Historial de cambios de la organización</Text>
                 </div>
               </Group>
               <IconChevronRight size={16} color="var(--mantine-color-gray-4)" />

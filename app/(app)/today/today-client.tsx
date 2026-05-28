@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useDisclosure } from '@mantine/hooks'
 import { Stack, Group, Text, Button, Card, ActionIcon, Alert } from '@mantine/core'
 import { IconTrash, IconPlus } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
 import { deleteTimeEntry } from '@/actions/time-entries'
 import TimeEntryForm from '@/components/time-entries/time-entry-form'
 
@@ -50,15 +51,13 @@ export default function TodayClient({
   projectNames,
 }: Props) {
   const [opened, { open, close }] = useDisclosure(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   async function handleDelete(id: string) {
-    setDeleteError(null)
     setDeletingId(id)
     const result = await deleteTimeEntry(id)
     setDeletingId(null)
-    if (!result.ok) setDeleteError(result.error)
+    if (!result.ok) notifications.show({ color: 'red', title: 'Error', message: result.error })
   }
 
   const over = totalHours >= SOFT_CAP
@@ -96,12 +95,6 @@ export default function TodayClient({
         </Alert>
       )}
 
-      {deleteError && (
-        <Alert color="red" variant="light" radius="lg" withCloseButton onClose={() => setDeleteError(null)}>
-          {deleteError}
-        </Alert>
-      )}
-
       {/* Entry list */}
       {entries.length === 0 ? (
         <Card>
@@ -134,12 +127,12 @@ export default function TodayClient({
                 <ActionIcon
                   variant="subtle"
                   color="gray"
-                  size="sm"
+                  size="lg"
                   loading={deletingId === entry.id}
                   onClick={() => handleDelete(entry.id)}
                   aria-label="Eliminar entrada"
                 >
-                  <IconTrash size={14} />
+                  <IconTrash size={15} />
                 </ActionIcon>
               </Group>
             </Card>

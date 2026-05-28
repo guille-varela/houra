@@ -1,5 +1,6 @@
 import { eq, desc } from 'drizzle-orm'
-import { Stack, Table, TableThead, TableTbody, TableTr, TableTh, TableTd, Text, Badge, Group } from '@mantine/core'
+import { Stack, Table, TableThead, TableTbody, TableTr, TableTh, TableTd, Text, Badge, Group, Button } from '@mantine/core'
+import { IconDownload } from '@tabler/icons-react'
 import { db } from '@/lib/db'
 import { persons, timeEntries } from '@/db/schema'
 
@@ -30,17 +31,43 @@ export default async function TimeEntriesTab({ projectId }: Props) {
 
   if (rows.length === 0) {
     return (
-      <Text size="sm" c="dimmed" ta="center" py="md">
-        Sin entradas registradas.
+      <Text size="sm" c="dimmed" ta="center" py="xl">
+        Todavía no hay entradas en este proyecto.
       </Text>
     )
   }
 
   return (
     <Stack gap="sm">
-      <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>
-        Últimas {rows.length} entradas
-      </Text>
+      <Group justify="space-between" align="center">
+        <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>
+          Últimas {rows.length} entradas
+        </Text>
+        <Group gap="xs">
+          <Button
+            component="a"
+            href={`/api/export/project/${projectId}?format=csv`}
+            download
+            size="xs"
+            variant="light"
+            color="gray"
+            leftSection={<IconDownload size={12} />}
+          >
+            CSV
+          </Button>
+          <Button
+            component="a"
+            href={`/api/export/project/${projectId}?format=xlsx`}
+            download
+            size="xs"
+            variant="light"
+            color="gray"
+            leftSection={<IconDownload size={12} />}
+          >
+            Excel
+          </Button>
+        </Group>
+      </Group>
       <Table withTableBorder withColumnBorders fz="sm">
         <TableThead>
           <TableTr>

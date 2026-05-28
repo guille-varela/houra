@@ -10,6 +10,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.7.0] — 2026-05-28
+
+### Phase 07 — Audit log UI + exports + error handling
+
+Completes the admin toolset: full audit trail UI with filtering and pagination, CSV/XLSX data exports, and a thorough error-handling cleanup across the app.
+
+### Added
+
+- `/audit` — Admin-only audit log page (50 entries per page, filter by entity type, colored action badges)
+- `app/(app)/audit/audit-pagination.tsx` — Client component: entity type filter Select + Previous/Next pagination
+- `app/(app)/audit/loading.tsx` — Skeleton loading state for audit log
+- `/api/export/project/[id]` — Route handler: download all time entries for a project as CSV or XLSX
+- `/api/export/workspace/[id]` — Route handler: download all time entries across a workspace's projects as CSV or XLSX (includes "Proyecto" column)
+- Export buttons (CSV + Excel) in project Entradas tab and workspace detail header
+- Settings → "Registro de actividad" card linking to `/audit`
+
+### Fixed
+
+- All user-facing error messages in `lib/guards.ts` changed from English technical strings to friendly Spanish microcopy
+- All user-facing error messages in `lib/rates.ts` changed to Spanish
+- `project.status` raw enum values no longer exposed in badges (`my-projects/page.tsx`)
+- `deleteError` inline Alert in `today/today-client.tsx` migrated to toast notification
+- Project status transition error in `actions/projects.ts` now shows a human-readable message
+- Public report page (`app/r/[slug]`) now shows friendly copy for closed/expired states
+- ActionIcon touch targets upgraded to `size="md"` or `size="lg"` (≥ 34px) across settings, share tab, time-off, and today views
+- Dashboard project cards: `wrap="nowrap"` → `wrap="wrap"` to prevent overflow on mobile
+- People page: PersonCard email now truncates correctly on narrow viewports
+
+### Changed
+
+- Server action errors surface via `notifications.show()` (toast) instead of inline Alert in `workspace-share-client.tsx` and `workspace-tabs.tsx`
+
+### Performance
+
+- Added composite DB index `project_assignments_person_active_idx` (`personId, isActive`) — speeds up "my active projects" queries
+- Added composite DB index `time_entries_project_area_idx` (`projectId, area`) — speeds up matrix and cell-drill-down queries
+- Migration: `db/migrations/0002_lumpy_lily_hollister.sql`
+
+### Testing
+
+- E2E suite with Playwright: `tests/e2e/login-imputar.spec.ts`, `tests/e2e/proyecto-asignar.spec.ts`, `tests/e2e/generar-report.spec.ts`
+- `playwright.config.ts` — CI-only `webServer`; local tests assume a running dev server
+
+[0.7.0]: https://github.com/guille-varela/houra/releases/tag/v0.7.0
+
+---
+
 ## [0.4.0] — 2026-05-26
 
 ### Phase 03 — Projects + matrix dashboard

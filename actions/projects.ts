@@ -99,7 +99,7 @@ export async function updateProjectStatus(raw: unknown): Promise<ActionResult> {
   if (!isValidTransition(project.status, status)) {
     return {
       ok: false,
-      error: `No se puede pasar de "${project.status}" a "${status}".`,
+      error: 'Este cambio de estado no está permitido desde la situación actual del proyecto.',
     }
   }
 

@@ -34,8 +34,8 @@ export default async function PublicReportPage({ params }: Props) {
     return (
       <Container size="sm" py="xl">
         <Stack align="center" gap="xs">
-          <Title order={4}>Report cerrado</Title>
-          <Text c="dimmed" size="sm">Este report ya no está disponible.</Text>
+          <Title order={4}>Informe no disponible</Title>
+          <Text c="dimmed" size="sm">Este informe ya no está disponible. Contacta con quien te lo compartió.</Text>
         </Stack>
       </Container>
     )
@@ -45,8 +45,8 @@ export default async function PublicReportPage({ params }: Props) {
     return (
       <Container size="sm" py="xl">
         <Stack align="center" gap="xs">
-          <Title order={4}>Report expirado</Title>
-          <Text c="dimmed" size="sm">El enlace de acceso ha caducado.</Text>
+          <Title order={4}>Enlace caducado</Title>
+          <Text c="dimmed" size="sm">El enlace de acceso ha expirado. Pide un nuevo enlace a quien te lo envió.</Text>
         </Stack>
       </Container>
     )

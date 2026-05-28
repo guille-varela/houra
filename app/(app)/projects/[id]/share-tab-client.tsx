@@ -155,7 +155,7 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
                   <CopyButton value={`${origin}/r/${r.shareUrlSlug}`}>
                     {({ copied, copy }) => (
                       <Tooltip label={copied ? 'Copiado' : 'Copiar URL'}>
-                        <ActionIcon size="sm" variant="subtle" color={copied ? 'green' : 'gray'} onClick={copy}>
+                        <ActionIcon size="md" variant="subtle" color={copied ? 'green' : 'gray'} onClick={copy}>
                           <IconCopy size={14} />
                         </ActionIcon>
                       </Tooltip>
@@ -164,7 +164,7 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
                   {r.status === 'open' && (
                     <Tooltip label="Cerrar acceso">
                       <ActionIcon
-                        size="sm"
+                        size="md"
                         variant="subtle"
                         color="red"
                         loading={isPending}

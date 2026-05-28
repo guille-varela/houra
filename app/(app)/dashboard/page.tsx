@@ -154,8 +154,8 @@ export default async function DashboardPage() {
               const mColor = marginColor(p.marginTotals.marginPct ?? -1)
               return (
                 <Card key={p.id} p="md">
-                  <Group justify="space-between" align="flex-start" wrap="nowrap">
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                  <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
+                    <div style={{ flex: 1, minWidth: 180 }}>
                       <Group gap="xs" mb={4}>
                         <AnchorLink href={`/projects/${p.id}`} fw={600} size="sm" c="dark">
                           {p.name}
@@ -177,7 +177,7 @@ export default async function DashboardPage() {
                         )}
                       </Group>
                     </div>
-                    <Group gap="xl" style={{ flexShrink: 0 }}>
+                    <Group gap="md" style={{ flexShrink: 0 }}>
                       <div style={{ textAlign: 'right' }}>
                         <Text size="xs" c="dimmed">Ingresos</Text>
                         <Text size="sm" fw={600}>{formatEur(p.marginTotals.soldCents)}</Text>

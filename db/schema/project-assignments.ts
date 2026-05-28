@@ -24,5 +24,6 @@ export const projectAssignments = pgTable(
   (table) => [
     index('project_assignments_org_id_idx').on(table.organizationId),
     uniqueIndex('project_assignments_unique_idx').on(table.projectId, table.personId),
+    index('project_assignments_person_active_idx').on(table.personId, table.isActive),
   ],
 )

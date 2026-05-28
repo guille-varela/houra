@@ -18,6 +18,7 @@ import {
 } from '@mantine/core'
 import Link from 'next/link'
 import { IconArrowsTransferDown, IconPlus } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
 import { createHourTransfer } from '@/actions/hour-transfers'
 import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS, type Area, type Role } from '@/lib/matrix'
 import { marginColor, consumptionColor } from '@/lib/tokens'
@@ -95,11 +96,10 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
       setError('Las horas deben ser positivas')
       return
     }
-    setError(null)
     startTransition(async () => {
       const result = await createHourTransfer({ fromProjectId, toProjectId, area, role, hours: hoursNum, reason })
       if (!result.ok) {
-        setError(result.error)
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
         setDrawerOpen(false)
         resetWizard()

@@ -2,7 +2,7 @@
 
 Internal time tracker for Gut. Tracks hours per project, per person, and per cost matrix (area × role) to give real-time margin visibility.
 
-> Phase 05 complete — reports + sharing live. Production: [houra.guillermo-varela.workers.dev](https://houra.guillermo-varela.workers.dev)
+> Phase 07 complete — audit log UI + CSV/XLSX exports. Production: [houra.guillermo-varela.workers.dev](https://houra.guillermo-varela.workers.dev)
 
 ---
 
@@ -55,6 +55,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `DATABASE_URL` | Yes | Neon connection string |
 | `BETTER_AUTH_URL` | Yes | App base URL (e.g. `http://localhost:3000`) |
 | `BETTER_AUTH_SECRET` | Yes | Random 32-char secret |
+| `NEXT_PUBLIC_BETTER_AUTH_URL` | Yes | App base URL for client-side auth |
 | `RESEND_API_KEY` | Magic link only | Resend API key |
 | `RESEND_FROM_EMAIL` | Magic link only | Sender address |
 
@@ -69,8 +70,12 @@ pnpm build:cf      # Cloudflare Workers build (opennextjs-cloudflare)
 pnpm preview:cf    # Local Cloudflare Workers preview
 pnpm deploy:cf     # Deploy to Cloudflare Workers
 pnpm typecheck     # TypeScript check (no emit)
+pnpm test          # Unit tests (vitest)
+pnpm test:e2e      # E2E tests (Playwright) — requires running server
 pnpm db:generate   # Generate Drizzle migrations
 pnpm db:migrate    # Apply migrations
+pnpm db:seed       # Seed: org + 3 users + rates + holiday presets
+pnpm db:fixtures   # Fixtures: workspaces + projects + assignments
 pnpm db:studio     # Drizzle Studio (local DB UI)
 ```
 
@@ -125,15 +130,20 @@ Secrets are managed with `wrangler secret put` — never stored in the repositor
 | 04 | Margin + amendments | ✅ Done |
 | 05 | Reports + sharing | ✅ Done |
 | 06 | Time off + Inngest auto-snapshot + Slack notifications | ✅ Done |
-| 07–08 | Audit log UI, exports (CSV/PDF) | — |
+| Visual design pass | DM Sans + color palette (adelantado de Phase 09) | ✅ Done |
+| 08 | Polish — loading states, toasts, mobile, microcopy, E2E | ✅ Done |
+| 07 | Audit log UI, exports (CSV/XLSX) | ✅ Done |
 | 09 | Brand tokens + final design | — |
 
 ---
 
 ## Known issues
 
-- `GET /api/pdf-test` returns 500 in Cloudflare Workers. `@react-pdf/renderer` depends on Node.js `canvas`, which is not fully supported in the Cloudflare edge runtime. Mitigation planned for Phase 05.
-- CI build command in Cloudflare dashboard is currently `pnpm run build`. It should be `pnpm build:cf`.
+- **PDF in Cloudflare Workers**: `GET /api/pdf-test` returns 500. `@react-pdf/renderer` depends on Node.js `canvas`, not supported in Cloudflare edge runtime. Planned fix in Phase 07.
+- **CI build command**: Cloudflare dashboard build command should be `pnpm build:cf` (not `pnpm run build`). Update in the Workers dashboard → Settings → Build command.
+- **Magic link**: `RESEND_API_KEY` not yet configured. Email/password login works; magic link flow is wired but inactive until the key is added.
+- **Inngest endpoint**: Not yet verified in Inngest dashboard. Auto-snapshot and Slack notification jobs are deployed but unconfirmed in production.
+- **E2E tests**: Playwright tests require a running dev server + seeded database. Run `pnpm db:seed && pnpm db:fixtures` before `pnpm test:e2e`.
 
 ---
 
