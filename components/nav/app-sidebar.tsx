@@ -11,6 +11,7 @@ import {
   IconLayoutDashboard,
   IconBriefcase,
   IconUsers,
+  IconBuilding,
   IconSettings,
   IconCommand,
 } from '@tabler/icons-react'
@@ -36,6 +37,7 @@ const NAV_TOP: NavItem[] = [
   { href: '/projects', label: 'Proyectos', Icon: IconFolders, roles: ['admin', 'manager'] },
   { href: '/dashboard', label: 'Dashboard', Icon: IconLayoutDashboard, roles: ['admin', 'manager'] },
   { href: '/workspaces', label: 'Workspaces', Icon: IconBriefcase, roles: ['admin', 'manager'] },
+  { href: '/clients', label: 'Clientes', Icon: IconBuilding, roles: ['admin', 'manager'] },
   { href: '/people', label: 'Personas', Icon: IconUsers, roles: ['admin'] },
   { href: '/time-off', label: 'Libre', Icon: IconUmbrella },
 ]

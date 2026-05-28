@@ -32,6 +32,8 @@ export const persons = pgTable(
     holidayRegion: text('holiday_region'),
     timezoneOverride: text('timezone_override'),
     notificationPreferences: jsonb('notification_preferences'),
+    // Nivel interno informativo (no afecta a precio). UI: tooltip on hover.
+    internalLevel: text('internal_level').$type<'level_1' | 'level_2' | 'level_3' | null>(),
     deactivatedAt: timestamp('deactivated_at', { withTimezone: true }),
     anonymizedAt: timestamp('anonymized_at', { withTimezone: true }),
     departmentId: uuid('department_id').references(() => departments.id),
