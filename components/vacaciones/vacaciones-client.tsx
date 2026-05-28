@@ -3,13 +3,13 @@
 import { useState, useMemo } from 'react'
 import {
   Stack, Group, Text, Badge, Alert, Progress, SimpleGrid,
-  Card, SegmentedControl, TextInput, ActionIcon, Anchor,
+  Card, SegmentedControl, TextInput, Anchor, Divider,
   Table, TableThead, TableTbody, TableTr, TableTh, TableTd, ScrollArea,
 } from '@mantine/core'
 import {
-  IconSearch, IconSun, IconAlertTriangle, IconTable,
-  IconTimeline, IconLayoutGrid, IconExternalLink, IconBrandGoogleBigQuery,
+  IconSearch, IconAlertTriangle, IconExternalLink, IconBrandGoogleBigQuery,
 } from '@tabler/icons-react'
+import type { VacationEvent } from '@/lib/vacation-calendar'
 import { GanttVacaciones } from './gantt-vacaciones'
 import type { PersonBalance, VacationRange } from '@/lib/sheets-vacaciones'
 
@@ -185,6 +185,30 @@ function BalanceCard({ person, today }: { person: PersonBalance; today: string }
   )
 }
 
+// ─── Calendar event card ──────────────────────────────────────────────────────
+
+function CalEventCard({ event, today }: { event: VacationEvent; today: string }) {
+  const active = event.start <= today && event.end >= today
+  const past   = event.end < today
+  return (
+    <Card p="sm" radius="md" withBorder style={{
+      borderColor: active ? 'var(--mantine-color-blue-3)' : 'var(--h-bd)',
+      background:  active ? 'var(--mantine-color-blue-0)' : undefined,
+      opacity: past ? 0.6 : 1,
+    }}>
+      <Group justify="space-between" align="flex-start" gap="sm">
+        <div>
+          <Text fw={600} size="sm">{event.summary}</Text>
+          <Text size="xs" c="dimmed" mt={2}>
+            {formatRange({ start: event.start, end: event.end })}
+          </Text>
+        </div>
+        {active && <Badge size="xs" color="blue" variant="filled">Ahora</Badge>}
+      </Group>
+    </Card>
+  )
+}
+
 // ─── Main client component ────────────────────────────────────────────────────
 
 export function VacacionesClient({
@@ -196,6 +220,7 @@ export function VacacionesClient({
   today,
   year,
   sheetUrl,
+  calEvents = [],
 }: {
   productPeople: PersonBalance[]
   croPeople: PersonBalance[]
@@ -205,6 +230,7 @@ export function VacacionesClient({
   today: string
   year: number
   sheetUrl: string
+  calEvents?: VacationEvent[]
 }) {
   const [view, setView]       = useState<View>('gantt')
   const [search, setSearch]   = useState('')
@@ -305,6 +331,41 @@ export function VacacionesClient({
           ))}
         </SimpleGrid>
       )}
+
+      {/* Calendario iCal */}
+      {calEvents.length > 0 && (() => {
+        const active   = calEvents.filter((e) => e.start <= today && e.end >= today)
+        const upcoming = calEvents.filter((e) => e.start > today)
+        const past     = calEvents.filter((e) => e.end < today)
+        return (
+          <>
+            <Divider />
+            <Stack gap="sm">
+              <Text size="xs" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.08em' }}>
+                Calendario · Vacaciones Product
+              </Text>
+              {active.length > 0 && (
+                <Stack gap="xs">
+                  <Text size="xs" c="dimmed" fw={600}>Ahora</Text>
+                  {active.map((e) => <CalEventCard key={e.uid} event={e} today={today} />)}
+                </Stack>
+              )}
+              {upcoming.length > 0 && (
+                <Stack gap="xs">
+                  <Text size="xs" c="dimmed" fw={600}>Próximas</Text>
+                  {upcoming.map((e) => <CalEventCard key={e.uid} event={e} today={today} />)}
+                </Stack>
+              )}
+              {past.length > 0 && (
+                <Stack gap="xs">
+                  <Text size="xs" c="dimmed" fw={600}>Últimas 2 semanas</Text>
+                  {past.map((e) => <CalEventCard key={e.uid} event={e} today={today} />)}
+                </Stack>
+              )}
+            </Stack>
+          </>
+        )
+      })()}
 
       {/* CRO */}
       {croPeople.length > 0 && (

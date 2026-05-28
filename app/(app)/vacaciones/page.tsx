@@ -1,4 +1,6 @@
 import { fetchSheetVacaciones } from '@/lib/sheets-vacaciones'
+import { fetchVacationEvents } from '@/lib/vacation-calendar'
+import type { VacationEvent } from '@/lib/vacation-calendar'
 import { requireRole } from '@/lib/auth-helpers'
 import { db } from '@/lib/db'
 import { holidayPresets } from '@/db/schema'
@@ -107,12 +109,19 @@ export default async function VacacionesPage() {
   const person    = await requireRole('contributor').catch(() => null)
   const isManager = person?.appRole === 'manager' || person?.appRole === 'admin'
 
-  const [sheetPeople, holidayRows] = await Promise.all([
+  const [sheetPeople, holidayRows, calEvents] = await Promise.all([
     fetchSheetVacaciones(year),
     db.select({ region: holidayPresets.region, dates: holidayPresets.dates })
       .from(holidayPresets)
       .where(or(eq(holidayPresets.year, year), eq(holidayPresets.year, year + 1))),
+    fetchVacationEvents(),
   ])
+
+  const windowStart = new Date(new Date(today).setDate(new Date(today).getDate() - 14)).toISOString().split('T')[0]!
+  const windowEnd   = new Date(new Date(today).setDate(new Date(today).getDate() + 90)).toISOString().split('T')[0]!
+  const visibleEvents = calEvents
+    .filter((e) => e.end >= windowStart && e.start <= windowEnd)
+    .sort((a, b) => a.start.localeCompare(b.start))
 
   // Baja y excedencia solo visibles a manager/admin
   const visiblePeople = isManager
@@ -152,6 +161,7 @@ export default async function VacacionesPage() {
       today={today}
       year={year}
       sheetUrl={sheetUrl}
+      calEvents={visibleEvents}
     />
   )
 }
