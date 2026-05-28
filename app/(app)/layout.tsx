@@ -14,7 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         style={{
           display: 'flex',
           height: '100vh',
-          background: '#f5f5f5',
+          background: '#F2F5FA',
           overflow: 'hidden',
         }}
         className="hidden md:flex"

@@ -1,16 +1,10 @@
 import { createTheme, type MantineThemeOverride } from '@mantine/core'
 import { MANTINE_PRIMARY } from './tokens'
 
-// Phase 09 migration checklist:
-//   1. Add custom brand color palette: colors: { brand: ['#f0...', ..., '#1a...'] }
-//   2. Change MANTINE_PRIMARY in lib/tokens.ts to 'brand'
-//   3. Update --h-brand-* vars in app/globals.css :root to brand palette values
-//   No component files need to change.
-
 export const theme: MantineThemeOverride = createTheme({
   primaryColor: MANTINE_PRIMARY,
 
-  fontFamily: 'var(--font-inter), system-ui, sans-serif',
+  fontFamily: 'var(--font-dm-sans), system-ui, sans-serif',
   fontFamilyMonospace: 'ui-monospace, monospace',
 
   defaultRadius: 'lg',

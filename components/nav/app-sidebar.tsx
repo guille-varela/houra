@@ -70,7 +70,7 @@ function NavBtn({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: active ? '#ebebeb' : 'transparent',
+          background: active ? '#EEF2FA' : 'transparent',
           transition: 'background 0.1s',
           flexShrink: 0,
         }}
@@ -78,7 +78,7 @@ function NavBtn({
         <item.Icon
           size={18}
           strokeWidth={active ? 2 : 1.5}
-          style={{ color: active ? '#111' : '#aaa' }}
+          style={{ color: active ? '#111111' : '#9A9A9A' }}
         />
       </UnstyledButton>
     </Tooltip>
@@ -162,8 +162,8 @@ export default function AppSidebar({ appRole, personName }: Props) {
             fontSize: 16,
             fontWeight: 800,
             letterSpacing: '-0.04em',
-            color: '#111',
-            fontFamily: 'var(--font-inter, system-ui)',
+            color: '#111111',
+            fontFamily: 'var(--font-dm-sans, system-ui)',
           }}
         >
           H

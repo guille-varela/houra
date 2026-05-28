@@ -32,8 +32,8 @@ html {
 }
 
 body {
-  background: #fafafa;
-  color: var(--mantine-color-dark-9);
+  background: #F2F5FA;
+  color: #111111;
 }
 
 /* Páginas que deben tener fondo blanco completo (auth, viewer público) */
@@ -55,30 +55,29 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--mantine-color-gray-5); }
 
 /* ─── Semantic tokens — Houra design system ────────────────────────────────
-   Wireframe mode: all --h-brand vars point to Mantine gray scale.
-   Phase 09 migration: swap --h-brand-* references to brand palette vars.
+   Palette approved in PoC (2026-05-27): DM Sans + blue-gray shell.
    Status vars (--h-success/warning/caution/danger) are functional — never swap.
    ─────────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Brand — neutral gray in wireframe */
-  --h-brand:       var(--mantine-color-gray-8);
-  --h-brand-light: var(--mantine-color-gray-1);
-  --h-brand-text:  var(--mantine-color-white);
+  /* Brand */
+  --h-brand:       #3C3C3C;
+  --h-brand-light: #EEF2FA;
+  --h-brand-text:  #ffffff;
 
   /* Surfaces */
-  --h-surface:        #fafafa;
+  --h-surface:        #F2F5FA;
   --h-surface-raised: #ffffff;
-  --h-surface-subtle: #f5f5f5;
+  --h-surface-subtle: #EEF2FA;
 
   /* Borders */
-  --h-border:        var(--mantine-color-gray-3);
-  --h-border-strong: var(--mantine-color-gray-5);
+  --h-border:        #DDE1EC;
+  --h-border-strong: #9A9A9A;
 
   /* Text */
-  --h-text:          var(--mantine-color-gray-9);
-  --h-text-subtle:   var(--mantine-color-gray-6);
-  --h-text-disabled: var(--mantine-color-gray-4);
-  --h-text-inverse:  var(--mantine-color-white);
+  --h-text:          #111111;
+  --h-text-subtle:   #555555;
+  --h-text-disabled: #9A9A9A;
+  --h-text-inverse:  #ffffff;
 
   /* Status — functional traffic-light (cell consumption + margin) */
   --h-success:    var(--mantine-color-green-7);
