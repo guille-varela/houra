@@ -1,0 +1,462 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import {
+  Stack,
+  Group,
+  Text,
+  Button,
+  TextInput,
+  Select,
+  NumberInput,
+  Alert,
+  Badge,
+  ActionIcon,
+  Divider,
+  Modal,
+} from '@mantine/core'
+import { IconPlus, IconTrash, IconCalendar } from '@tabler/icons-react'
+import {
+  addProposalPhase,
+  deleteProposalPhase,
+  addStaffingLine,
+  deleteStaffingLine,
+} from '@/actions/proposals'
+
+const AREA_OPTIONS = [
+  { value: 'research', label: 'Research' },
+  { value: 'ux', label: 'UX' },
+  { value: 'ui', label: 'UI' },
+]
+
+const ROLE_OPTIONS = [
+  { value: 'head', label: 'Head' },
+  { value: 'lead', label: 'Lead' },
+  { value: 'senior', label: 'Senior' },
+  { value: 'mid', label: 'Mid' },
+  { value: 'junior', label: 'Junior' },
+  { value: 'trainee', label: 'Trainee' },
+]
+
+type Phase = {
+  id: string
+  name: string
+  billingAmount: string | null
+  deliveryDate: string | null
+  sortOrder: string
+}
+
+type StaffingLine = {
+  id: string
+  phaseId: string | null
+  staffingType: 'person' | 'role'
+  personId: string | null
+  roleCategory: string | null
+  area: string
+  estimatedHours: string
+}
+
+type Person = {
+  id: string
+  name: string
+  professionalCategory: string
+}
+
+type Props = {
+  proposalId: string
+  phases: Phase[]
+  staffing: StaffingLine[]
+  people: Person[]
+  billingModel: string
+}
+
+export default function StaffingTab({
+  proposalId,
+  phases: initialPhases,
+  staffing: initialStaffing,
+  people,
+  billingModel,
+}: Props) {
+  const [phases, setPhases] = useState<Phase[]>(initialPhases)
+  const [staffing, setStaffing] = useState<StaffingLine[]>(initialStaffing)
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  // Add phase form state
+  const [phaseModalOpen, setPhaseModalOpen] = useState(false)
+  const [newPhaseName, setNewPhaseName] = useState('')
+  const [newPhaseDelivery, setNewPhaseDelivery] = useState('')
+  const [newPhaseBilling, setNewPhaseBilling] = useState<number | ''>('')
+
+  // Add staffing line form state
+  const [staffingModalOpen, setStaffingModalOpen] = useState(false)
+  const [newLinePhase, setNewLinePhase] = useState<string | null>(null)
+  const [newLineType, setNewLineType] = useState<string | null>('role')
+  const [newLineArea, setNewLineArea] = useState<string | null>(null)
+  const [newLineRole, setNewLineRole] = useState<string | null>(null)
+  const [newLinePerson, setNewLinePerson] = useState<string | null>(null)
+  const [newLineHours, setNewLineHours] = useState<number | ''>(40)
+
+  function handleAddPhase() {
+    if (!newPhaseName.trim()) return
+    setError(null)
+    startTransition(async () => {
+      try {
+        const result = await addProposalPhase(proposalId, {
+          name: newPhaseName.trim(),
+          billingAmount: typeof newPhaseBilling === 'number' ? newPhaseBilling : null,
+          deliveryDate: newPhaseDelivery || null,
+        })
+        setPhases((prev) => [
+          ...prev,
+          {
+            id: result.id,
+            name: newPhaseName.trim(),
+            billingAmount: typeof newPhaseBilling === 'number' ? newPhaseBilling.toString() : null,
+            deliveryDate: newPhaseDelivery || null,
+            sortOrder: String(prev.length),
+          },
+        ])
+        setPhaseModalOpen(false)
+        setNewPhaseName('')
+        setNewPhaseDelivery('')
+        setNewPhaseBilling('')
+      } catch {
+        setError('Error al añadir la fase.')
+      }
+    })
+  }
+
+  function handleDeletePhase(phaseId: string) {
+    setError(null)
+    startTransition(async () => {
+      const result = await deleteProposalPhase(phaseId)
+      if (result.ok) {
+        setPhases((prev) => prev.filter((p) => p.id !== phaseId))
+        setStaffing((prev) => prev.filter((s) => s.phaseId !== phaseId))
+      } else {
+        setError(result.error)
+      }
+    })
+  }
+
+  function handleAddStaffing() {
+    if (!newLineArea || !newLineHours) return
+    setError(null)
+    startTransition(async () => {
+      try {
+        const result = await addStaffingLine(proposalId, {
+          phaseId: newLinePhase,
+          staffingType: newLineType === 'person' ? 'person' : 'role',
+          personId: newLineType === 'person' ? newLinePerson : null,
+          roleCategory: newLineType === 'role' ? newLineRole : null,
+          area: newLineArea,
+          estimatedHours: typeof newLineHours === 'number' ? newLineHours : 0,
+        })
+        setStaffing((prev) => [
+          ...prev,
+          {
+            id: result.id,
+            phaseId: newLinePhase,
+            staffingType: newLineType === 'person' ? 'person' : 'role',
+            personId: newLineType === 'person' ? newLinePerson : null,
+            roleCategory: newLineType === 'role' ? newLineRole : null,
+            area: newLineArea,
+            estimatedHours: String(newLineHours),
+          },
+        ])
+        setStaffingModalOpen(false)
+        setNewLinePhase(null)
+        setNewLineArea(null)
+        setNewLineRole(null)
+        setNewLinePerson(null)
+        setNewLineHours(40)
+      } catch {
+        setError('Error al añadir la línea.')
+      }
+    })
+  }
+
+  function handleDeleteStaffing(lineId: string) {
+    setError(null)
+    startTransition(async () => {
+      const result = await deleteStaffingLine(lineId)
+      if (result.ok) {
+        setStaffing((prev) => prev.filter((s) => s.id !== lineId))
+      } else {
+        setError(result.error)
+      }
+    })
+  }
+
+  function getPersonName(personId: string) {
+    return people.find((p) => p.id === personId)?.name ?? '—'
+  }
+
+  const phaseOptions = [
+    { value: '__none__', label: 'Sin fase' },
+    ...phases.map((p) => ({ value: p.id, label: p.name })),
+  ]
+
+  const totalHours = staffing.reduce((acc, s) => acc + Number(s.estimatedHours), 0)
+
+  return (
+    <Stack gap="xl">
+      {error && (
+        <Alert color="red" variant="light" withCloseButton onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Phases section */}
+      <Stack gap="sm">
+        <Group justify="space-between" align="center">
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+            Fases {phases.length > 0 && `(${phases.length})`}
+          </Text>
+          <Button
+            size="xs"
+            variant="light"
+            leftSection={<IconPlus size={12} />}
+            onClick={() => setPhaseModalOpen(true)}
+          >
+            Añadir fase
+          </Button>
+        </Group>
+
+        {phases.length === 0 ? (
+          <Text size="sm" c="dimmed">Sin fases definidas. Las fases permiten organizar el trabajo en entregables.</Text>
+        ) : (
+          <Stack gap={4}>
+            {phases.map((phase) => (
+              <Group
+                key={phase.id}
+                justify="space-between"
+                align="center"
+                p="sm"
+                style={{
+                  borderRadius: 8,
+                  border: '1px solid var(--h-border)',
+                  background: 'var(--h-surface-raised)',
+                }}
+              >
+                <Group gap="sm">
+                  <Text size="sm" fw={500} style={{ color: 'var(--h-text)' }}>{phase.name}</Text>
+                  {phase.deliveryDate && (
+                    <Badge size="xs" variant="light" color="gray" leftSection={<IconCalendar size={10} />}>
+                      {phase.deliveryDate}
+                    </Badge>
+                  )}
+                  {phase.billingAmount && billingModel === 'by_phase' && (
+                    <Badge size="xs" variant="light" color="teal">
+                      {Number(phase.billingAmount).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}
+                    </Badge>
+                  )}
+                </Group>
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  size="sm"
+                  disabled={isPending}
+                  onClick={() => handleDeletePhase(phase.id)}
+                >
+                  <IconTrash size={14} />
+                </ActionIcon>
+              </Group>
+            ))}
+          </Stack>
+        )}
+      </Stack>
+
+      <Divider />
+
+      {/* Staffing section */}
+      <Stack gap="sm">
+        <Group justify="space-between" align="center">
+          <Group gap="sm">
+            <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+              Equipo estimado
+            </Text>
+            {totalHours > 0 && (
+              <Badge size="sm" variant="light" color="blue">{totalHours}h total</Badge>
+            )}
+          </Group>
+          <Button
+            size="xs"
+            variant="light"
+            leftSection={<IconPlus size={12} />}
+            onClick={() => setStaffingModalOpen(true)}
+          >
+            Añadir línea
+          </Button>
+        </Group>
+
+        {staffing.length === 0 ? (
+          <Text size="sm" c="dimmed">Sin líneas de staffing. Añade perfiles o personas estimadas para el proyecto.</Text>
+        ) : (
+          <Stack gap={4}>
+            {staffing.map((line) => {
+              const phaseName = line.phaseId ? phases.find((p) => p.id === line.phaseId)?.name : null
+              return (
+                <Group
+                  key={line.id}
+                  justify="space-between"
+                  align="center"
+                  p="sm"
+                  style={{
+                    borderRadius: 8,
+                    border: '1px solid var(--h-border)',
+                    background: 'var(--h-surface-raised)',
+                  }}
+                >
+                  <Group gap="xs" wrap="wrap">
+                    <Badge size="sm" variant="light" color="gray">{line.area.toUpperCase()}</Badge>
+                    <Text size="sm" style={{ color: 'var(--h-text)' }}>
+                      {line.staffingType === 'person'
+                        ? getPersonName(line.personId!)
+                        : (line.roleCategory ?? 'Perfil genérico')}
+                    </Text>
+                    <Badge size="xs" variant="outline" color="blue">{line.estimatedHours}h</Badge>
+                    {phaseName && (
+                      <Badge size="xs" variant="light" color="gray">{phaseName}</Badge>
+                    )}
+                    {line.staffingType === 'role' && (
+                      <Badge size="xs" variant="dot" color="gray">Perfil</Badge>
+                    )}
+                  </Group>
+                  <ActionIcon
+                    variant="subtle"
+                    color="red"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => handleDeleteStaffing(line.id)}
+                  >
+                    <IconTrash size={14} />
+                  </ActionIcon>
+                </Group>
+              )
+            })}
+          </Stack>
+        )}
+      </Stack>
+
+      {/* Add phase modal */}
+      <Modal
+        opened={phaseModalOpen}
+        onClose={() => setPhaseModalOpen(false)}
+        title="Añadir fase"
+        size="sm"
+      >
+        <Stack gap="md">
+          <TextInput
+            label="Nombre"
+            placeholder="Fase 1 — Discovery…"
+            value={newPhaseName}
+            onChange={(e) => setNewPhaseName(e.currentTarget.value)}
+            autoFocus
+          />
+          <TextInput
+            label="Fecha de entrega"
+            placeholder="YYYY-MM-DD"
+            value={newPhaseDelivery}
+            onChange={(e) => setNewPhaseDelivery(e.currentTarget.value)}
+            leftSection={<IconCalendar size={14} />}
+          />
+          {billingModel === 'by_phase' && (
+            <NumberInput
+              label="Importe de facturación (€)"
+              placeholder="0"
+              value={newPhaseBilling}
+              onChange={(v) => setNewPhaseBilling(typeof v === 'number' ? v : '')}
+              min={0}
+              prefix="€"
+            />
+          )}
+          <Group justify="flex-end" gap="sm">
+            <Button variant="subtle" color="gray" onClick={() => setPhaseModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button loading={isPending} disabled={!newPhaseName.trim()} onClick={handleAddPhase}>
+              Añadir
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      {/* Add staffing line modal */}
+      <Modal
+        opened={staffingModalOpen}
+        onClose={() => setStaffingModalOpen(false)}
+        title="Añadir línea de equipo"
+        size="sm"
+      >
+        <Stack gap="md">
+          {phases.length > 0 && (
+            <Select
+              label="Fase (opcional)"
+              placeholder="Sin fase"
+              data={phaseOptions}
+              value={newLinePhase ?? '__none__'}
+              onChange={(v) => setNewLinePhase(v === '__none__' ? null : v)}
+              clearable
+            />
+          )}
+          <Select
+            label="Tipo"
+            data={[
+              { value: 'role', label: 'Perfil genérico' },
+              { value: 'person', label: 'Persona concreta' },
+            ]}
+            value={newLineType}
+            onChange={setNewLineType}
+          />
+          <Select
+            label="Área"
+            data={AREA_OPTIONS}
+            value={newLineArea}
+            onChange={setNewLineArea}
+          />
+          {newLineType === 'role' && (
+            <Select
+              label="Categoría"
+              placeholder="Cualquier perfil"
+              data={ROLE_OPTIONS}
+              value={newLineRole}
+              onChange={setNewLineRole}
+              clearable
+            />
+          )}
+          {newLineType === 'person' && (
+            <Select
+              label="Persona"
+              placeholder="Selecciona…"
+              data={people.map((p) => ({ value: p.id, label: `${p.name} (${p.professionalCategory})` }))}
+              value={newLinePerson}
+              onChange={setNewLinePerson}
+              searchable
+            />
+          )}
+          <NumberInput
+            label="Horas estimadas"
+            value={newLineHours}
+            onChange={(v) => setNewLineHours(typeof v === 'number' ? v : '')}
+            min={1}
+            suffix="h"
+          />
+          <Group justify="flex-end" gap="sm">
+            <Button variant="subtle" color="gray" onClick={() => setStaffingModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              loading={isPending}
+              disabled={!newLineArea || !newLineHours}
+              onClick={handleAddStaffing}
+            >
+              Añadir
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </Stack>
+  )
+}

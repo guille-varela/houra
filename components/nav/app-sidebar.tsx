@@ -14,6 +14,7 @@ import {
   IconBuilding,
   IconSettings,
   IconCommand,
+  IconFileText,
 } from '@tabler/icons-react'
 import RoleSwitcher from './role-switcher'
 import ThemeToggle from './theme-toggle'
@@ -37,6 +38,7 @@ const NAV_TOP: NavItem[] = [
   { href: '/projects', label: 'Proyectos', Icon: IconFolders, roles: ['admin', 'manager'] },
   { href: '/dashboard', label: 'Dashboard', Icon: IconLayoutDashboard, roles: ['admin', 'manager'] },
   { href: '/workspaces', label: 'Workspaces', Icon: IconBriefcase, roles: ['admin', 'manager'] },
+  { href: '/proposals', label: 'Propuestas', Icon: IconFileText, roles: ['admin', 'manager'] },
   { href: '/clients', label: 'Clientes', Icon: IconBuilding, roles: ['admin', 'manager'] },
   { href: '/people', label: 'Personas', Icon: IconUsers, roles: ['admin'] },
   { href: '/time-off', label: 'Libre', Icon: IconUmbrella },
