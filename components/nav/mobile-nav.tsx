@@ -46,8 +46,8 @@ export default function MobileNav({ appRole }: Props) {
         bottom: 0,
         left: 0,
         right: 0,
-        borderTop: '1px solid var(--mantine-color-gray-2)',
-        background: 'rgba(255,255,255,0.92)',
+        borderTop: '1px solid var(--h-border)',
+        background: 'var(--h-surface-raised)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         zIndex: 100,
@@ -66,14 +66,13 @@ export default function MobileNav({ appRole }: Props) {
               <Icon
                 size={20}
                 stroke={active ? 2 : 1.5}
-                color={active ? 'var(--mantine-color-dark-9)' : 'var(--mantine-color-gray-5)'}
+                color={active ? 'var(--h-text)' : 'var(--h-text-disabled)'}
                 style={{ display: 'block', margin: '0 auto 2px' }}
               />
               <Text
                 size="xs"
                 fw={active ? 600 : 400}
-                c={active ? 'dark.9' : 'dimmed'}
-                style={{ lineHeight: 1 }}
+                style={{ lineHeight: 1, color: active ? 'var(--h-text)' : 'var(--h-text-disabled)' }}
               >
                 {label}
               </Text>

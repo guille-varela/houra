@@ -10,6 +10,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.0] — 2026-05-28
+
+### Sprint 1 — Dark mode + sidebar icon+text + ⌘K search
+
+Visual and UX refresh inspired by Magnific's layout. Sidebar expands to icon+text, dark mode works out of the box, and a global command palette lets you jump anywhere fast.
+
+### Added
+
+- **Dark mode** — full `[data-mantine-color-scheme="dark"]` token set (`--h-*`). Respects OS preference on first load; toggle persists via Mantine's color scheme storage
+- **ThemeToggle** — `components/nav/theme-toggle.tsx`: moon/sun button in the sidebar footer; uses `useMantineColorScheme`
+- **Expanded sidebar** — `components/nav/app-sidebar.tsx` rewritten from 60px icon-only to 220px icon+text. No tooltips needed. Logo shows "H" badge + "houra" wordmark
+- **Search shortcut bar** in sidebar (button + ⌘K hint) that opens the command palette
+- **Command palette** — `components/search/command-palette.tsx`: ⌘K / custom event `houra:search`. Modal with debounced search, keyboard navigation (↑↓↵), results for projects and people
+- `app/api/search/route.ts` — authenticated search endpoint: queries projects + people by name/email with `ilike`, respects `organizationId`, contributors only see projects
+
+### Changed
+
+- `app/globals.css` — `body` background and color now use `var(--h-surface)` / `var(--h-text)` instead of hardcoded hex values
+- `app/layout.tsx` — `defaultColorScheme` changed from `"light"` to `"auto"` (OS preference)
+- `app/(app)/layout.tsx` — shell and main panel use `var(--h-surface)` / `var(--h-surface-raised)`; added `<CommandPalette />` to the authenticated shell
+- `lib/theme.ts` — `Card` and `Paper` `backgroundColor` now use `var(--h-surface-raised)` for dark mode compatibility
+- `components/nav/mobile-nav.tsx` — border and background use `var(--h-border)` / `var(--h-surface-raised)`; icon/text colors use `var(--h-text)` / `var(--h-text-disabled)`
+
+[1.0.0]: https://github.com/guille-varela/houra/releases/tag/v1.0.0
+
+---
+
 ## [0.9.0] — 2026-05-28
 
 ### Phase 09 — Brand tokens + visual identity

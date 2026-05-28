@@ -32,13 +32,13 @@ html {
 }
 
 body {
-  background: #F2F5FA;
-  color: #111111;
+  background: var(--h-surface);
+  color: var(--h-text);
 }
 
 /* Páginas que deben tener fondo blanco completo (auth, viewer público) */
 .bg-white-page {
-  background: #ffffff;
+  background: var(--h-surface-raised);
 }
 
 /* Focus ring — minimal */
@@ -92,6 +92,28 @@ body {
   /* Typography */
   --h-font-sans: var(--mantine-font-family);
   --h-font-mono: var(--mantine-font-family-monospace);
+}
+
+/* ─── Dark mode overrides ───────────────────────────────────────────────────
+   Applied automatically by Mantine's ColorSchemeScript when the user
+   selects dark mode (or OS preference resolves to dark).
+   ─────────────────────────────────────────────────────────────────────────── */
+[data-mantine-color-scheme="dark"] {
+  --h-brand:       #5B8EFF;
+  --h-brand-light: #1A2440;
+  --h-brand-text:  #ffffff;
+
+  --h-surface:        #0F1117;
+  --h-surface-raised: #1E2536;
+  --h-surface-subtle: #161B25;
+
+  --h-border:        #2A3347;
+  --h-border-strong: #3D4F6E;
+
+  --h-text:          #E8EDF5;
+  --h-text-subtle:   #7A8BA8;
+  --h-text-disabled: #3D4F6E;
+  --h-text-inverse:  #111111;
 }
 
 /* ─── Tailwind 4 custom utilities ───────────────────────────────────────────

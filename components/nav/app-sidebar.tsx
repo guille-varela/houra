@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Tooltip, UnstyledButton } from '@mantine/core'
+import { UnstyledButton, Tooltip } from '@mantine/core'
 import {
   IconSun,
   IconCalendarWeek,
@@ -12,19 +12,20 @@ import {
   IconBriefcase,
   IconUsers,
   IconSettings,
+  IconCommand,
 } from '@tabler/icons-react'
+import RoleSwitcher from './role-switcher'
+import ThemeToggle from './theme-toggle'
 
-/** Elemento de navegación de la barra lateral */
+function openCommandPalette() {
+  window.dispatchEvent(new CustomEvent('houra:search'))
+}
+
 type NavItem = {
-  /** Ruta de destino del enlace */
   href: string
-  /** Etiqueta visible en el tooltip */
   label: string
-  /** Componente de icono de Tabler */
   Icon: React.ComponentType<{ size: number; strokeWidth: number; style?: React.CSSProperties }>
-  /** Roles que pueden ver este ítem; si se omite, es visible para todos */
   roles?: string[]
-  /** Si es true, la ruta debe coincidir exactamente para marcar el ítem como activo */
   exact?: boolean
 }
 
@@ -43,45 +44,47 @@ const NAV_BOTTOM: NavItem[] = [
   { href: '/settings', label: 'Configuración', Icon: IconSettings, roles: ['admin'] },
 ]
 
-/** Propiedades del componente AppSidebar */
 type Props = {
-  /** Rol del usuario en la aplicación, determina los ítems visibles */
   appRole: string
-  /** Nombre completo de la persona, usado para el monograma de usuario */
+  displayRole: string
   personName: string
 }
 
-function NavBtn({
-  item,
-  active,
-}: {
-  item: NavItem
-  active: boolean
-}) {
+function NavBtn({ item, active }: { item: NavItem; active: boolean }) {
   return (
-    <Tooltip label={item.label} position="right" withArrow offset={10} fz="xs">
-      <UnstyledButton
-        component={Link}
-        href={item.href}
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 8,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: active ? '#EEF2FA' : 'transparent',
-          transition: 'background 0.1s',
-          flexShrink: 0,
-        }}
-      >
-        <item.Icon
-          size={18}
-          strokeWidth={active ? 2 : 1.5}
-          style={{ color: active ? '#111111' : '#9A9A9A' }}
-        />
-      </UnstyledButton>
-    </Tooltip>
+    <UnstyledButton
+      component={Link}
+      href={item.href}
+      style={{
+        width: '100%',
+        height: 34,
+        borderRadius: 8,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '0 10px',
+        background: active ? 'var(--h-surface-subtle)' : 'transparent',
+        transition: 'background 0.1s',
+        flexShrink: 0,
+      }}
+    >
+      <item.Icon
+        size={16}
+        strokeWidth={active ? 2 : 1.5}
+        style={{ color: active ? 'var(--h-text)' : 'var(--h-text-disabled)', flexShrink: 0 }}
+      />
+      <span style={{
+        fontSize: 13,
+        fontWeight: active ? 500 : 400,
+        color: active ? 'var(--h-text)' : 'var(--h-text-subtle)',
+        letterSpacing: '-0.01em',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }}>
+        {item.label}
+      </span>
+    </UnstyledButton>
   )
 }
 
@@ -95,11 +98,11 @@ function Monogram({ name }: { name: string }) {
   return (
     <div
       style={{
-        width: 28,
-        height: 28,
-        borderRadius: 8,
-        background: '#111',
-        color: 'white',
+        width: 26,
+        height: 26,
+        borderRadius: 7,
+        background: 'var(--h-text)',
+        color: 'var(--h-text-inverse)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -114,8 +117,7 @@ function Monogram({ name }: { name: string }) {
   )
 }
 
-/** Barra lateral de navegación vertical de escritorio con ítems filtrados por rol */
-export default function AppSidebar({ appRole, personName }: Props) {
+export default function AppSidebar({ appRole, displayRole, personName }: Props) {
   const pathname = usePathname()
 
   function isActive(item: NavItem) {
@@ -125,83 +127,127 @@ export default function AppSidebar({ appRole, personName }: Props) {
 
   function visible(item: NavItem) {
     if (!item.roles) return true
-    return item.roles.includes(appRole)
+    return item.roles.includes(displayRole)
   }
 
   const topItems = NAV_TOP.filter(visible)
   const bottomItems = NAV_BOTTOM.filter(visible)
+  const shortName = personName.split(' ').slice(0, 2).join(' ')
 
   return (
     <aside
       style={{
-        width: 60,
+        width: 220,
         flexShrink: 0,
-        background: 'white',
+        background: 'var(--h-surface-raised)',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        paddingTop: 16,
-        paddingBottom: 16,
-        gap: 0,
+        padding: '16px 12px',
+        borderRight: '1px solid var(--h-border)',
       }}
     >
       {/* Logo */}
-      <div
-        style={{
-          width: 32,
-          height: 32,
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, padding: '0 4px' }}>
+        <div style={{
+          width: 24,
+          height: 24,
+          background: 'var(--h-text)',
+          color: 'var(--h-text-inverse)',
+          borderRadius: 6,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: 24,
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: '-0.04em',
           flexShrink: 0,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 16,
-            fontWeight: 800,
-            letterSpacing: '-0.04em',
-            color: '#111111',
-            fontFamily: 'var(--font-dm-sans, system-ui)',
-          }}
-        >
+          fontFamily: 'var(--font-dm-sans, system-ui)',
+        }}>
           H
+        </div>
+        <span style={{
+          fontSize: 14,
+          fontWeight: 700,
+          letterSpacing: '-0.03em',
+          color: 'var(--h-text)',
+          fontFamily: 'var(--font-dm-sans, system-ui)',
+        }}>
+          houra
         </span>
       </div>
 
-      {/* Top nav items */}
-      <div
+      {/* Search shortcut */}
+      <UnstyledButton
+        onClick={openCommandPalette}
         style={{
+          width: '100%',
+          height: 32,
+          borderRadius: 8,
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          gap: 4,
-          flex: 1,
+          gap: 8,
+          padding: '0 10px',
+          background: 'var(--h-surface-subtle)',
+          border: '1px solid var(--h-border)',
+          marginBottom: 12,
+          cursor: 'text',
         }}
       >
+        <IconCommand size={13} strokeWidth={1.5} style={{ color: 'var(--h-text-disabled)', flexShrink: 0 }} />
+        <span style={{ fontSize: 12, color: 'var(--h-text-disabled)', flex: 1 }}>Buscar…</span>
+        <span style={{
+          fontSize: 10,
+          color: 'var(--h-text-disabled)',
+          background: 'var(--h-surface-raised)',
+          border: '1px solid var(--h-border)',
+          borderRadius: 4,
+          padding: '1px 5px',
+          letterSpacing: '0.02em',
+        }}>⌘K</span>
+      </UnstyledButton>
+
+      {/* Top nav items */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
         {topItems.map((item) => (
           <NavBtn key={item.href} item={item} active={isActive(item)} />
         ))}
       </div>
 
-      {/* Bottom: settings + user */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
+      {/* Bottom section */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {bottomItems.map((item) => (
           <NavBtn key={item.href} item={item} active={isActive(item)} />
         ))}
-        <Tooltip label={personName} position="right" withArrow offset={10} fz="xs">
-          <div style={{ cursor: 'default' }}>
-            <Monogram name={personName} />
+
+        {appRole === 'admin' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0' }}>
+            <RoleSwitcher currentDisplay={displayRole} actualRole={appRole} />
+            <span style={{ fontSize: 12, color: 'var(--h-text-disabled)' }}>
+              {displayRole !== appRole ? `Vista: ${displayRole}` : 'Ver como…'}
+            </span>
           </div>
-        </Tooltip>
+        )}
+
+        <div style={{ height: 1, background: 'var(--h-border)', margin: '6px 0' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 4px' }}>
+          <Tooltip label={personName} position="right" withArrow offset={10} fz="xs">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, cursor: 'default' }}>
+              <Monogram name={personName} />
+              <span style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'var(--h-text)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {shortName}
+              </span>
+            </div>
+          </Tooltip>
+          <ThemeToggle />
+        </div>
       </div>
     </aside>
   )

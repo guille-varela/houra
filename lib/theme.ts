@@ -61,12 +61,11 @@ export const theme: MantineThemeOverride = createTheme({
     ActionIcon: {
       defaultProps: { variant: 'subtle', color: 'gray' },
     },
-    // Cards: white, no border, shadow visible enough over #fafafa shell
     Card: {
       defaultProps: { padding: 'lg', radius: 'lg' },
       styles: {
         root: {
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--h-surface-raised)',
           boxShadow: '0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)',
           border: 'none',
         },
@@ -76,7 +75,7 @@ export const theme: MantineThemeOverride = createTheme({
       defaultProps: { radius: 'lg' },
       styles: {
         root: {
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--h-surface-raised)',
           boxShadow: '0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)',
           border: 'none',
         },

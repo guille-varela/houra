@@ -1,11 +1,21 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { getCurrentPerson } from '@/lib/auth-helpers'
 import MobileNav from '@/components/nav/mobile-nav'
 import AppSidebar from '@/components/nav/app-sidebar'
+import CommandPalette from '@/components/search/command-palette'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const person = await getCurrentPerson()
   if (!person) redirect('/login')
+
+  const cookieStore = await cookies()
+  const previewRole = person.appRole === 'admin'
+    ? (cookieStore.get('_h_preview_role')?.value ?? 'admin')
+    : person.appRole
+  const displayRole = ['admin', 'manager', 'contributor'].includes(previewRole)
+    ? previewRole
+    : person.appRole
 
   return (
     <>
@@ -14,12 +24,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         style={{
           display: 'flex',
           height: '100vh',
-          background: '#F2F5FA',
+          background: 'var(--h-surface)',
           overflow: 'hidden',
         }}
         className="hidden md:flex"
       >
-        <AppSidebar appRole={person.appRole} personName={person.name} />
+        <AppSidebar appRole={person.appRole} displayRole={displayRole} personName={person.name} />
         <div
           style={{
             flex: 1,
@@ -31,7 +41,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <main
             style={{
               flex: 1,
-              background: 'white',
+              background: 'var(--h-surface-raised)',
               borderRadius: 14,
               overflowY: 'auto',
             }}
@@ -44,8 +54,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {/* Mobile shell */}
       <div className="flex flex-col min-h-screen md:hidden">
         <main className="flex-1 pb-20">{children}</main>
-        <MobileNav appRole={person.appRole} />
+        <MobileNav appRole={displayRole} />
       </div>
+
+      <CommandPalette />
     </>
   )
 }
