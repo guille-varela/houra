@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useMemo } from 'react'
 import {
   Stack,
   Group,
@@ -14,14 +14,17 @@ import {
   ActionIcon,
   Divider,
   Modal,
+  Progress,
+  Card,
 } from '@mantine/core'
-import { IconPlus, IconTrash, IconCalendar } from '@tabler/icons-react'
+import { IconPlus, IconTrash, IconCalendar, IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react'
 import {
   addProposalPhase,
   deleteProposalPhase,
   addStaffingLine,
   deleteStaffingLine,
 } from '@/actions/proposals'
+import { computeFeasibility } from '@/lib/feasibility'
 
 const AREA_OPTIONS = [
   { value: 'research', label: 'Research' },
@@ -68,6 +71,8 @@ type Props = {
   staffing: StaffingLine[]
   people: Person[]
   billingModel: string
+  hoursPerDay: number
+  holidays: string[]
 }
 
 export default function StaffingTab({
@@ -76,6 +81,8 @@ export default function StaffingTab({
   staffing: initialStaffing,
   people,
   billingModel,
+  hoursPerDay,
+  holidays,
 }: Props) {
   const [phases, setPhases] = useState<Phase[]>(initialPhases)
   const [staffing, setStaffing] = useState<StaffingLine[]>(initialStaffing)
@@ -340,6 +347,14 @@ export default function StaffingTab({
         )}
       </Stack>
 
+      {/* Feasibility section */}
+      <FeasibilityWidget
+        phases={phases}
+        staffing={staffing}
+        hoursPerDay={hoursPerDay}
+        holidays={holidays}
+      />
+
       {/* Add phase modal */}
       <Modal
         opened={phaseModalOpen}
@@ -458,5 +473,143 @@ export default function StaffingTab({
         </Stack>
       </Modal>
     </Stack>
+  )
+}
+
+// ─── Feasibility widget ───────────────────────────────────────────────────────
+
+function FeasibilityWidget({
+  phases,
+  staffing,
+  hoursPerDay,
+  holidays,
+}: {
+  phases: Phase[]
+  staffing: StaffingLine[]
+  hoursPerDay: number
+  holidays: string[]
+}) {
+  const today = new Date()
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+  const holidaySet = useMemo(() => new Set(holidays), [holidays])
+
+  const totalHours = staffing.reduce((acc, s) => acc + parseFloat(s.estimatedHours), 0)
+
+  // Latest delivery date across all phases
+  const latestDeadline = useMemo(() => {
+    const dates = phases.map((p) => p.deliveryDate).filter(Boolean) as string[]
+    if (dates.length === 0) return null
+    return dates.sort().at(-1) ?? null
+  }, [phases])
+
+  const result = useMemo(() => {
+    if (!latestDeadline || totalHours === 0) return null
+    return computeFeasibility({
+      deadline: latestDeadline,
+      today: todayIso,
+      totalEstimatedHours: totalHours,
+      staffingLines: Math.max(staffing.length, 1),
+      hoursPerDay,
+      holidaySet,
+    })
+  }, [latestDeadline, totalHours, staffing.length, hoursPerDay, holidaySet, todayIso])
+
+  if (staffing.length === 0 || totalHours === 0) return null
+
+  const loadPct = result ? Math.min((result.fteNeeded / Math.max(result.staffingLines, 1)) * 100, 200) : 0
+  const barColor = result?.ok ? 'green' : 'red'
+
+  return (
+    <>
+      <Divider />
+      <Stack gap="sm">
+        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+          Viabilidad del plazo
+        </Text>
+        <Text size="xs" c="dimmed">
+          Basado en {hoursPerDay}h/día útil · festivos Madrid (ES-MD)
+        </Text>
+
+        {!latestDeadline ? (
+          <Text size="sm" c="dimmed">
+            Añade una fecha de entrega a alguna fase para ver si el plazo es viable.
+          </Text>
+        ) : result ? (
+          <Card
+            p="md"
+            style={{
+              border: `1px solid ${result.ok ? 'var(--mantine-color-green-3)' : 'var(--mantine-color-red-3)'}`,
+              background: result.ok ? 'var(--mantine-color-green-0)' : 'var(--mantine-color-red-0)',
+            }}
+          >
+            <Stack gap="sm">
+              <Group justify="space-between" align="flex-start">
+                <Group gap="xs">
+                  {result.ok
+                    ? <IconCircleCheck size={16} style={{ color: 'var(--mantine-color-green-6)', flexShrink: 0 }} />
+                    : <IconAlertTriangle size={16} style={{ color: 'var(--mantine-color-red-6)', flexShrink: 0 }} />
+                  }
+                  <Text size="sm" fw={600} c={result.ok ? 'green' : 'red'}>
+                    {result.ok ? 'Plazo viable' : 'Plazo ajustado'}
+                  </Text>
+                </Group>
+                <Badge size="sm" variant="light" color="gray">
+                  Entrega: {latestDeadline}
+                </Badge>
+              </Group>
+
+              <Group gap="xl">
+                <Stack gap={2}>
+                  <Text size="xs" c="dimmed">Días hábiles</Text>
+                  <Text size="sm" fw={600}>{result.workingDays} días</Text>
+                </Stack>
+                <Stack gap={2}>
+                  <Text size="xs" c="dimmed">Capacidad (1 perfil)</Text>
+                  <Text size="sm" fw={600}>{result.availableHours.toFixed(0)}h</Text>
+                </Stack>
+                <Stack gap={2}>
+                  <Text size="xs" c="dimmed">Horas estimadas</Text>
+                  <Text size="sm" fw={600}>{totalHours.toFixed(0)}h</Text>
+                </Stack>
+                <Stack gap={2}>
+                  <Text size="xs" c="dimmed">Perfiles en paralelo</Text>
+                  <Text size="sm" fw={600}>{result.staffingLines} definidos</Text>
+                </Stack>
+              </Group>
+
+              <Stack gap={4}>
+                <Group justify="space-between">
+                  <Text size="xs" c="dimmed">
+                    Carga del equipo: {(result.fteNeeded * 100).toFixed(0)}%
+                    {result.fteNeeded > 1 && ` · necesita ${Math.ceil(result.fteNeeded)} FTE`}
+                  </Text>
+                  {result.surplus >= 0 ? (
+                    <Text size="xs" c="green">{result.surplus.toFixed(0)}h de margen</Text>
+                  ) : (
+                    <Text size="xs" c="red">
+                      Faltan {Math.abs(result.surplus).toFixed(0)}h · {result.daysShort} días extra (1 perfil)
+                    </Text>
+                  )}
+                </Group>
+                <Progress
+                  value={Math.min((result.fteNeeded / Math.max(result.staffingLines, 1)) * 100, 100)}
+                  color={barColor}
+                  size="sm"
+                />
+              </Stack>
+
+              {!result.ok && (
+                <Text size="xs" c="red">
+                  Con {result.staffingLines} {result.staffingLines === 1 ? 'perfil' : 'perfiles'} en paralelo,
+                  el proyecto necesita {Math.ceil(result.fteNeeded * result.availableHours / result.staffingLines)}h
+                  por perfil. Considera ampliar el plazo o añadir más perfiles al equipo.
+                </Text>
+              )}
+            </Stack>
+          </Card>
+        ) : null}
+      </Stack>
+    </>
   )
 }

@@ -2,8 +2,8 @@ import { notFound, redirect } from 'next/navigation'
 import { eq, and } from 'drizzle-orm'
 import { Stack, Group, Badge, Text, Card } from '@mantine/core'
 import { db } from '@/lib/db'
-import { requireRole } from '@/lib/auth-helpers'
-import { persons } from '@/db/schema'
+import { requireRole, getOrganizationContext } from '@/lib/auth-helpers'
+import { persons, holidayPresets, organizations } from '@/db/schema'
 import { getProposal, getProposalPhases, getProposalStaffing } from '@/actions/proposals'
 import { getClients } from '@/actions/clients'
 import ProposalTabs from './proposal-tabs'
@@ -42,7 +42,9 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
   const proposal = await getProposal(id)
   if (!proposal) notFound()
 
-  const [phases, staffing, clientList, teamPeople] = await Promise.all([
+  const thisYear = new Date().getFullYear()
+
+  const [phases, staffing, clientList, teamPeople, org, holidayRows] = await Promise.all([
     getProposalPhases(id),
     getProposalStaffing(id),
     getClients(),
@@ -54,7 +56,30 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
       })
       .from(persons)
       .where(eq(persons.organizationId, person.organizationId)),
+    db
+      .select({ defaultWeeklyHours: organizations.defaultWeeklyHours })
+      .from(organizations)
+      .where(eq(organizations.id, person.organizationId))
+      .limit(1)
+      .then((r) => r[0] ?? null),
+    // Fetch current + next year holidays for ES-MD
+    db
+      .select({ dates: holidayPresets.dates, year: holidayPresets.year })
+      .from(holidayPresets)
+      .where(
+        and(
+          eq(holidayPresets.region, 'ES-MD'),
+          // current year and next year
+        ),
+      ),
   ])
+
+  // Build flat holiday set from all fetched years
+  const holidays: string[] = holidayRows.flatMap((r) =>
+    (r.dates as Array<{ date: string }>).map((d) => d.date),
+  )
+  // hoursPerDay = weeklyHours / 5 work days
+  const hoursPerDay = org?.defaultWeeklyHours ? parseFloat(org.defaultWeeklyHours) / 5 : 7.5
 
   const isAdmin = person.appRole === 'admin'
   const activeTab = tab ?? 'summary'
@@ -112,6 +137,8 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
             }))}
             people={teamPeople}
             billingModel={proposal.billingModel}
+            hoursPerDay={hoursPerDay}
+            holidays={holidays}
           />
         }
         margin={<MarginTab proposalId={id} />}
