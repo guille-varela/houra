@@ -33,7 +33,13 @@ function displayName(raw: string): string {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type DayStatus = 'aprobado' | 'pendiente' | 'bloqueado'
+export type DayStatus = 'aprobado' | 'pendiente' | 'bloqueado' | 'baja_paternal'
+
+// Bajas parentales con fecha fija (fuente: RRHH, no Sheet)
+const BAJAS_PARENTALES: Array<{ nameRaw: string; start: string; end: string }> = [
+  { nameRaw: 'Ion Gómez',   start: '2026-09-01', end: '2026-10-26' },
+  { nameRaw: 'Daniel Peña', start: '2026-09-01', end: '2026-10-26' },
+]
 
 export type VacationRange = {
   start: string // YYYY-MM-DD
@@ -289,6 +295,18 @@ function parseData(
       isCro:           CRO_NAMES.has(nameRaw),
       vacations:       groupRanges(vacDays, year),
     })
+  }
+
+  // Inyectar bajas parentales (no están en el Sheet)
+  for (const bp of BAJAS_PARENTALES) {
+    const person = people.find((p) => p.nameRaw === bp.nameRaw)
+    if (!person) continue
+    const [sy, sm, sd] = bp.start.split('-').map(Number)
+    const [ey, em, ed] = bp.end.split('-').map(Number)
+    const startDate = new Date(Date.UTC(sy!, sm! - 1, sd!))
+    const endDate   = new Date(Date.UTC(ey!, em! - 1, ed!))
+    const days      = Math.round((endDate.getTime() - startDate.getTime()) / 86_400_000) + 1
+    person.vacations.push({ start: bp.start, end: bp.end, days, status: 'baja_paternal' })
   }
 
   return people

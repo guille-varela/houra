@@ -85,6 +85,22 @@ function computeOverlaps(people: PersonBalance[], today: string): OverlapWarning
   checkLeadConflicts(LEADS_UX, 'UX')
   checkLeadConflicts(LEADS_UI, 'UI')
 
+  // Regla especial: bajas parentales de lead (no es "coincidencia" entre leads, sino ausencia de cobertura)
+  const allLeads = [...LEADS_UX, ...LEADS_UI]
+  for (const p of people) {
+    if (!allLeads.includes(p.name)) continue
+    for (const v of p.vacations) {
+      if (v.status !== 'baja_paternal') continue
+      if (v.end < today || v.start > windowEnd) continue
+      warnings.push({
+        start: v.start > today ? v.start : today,
+        end:   v.end < windowEnd ? v.end : windowEnd,
+        names: [p.name],
+        reason: '🍼 Baja paternal — lead fuera',
+      })
+    }
+  }
+
   // Regla 2: general — más de 1 persona coincide el mismo día
   const dayMap = new Map<string, string[]>()
   for (const p of people) {

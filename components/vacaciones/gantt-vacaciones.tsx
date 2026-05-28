@@ -314,15 +314,18 @@ export function GanttVacaciones({
                 const w = (ei - si + 1) * COL_W - 6
                 if (w <= 0) return null
 
-                const isAprobado = v.status === 'aprobado'
-                const bg   = isAprobado ? 'var(--mantine-color-green-5)'  : 'var(--mantine-color-yellow-4)'
-                const text = isAprobado ? '#fff' : 'rgba(0,0,0,0.75)'
+                const isAprobado  = v.status === 'aprobado'
+                const isPaternal  = v.status === 'baja_paternal'
+                const bg   = isPaternal  ? 'var(--mantine-color-violet-5)'
+                           : isAprobado  ? 'var(--mantine-color-green-5)'
+                           : 'var(--mantine-color-yellow-4)'
+                const text = isPaternal || isAprobado ? '#fff' : 'rgba(0,0,0,0.75)'
                 const showLabel = w > COL_W * 2
 
                 return (
                   <div
                     key={`${p.name}-bar-${vi}`}
-                    title={`${p.name} · ${v.start} → ${v.end} · ${v.days}d · ${v.status}`}
+                    title={`${p.name} · ${v.start} → ${v.end} · ${v.days}d · ${isPaternal ? 'Baja paternal' : v.status}`}
                     style={{
                       position: 'absolute',
                       left: x,
@@ -340,17 +343,8 @@ export function GanttVacaciones({
                     }}
                   >
                     {showLabel && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: text,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {v.days}d
+                      <span style={{ fontSize: 11, fontWeight: 600, color: text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {isPaternal ? 'Paternal' : `${v.days}d`}
                       </span>
                     )}
                   </div>
