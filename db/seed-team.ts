@@ -66,7 +66,7 @@ async function main() {
     const existing = await db.select().from(persons).where(eq(persons.email, m.email))
     if (existing.length > 0) {
       // Actualizar nombre y password aunque ya exista
-      const hashed = await hashPassword('Gut')
+      const hashed = await hashPassword('@houra')
       await db.update(persons).set({ name: m.name }).where(eq(persons.email, m.email))
       await db.update(user).set({ name: m.name }).where(eq(user.email, m.email))
       const [acc] = await db.select().from(account).where(eq(account.accountId, m.email))
@@ -76,7 +76,7 @@ async function main() {
       continue
     }
 
-    const hashed    = await hashPassword('Gut')
+    const hashed    = await hashPassword('@houra')
     const userId    = generateId()
     const now       = new Date()
 
@@ -106,7 +106,7 @@ async function main() {
   }
 
   console.log(`\nListo: ${created} creados, ${skipped} ya existían.`)
-  console.log('Contraseña: Gut')
+  console.log('Contraseña: @houra')
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })
