@@ -41,6 +41,8 @@ const ROLES: Array<{ email: string; category: Category; area: Area }> = [
   { email: 'josefa.inostroza@houra.com',    category: 'senior', area: 'cro' },
   { email: 'carlos.oa@houra.com',           category: 'senior', area: 'cro' },
   { email: 'emilio.cuchillo@houra.com',     category: 'senior', area: 'cro' },
+  { email: 'agostina.giannelli@houra.com',  category: 'mid',    area: 'cro' },
+  { email: 'joaquin.briceno@houra.com',     category: 'mid',    area: 'cro' },
 ]
 
 async function main() {

@@ -25,7 +25,7 @@ const NAME_MAP: Record<string, string> = {
 
 const BAJA_NAMES      = new Set(['Jessica López'])
 const EXCEDENCIA_NAMES = new Set(['Antonio Díaz'])  // Toni — excedencia desde 2026-05-29
-const CRO_NAMES        = new Set(['Josefa Inostroza', 'Carlos Ochoa', 'Emilio Cuchillo'])
+const CRO_NAMES        = new Set(['Josefa Inostroza', 'Carlos Ochoa', 'Emilio Cuchillo', 'Agostina Giannelli', 'Joaquín Briceño'])
 
 function displayName(raw: string): string {
   return NAME_MAP[raw] ?? raw
