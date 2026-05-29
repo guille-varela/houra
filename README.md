@@ -1,8 +1,8 @@
 # Houra
 
-Internal time tracker for Gut. Tracks hours per project, per person, and per cost matrix (area × role) to give real-time margin visibility.
+Internal time tracker and team visibility tool for Gut. Tracks hours per project, per person, and per cost matrix (area × role) with real-time margin visibility. Includes a full vacation management module with Gantt view, overlap warnings, and Google Sheets/Calendar integration.
 
-> All phases complete — production-ready. Production: [houra.guillermo-varela.workers.dev](https://houra.guillermo-varela.workers.dev)
+> Production: [houra.guillermo-varela.workers.dev](https://houra.guillermo-varela.workers.dev)
 
 ---
 
@@ -11,13 +11,12 @@ Internal time tracker for Gut. Tracks hours per project, per person, and per cos
 | Layer | Technology |
 |-------|-----------|
 | Framework | Next.js 16 (App Router) + React 19 + TypeScript strict |
-| UI | Mantine v9 (wireframe mode) + Tailwind 4 |
+| UI | Mantine v9 + Tailwind 4 |
 | Database | Drizzle ORM + Neon (Postgres serverless) |
 | Auth | Better Auth — email/password + magic link (Resend) |
 | Background jobs | Inngest |
 | PDF export | `@react-pdf/renderer` (⚠ edge limitation — see Known issues) |
 | Deploy | Cloudflare Workers via `@opennextjs/cloudflare` |
-| CI preview | Neon branch per PR (GitHub Actions) |
 
 ---
 
@@ -27,22 +26,16 @@ Internal time tracker for Gut. Tracks hours per project, per person, and per cos
 
 - Node.js 20+
 - pnpm 9+
-- A Neon project (get the `DATABASE_URL` from the Neon dashboard)
+- A Neon project (`DATABASE_URL` from the Neon dashboard)
 
 ### Setup
 
 ```bash
-# 1. Install dependencies
 pnpm install
-
-# 2. Copy env template and fill in values
-cp .env.local.example .env.local
-
-# 3. Push the schema to your dev database
-pnpm db:generate
+cp .env.local.example .env.local   # fill in values
 pnpm db:migrate
-
-# 4. Start the dev server
+pnpm db:seed
+pnpm db:fixtures
 pnpm dev
 ```
 
@@ -53,30 +46,32 @@ Open [http://localhost:3000](http://localhost:3000).
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | Neon connection string |
-| `BETTER_AUTH_URL` | Yes | App base URL (e.g. `http://localhost:3000`) |
+| `BETTER_AUTH_URL` | Yes | App base URL (`http://localhost:3000`) |
 | `BETTER_AUTH_SECRET` | Yes | Random 32-char secret |
 | `NEXT_PUBLIC_BETTER_AUTH_URL` | Yes | App base URL for client-side auth |
 | `RESEND_API_KEY` | Magic link only | Resend API key |
 | `RESEND_FROM_EMAIL` | Magic link only | Sender address |
+| `GOOGLE_SHEETS_CLIENT_EMAIL` | Vacaciones | Service account email |
+| `GOOGLE_SHEETS_PRIVATE_KEY` | Vacaciones | Service account private key |
+| `GOOGLE_SHEETS_SPREADSHEET_ID` | Vacaciones | Target spreadsheet ID |
+| `VACATION_CALENDAR_ICAL_URL` | Vacaciones | Private iCal URL from Google Calendar |
 
 ---
 
 ## Scripts
 
 ```bash
-pnpm dev           # Next.js dev server
-pnpm build         # Standard Next.js build
-pnpm build:cf      # Cloudflare Workers build (opennextjs-cloudflare)
-pnpm preview:cf    # Local Cloudflare Workers preview
-pnpm deploy:cf     # Deploy to Cloudflare Workers
-pnpm typecheck     # TypeScript check (no emit)
-pnpm test          # Unit tests (vitest)
-pnpm test:e2e      # E2E tests (Playwright) — requires running server
-pnpm db:generate   # Generate Drizzle migrations
-pnpm db:migrate    # Apply migrations
-pnpm db:seed       # Seed: org + 3 users + rates + holiday presets
-pnpm db:fixtures   # Fixtures: workspaces + projects + assignments
-pnpm db:studio     # Drizzle Studio (local DB UI)
+pnpm dev              # Next.js dev server
+pnpm build:cf         # Cloudflare Workers build
+pnpm deploy:cf        # Deploy to Cloudflare Workers
+
+pnpm db:migrate       # Apply migrations
+pnpm db:seed          # Org + 3 demo users + rates + holiday presets 2026
+pnpm db:seed-2027     # Holiday presets 2027 (ES + ES-MD + ES-CL)
+pnpm db:seed-team     # Full team (25 people, @houra.com emails, password: @houra)
+pnpm db:seed-roles    # Update professional categories and disciplines
+pnpm db:fixtures      # Workspaces + projects + assignments
+pnpm db:studio        # Drizzle Studio
 ```
 
 ---
@@ -84,38 +79,67 @@ pnpm db:studio     # Drizzle Studio (local DB UI)
 ## Project structure
 
 ```
-app/                   # Next.js App Router
-  (auth)/login/        # Login page
-  (app)/               # Authenticated shell
-    today/             # Daily time entry
-    projects/          # Project list
-    time-off/          # PTO management
-    settings/          # User settings
-  api/
-    auth/[...all]/     # Better Auth handler
-    inngest/           # Inngest endpoint
-    pdf-test/          # PDF smoke test
-db/
-  schema/              # Drizzle schema (index.ts)
+app/
+  (auth)/login/          Login
+  (app)/
+    today/               Daily time entry
+    week/                Weekly view
+    projects/            Project list + matrix dashboard
+    proposals/           Proposals pipeline
+    clients/             Client management
+    people/              Team directory
+    time-off/            PTO management
+    vacaciones/          Team vacation view (Gantt + Saldos + Equipo)
+    dashboard/           Management dashboard
+    settings/            Settings + rates
+  (print)/               Print-only layout (PDF proposals)
+components/
+  vacaciones/
+    gantt-vacaciones.tsx  5-month Gantt with regional holidays
+    vacaciones-client.tsx Tab switcher + search + drawer
 lib/
-  auth.ts              # Better Auth config
-  db.ts                # Neon + Drizzle client
-  inngest.ts           # Inngest client
-  theme.ts             # Mantine wireframe theme
+  sheets-vacaciones.ts   Google Sheets parser (values + colors APIs)
+  vacation-calendar.ts   iCal parser (Google Calendar)
+db/
+  schema/                Drizzle schema
+  seed*.ts               Seed scripts
 ```
+
+---
+
+## Vacation module
+
+The `/vacaciones` page integrates two external sources:
+
+| Source | What it provides |
+|--------|-----------------|
+| Google Sheets | Days balance (n, n-1, used, remaining) + cell colors (approved/pending) |
+| Google Calendar (iCal) | Events from "Vacaciones Product" calendar |
+
+Features:
+- **Gantt** — 5-month timeline auto-scrolled to today, regional holiday shading per person, tooltip per bar, paternity leave in violet
+- **Saldos** — table sorted by days remaining, n-1 expiry alerts
+- **Equipo** — card grid; click any card to open a detail drawer (ring chart, balance, baja/excedencia/paternal status, overlap alerts, period history)
+- **iCal calendar** — Ahora / Próximas / Últimas 2 semanas always at the top
+- **Overlap warnings** — lead/dept conflicts, paternity leave alerts, general overlaps
+- **Search** — real-time filter by name, month, status, alerta, bekind
+
+Access control: `isBaja` and `isExcedencia` people visible to manager/admin only. CRO team shown as a separate group.
+
+### Dev credentials
+
+All team accounts: `nombre.apellido@houra.com` / `@houra`
+Demo accounts: `admin@gut.com`, `manager@gut.com`, `contributor@gut.com` / `@houra`
 
 ---
 
 ## Deployment
 
-The app deploys to Cloudflare Workers via `@opennextjs/cloudflare`.
-
 ```bash
-# Build + deploy
 pnpm build:cf && pnpm deploy:cf
 ```
 
-Secrets are managed with `wrangler secret put` — never stored in the repository.
+Secrets managed with `wrangler secret put`.
 
 ---
 
@@ -123,27 +147,25 @@ Secrets are managed with `wrangler secret put` — never stored in the repositor
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 00 | Scaffold — infrastructure wired | ✅ Done |
-| 01 | Data model + auth | ✅ Done |
-| 02 | Time entry UI | ✅ Done |
-| 03 | Project management + matrix dashboard | ✅ Done |
-| 04 | Margin + amendments | ✅ Done |
-| 05 | Reports + sharing | ✅ Done |
-| 06 | Time off + Inngest auto-snapshot + Slack notifications | ✅ Done |
-| Visual design pass | DM Sans + color palette (adelantado de Phase 09) | ✅ Done |
-| 08 | Polish — loading states, toasts, mobile, microcopy, E2E | ✅ Done |
-| 07 | Audit log UI, exports (CSV/XLSX) | ✅ Done |
-| 09 | Brand tokens + visual identity (DM Sans + paleta azul-gris) | ✅ Done |
+| 00 | Scaffold | ✅ |
+| 01 | Data model + auth | ✅ |
+| 02 | Time entry UI | ✅ |
+| 03 | Project management + matrix dashboard | ✅ |
+| 04 | Margin + amendments | ✅ |
+| 05 | Reports + sharing | ✅ |
+| 06 | Time off + Inngest + Slack | ✅ |
+| 07 | Audit log UI + exports (CSV/XLSX) | ✅ |
+| 08 | Polish — loading, toasts, mobile, microcopy | ✅ |
+| 09 | Visual identity (DM Sans + paleta azul-gris) | ✅ |
+| Vacaciones | Google Sheets + Calendar + Gantt + team DB | ✅ |
 
 ---
 
 ## Known issues
 
-- **PDF in Cloudflare Workers**: `GET /api/pdf-test` returns 500. `@react-pdf/renderer` depends on Node.js `canvas`, not supported in Cloudflare edge runtime. Planned fix in Phase 07.
-- **CI build command**: Cloudflare dashboard build command should be `pnpm build:cf` (not `pnpm run build`). Update in the Workers dashboard → Settings → Build command.
-- **Magic link**: `RESEND_API_KEY` not yet configured. Email/password login works; magic link flow is wired but inactive until the key is added.
-- **Inngest endpoint**: Not yet verified in Inngest dashboard. Auto-snapshot and Slack notification jobs are deployed but unconfirmed in production.
-- **E2E tests**: Playwright tests require a running dev server + seeded database. Run `pnpm db:seed && pnpm db:fixtures` before `pnpm test:e2e`.
+- **PDF in Cloudflare Workers**: `@react-pdf/renderer` depends on Node.js `canvas`, not supported at the edge.
+- **Magic link**: `RESEND_API_KEY` not configured — email/password login works.
+- **Inngest**: endpoint deployed but not verified in production dashboard.
 
 ---
 
