@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { eq, desc } from 'drizzle-orm'
-import * as XLSX from 'xlsx'
 import { db } from '@/lib/db'
 import { persons, projects, timeEntries } from '@/db/schema'
 import { requireRole } from '@/lib/auth-helpers'
@@ -31,7 +30,6 @@ export async function GET(req: NextRequest, { params }: Params) {
   }
 
   const { id: projectId } = await params
-  const format = req.nextUrl.searchParams.get('format') ?? 'csv'
 
   const [project] = await db
     .select({ name: projects.name, organizationId: projects.organizationId })
@@ -77,29 +75,14 @@ export async function GET(req: NextRequest, { params }: Params) {
   const safeName = project.name.replace(/[^a-z0-9\-_]/gi, '_').toLowerCase()
   const date = new Date().toISOString().slice(0, 10)
 
-  if (format === 'xlsx') {
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(data)
-    XLSX.utils.book_append_sheet(wb, ws, 'Entradas')
-    const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as number[]
-    const blob = new Blob([new Uint8Array(buf)], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    })
-    return new NextResponse(blob, {
-      headers: {
-        'Content-Disposition': `attachment; filename="${safeName}_${date}.xlsx"`,
-      },
-    })
-  }
-
-  // CSV
+  // CSV con BOM UTF-8 para que Excel respete los acentos al abrirlo.
   const header = Object.keys(data[0] ?? {}).join(',')
   const csvRows = data.map((row) =>
     Object.values(row)
       .map((v) => `"${String(v).replace(/"/g, '""')}"`)
       .join(','),
   )
-  const csv = [header, ...csvRows].join('\n')
+  const csv = '﻿' + [header, ...csvRows].join('\n')
 
   return new NextResponse(csv, {
     headers: {

@@ -157,17 +157,6 @@ export default async function WorkspacePage({ params }: Props) {
             >
               CSV
             </Button>
-            <Button
-              component="a"
-              href={`/api/export/workspace/${id}?format=xlsx`}
-              download
-              size="xs"
-              variant="light"
-              color="gray"
-              leftSection={<IconDownload size={12} />}
-            >
-              Excel
-            </Button>
           </Group>
           <WorkspaceShareClient
             workspaceId={id}
