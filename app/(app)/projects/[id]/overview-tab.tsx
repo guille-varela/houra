@@ -61,11 +61,15 @@ export default async function OverviewTab({
     .groupBy(sql`DATE_TRUNC('week', ${timeEntries.date}::date)`)
     .orderBy(sql`DATE_TRUNC('week', ${timeEntries.date}::date)`)
 
-  let cumulative = 0
-  const burnData = weekRows.map((r) => {
-    cumulative += parseFloat(r.hours)
-    return { week: r.week, hours: parseFloat(r.hours), cumulative }
-  })
+  const burnData = weekRows.reduce<{ week: string; hours: number; cumulative: number }[]>(
+    (acc, r) => {
+      const hours = parseFloat(r.hours)
+      const cumulative = (acc[acc.length - 1]?.cumulative ?? 0) + hours
+      acc.push({ week: r.week, hours, cumulative })
+      return acc
+    },
+    [],
+  )
 
   const contributorRows = await db
     .select({

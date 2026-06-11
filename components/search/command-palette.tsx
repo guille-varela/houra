@@ -52,14 +52,17 @@ export default function CommandPalette() {
   }, [])
 
   useEffect(() => {
-    if (!open) {
-      setQuery('')
-      setResults([])
-      setActiveIdx(0)
-    } else {
+    if (open) {
       setTimeout(() => inputRef.current?.focus(), 50)
     }
   }, [open])
+
+  function close() {
+    setOpen(false)
+    setQuery('')
+    setResults([])
+    setActiveIdx(0)
+  }
 
   const search = useCallback(async (q: string) => {
     if (!q.trim()) { setResults([]); return }
@@ -83,7 +86,7 @@ export default function CommandPalette() {
   }
 
   function navigate(href: string) {
-    setOpen(false)
+    close()
     router.push(href)
   }
 
@@ -102,7 +105,7 @@ export default function CommandPalette() {
   return (
     <Modal
       opened={open}
-      onClose={() => setOpen(false)}
+      onClose={close}
       withCloseButton={false}
       padding={0}
       radius="lg"

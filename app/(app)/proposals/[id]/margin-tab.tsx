@@ -32,6 +32,83 @@ type ScenarioLine = {
   revenueScenario2Cents: number | null
 }
 
+function marginPct(rev: number, cost: number) {
+  return rev > 0 ? ((rev - cost) / rev) * 100 : null
+}
+
+function ScenarioCard({
+  title,
+  subtitle,
+  revenue,
+  cost,
+  totalHours,
+  targetPct,
+  available = true,
+  unavailableReason,
+}: {
+  title: string
+  subtitle: string
+  revenue: number
+  cost: number
+  totalHours: number
+  targetPct: number | null
+  available?: boolean
+  unavailableReason?: string
+}) {
+  const pct = marginPct(revenue, cost)
+  const margin = revenue - cost
+  const color = pct !== null ? marginColor(pct) : 'gray'
+  const targetDelta = targetPct !== null && pct !== null ? pct - targetPct : null
+
+  return (
+    <Card p="md" style={{ opacity: available ? 1 : 0.5 }}>
+      <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.04em' }} mb={4}>
+        {title}
+      </Text>
+      <Text size="xs" c="dimmed" mb="sm">{subtitle}</Text>
+
+      {!available ? (
+        <Text size="sm" c="dimmed">{unavailableReason}</Text>
+      ) : (
+        <Stack gap={6}>
+          <Group justify="space-between">
+            <Text size="xs" c="dimmed">Horas</Text>
+            <Text size="sm" fw={500}>{totalHours.toFixed(0)}h</Text>
+          </Group>
+          <Group justify="space-between">
+            <Text size="xs" c="dimmed">Coste</Text>
+            <Text size="sm" fw={500}>{formatEur(cost)}</Text>
+          </Group>
+          <Group justify="space-between">
+            <Text size="xs" c="dimmed">Ingresos</Text>
+            <Text size="sm" fw={500}>{formatEur(revenue)}</Text>
+          </Group>
+          <Group justify="space-between" mt={4}>
+            <Text size="xs" c="dimmed">Margen</Text>
+            <Group gap={6} align="center">
+              <Text size="sm" fw={700} c={color}>
+                {pct !== null ? `${pct.toFixed(1)}%` : 'n/d'}
+              </Text>
+              <Text size="xs" c="dimmed">{formatEur(margin)}</Text>
+            </Group>
+          </Group>
+          {targetDelta !== null && (
+            <Group justify="flex-end">
+              <Badge
+                size="xs"
+                variant="light"
+                color={targetDelta >= 0 ? 'green' : 'red'}
+              >
+                {targetDelta >= 0 ? '+' : ''}{targetDelta.toFixed(1)}% vs objetivo
+              </Badge>
+            </Group>
+          )}
+        </Stack>
+      )}
+    </Card>
+  )
+}
+
 type Props = { proposalId: string }
 
 export default async function MarginTab({ proposalId }: Props) {
@@ -160,79 +237,6 @@ export default async function MarginTab({ proposalId }: Props) {
 
   const targetPct = proposal.targetMarginPercent ? parseFloat(proposal.targetMarginPercent) : null
 
-  function marginPct(rev: number, cost: number) {
-    return rev > 0 ? ((rev - cost) / rev) * 100 : null
-  }
-
-  function ScenarioCard({
-    title,
-    subtitle,
-    revenue,
-    cost,
-    available = true,
-    unavailableReason,
-  }: {
-    title: string
-    subtitle: string
-    revenue: number
-    cost: number
-    available?: boolean
-    unavailableReason?: string
-  }) {
-    const pct = marginPct(revenue, cost)
-    const margin = revenue - cost
-    const color = pct !== null ? marginColor(pct) : 'gray'
-    const targetDelta = targetPct !== null && pct !== null ? pct - targetPct : null
-
-    return (
-      <Card p="md" style={{ opacity: available ? 1 : 0.5 }}>
-        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.04em' }} mb={4}>
-          {title}
-        </Text>
-        <Text size="xs" c="dimmed" mb="sm">{subtitle}</Text>
-
-        {!available ? (
-          <Text size="sm" c="dimmed">{unavailableReason}</Text>
-        ) : (
-          <Stack gap={6}>
-            <Group justify="space-between">
-              <Text size="xs" c="dimmed">Horas</Text>
-              <Text size="sm" fw={500}>{totalHours.toFixed(0)}h</Text>
-            </Group>
-            <Group justify="space-between">
-              <Text size="xs" c="dimmed">Coste</Text>
-              <Text size="sm" fw={500}>{formatEur(cost)}</Text>
-            </Group>
-            <Group justify="space-between">
-              <Text size="xs" c="dimmed">Ingresos</Text>
-              <Text size="sm" fw={500}>{formatEur(revenue)}</Text>
-            </Group>
-            <Group justify="space-between" mt={4}>
-              <Text size="xs" c="dimmed">Margen</Text>
-              <Group gap={6} align="center">
-                <Text size="sm" fw={700} c={color}>
-                  {pct !== null ? `${pct.toFixed(1)}%` : 'n/d'}
-                </Text>
-                <Text size="xs" c="dimmed">{formatEur(margin)}</Text>
-              </Group>
-            </Group>
-            {targetDelta !== null && (
-              <Group justify="flex-end">
-                <Badge
-                  size="xs"
-                  variant="light"
-                  color={targetDelta >= 0 ? 'green' : 'red'}
-                >
-                  {targetDelta >= 0 ? '+' : ''}{targetDelta.toFixed(1)}% vs objetivo
-                </Badge>
-              </Group>
-            )}
-          </Stack>
-        )}
-      </Card>
-    )
-  }
-
   return (
     <Stack gap="xl">
       {missingRates.length > 0 && (
@@ -253,12 +257,16 @@ export default async function MarginTab({ proposalId }: Props) {
           subtitle="Tarifas de venta base de la organización"
           revenue={totalRev1}
           cost={totalCost}
+          totalHours={totalHours}
+          targetPct={targetPct}
         />
         <ScenarioCard
           title="Acuerdo Marco"
           subtitle={client ? `Tarifas acordadas con ${client.name}` : 'Sin cliente asignado'}
           revenue={totalRev2 ?? 0}
           cost={totalCost}
+          totalHours={totalHours}
+          targetPct={targetPct}
           available={marcoAvailable}
           unavailableReason={
             !client
@@ -271,6 +279,8 @@ export default async function MarginTab({ proposalId }: Props) {
           subtitle="Ingresos según importe total de fases"
           revenue={totalFixedBillingCents}
           cost={totalCost}
+          totalHours={totalHours}
+          targetPct={targetPct}
           available={fixedBagAvailable}
           unavailableReason={
             proposal.billingModel !== 'by_phase'

@@ -10,6 +10,10 @@ const ROLES: { value: string; label: string; description: string }[] = [
   { value: 'contributor', label: 'Contributor', description: 'Solo imputación' },
 ]
 
+function setPreviewRoleCookie(role: string) {
+  document.cookie = `_h_preview_role=${role}; path=/; max-age=86400; SameSite=Lax`
+}
+
 type Props = {
   currentDisplay: string
   actualRole: string
@@ -20,7 +24,7 @@ export default function RoleSwitcher({ currentDisplay, actualRole }: Props) {
   const isPreviewing = currentDisplay !== actualRole
 
   function switchRole(role: string) {
-    document.cookie = `_h_preview_role=${role}; path=/; max-age=86400; SameSite=Lax`
+    setPreviewRoleCookie(role)
     router.refresh()
   }
 

@@ -88,11 +88,15 @@ async function ProjectView({ projectId }: { projectId: string }) {
   const matrix = buildMatrix(effectiveAllocation, consumed)
   const totals = getProjectTotals(matrix)
 
-  let cumulative = 0
-  const burnData = weekRows.map((r) => {
-    cumulative += parseFloat(r.hours)
-    return { week: r.week as string, hours: parseFloat(r.hours), cumulative }
-  })
+  const burnData = weekRows.reduce<{ week: string; hours: number; cumulative: number }[]>(
+    (acc, r) => {
+      const hours = parseFloat(r.hours)
+      const cumulative = (acc[acc.length - 1]?.cumulative ?? 0) + hours
+      acc.push({ week: r.week as string, hours, cumulative })
+      return acc
+    },
+    [],
+  )
 
   const parsedMarginRows = marginRows.map((r) => ({
     area: r.area, role: r.role, hours: parseFloat(r.hours),

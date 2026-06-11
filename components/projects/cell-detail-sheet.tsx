@@ -29,20 +29,33 @@ type Props = {
 
 /** Drawer lateral que lista las entradas de tiempo asociadas a una celda área/rol de la matriz */
 export default function CellDetailSheet({ cell, projectId, onClose }: Props) {
-  const [entries, setEntries] = useState<EntryRow[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const cellKey = `${projectId}/${cell.area}/${cell.role}`
+  const [loaded, setLoaded] = useState<{
+    key: string
+    entries: EntryRow[] | null
+    error: string | null
+  } | null>(null)
 
   useEffect(() => {
-    setEntries(null)
-    setError(null)
+    let cancelled = false
     getCellEntries({ projectId, area: cell.area, role: cell.role }).then((result) => {
-      if (result.ok) {
-        setEntries(result.entries)
-      } else {
-        setError(result.error)
-      }
+      if (cancelled) return
+      setLoaded(
+        result.ok
+          ? { key: cellKey, entries: result.entries, error: null }
+          : { key: cellKey, entries: null, error: result.error },
+      )
     })
-  }, [projectId, cell.area, cell.role])
+    return () => {
+      cancelled = true
+    }
+  }, [projectId, cell.area, cell.role, cellKey])
+
+  // Loading se deriva durante el render: los datos sólo son válidos si su
+  // clave coincide con la celda actual (al cambiar de celda se muestra el loader).
+  const isLoading = loaded?.key !== cellKey
+  const entries = isLoading ? null : loaded.entries
+  const error = isLoading ? null : loaded.error
 
   const totalHours = entries?.reduce((s, e) => s + e.hours, 0) ?? 0
 
