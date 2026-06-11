@@ -31,7 +31,6 @@
     "@mantine/hooks": "^9.2.1",
     "@mantine/notifications": "^9.2.1",
     "@neondatabase/serverless": "^1.1.0",
-    "@react-pdf/renderer": "^4.5.1",
     "@tabler/icons-react": "^3.44.0",
     "better-auth": "^1.6.11",
     "drizzle-orm": "^0.45.2",

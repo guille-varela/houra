@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Removed
+
+- `@react-pdf/renderer` dependency and the `/api/pdf-test` smoke-test route. The library depends on Node.js `canvas`, unsupported in the Cloudflare Workers edge runtime (it was the source of the 500 in production). PDF generation is covered by the carta-oferta print route (`window.print()`) plus CSV/XLSX exports.
+
 ---
 
 ## [1.0.0] — 2026-05-28

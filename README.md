@@ -15,7 +15,7 @@ Internal time tracker and team visibility tool for Gut. Tracks hours per project
 | Database | Drizzle ORM + Neon (Postgres serverless) |
 | Auth | Better Auth — email/password + magic link (Resend) |
 | Background jobs | Inngest |
-| PDF export | `@react-pdf/renderer` (⚠ edge limitation — see Known issues) |
+| PDF export | Browser print (`window.print()`) + CSV/XLSX exports |
 | Deploy | Cloudflare Workers via `@opennextjs/cloudflare` |
 
 ---
@@ -163,7 +163,6 @@ Secrets managed with `wrangler secret put`.
 
 ## Known issues
 
-- **PDF in Cloudflare Workers**: `@react-pdf/renderer` depends on Node.js `canvas`, not supported at the edge.
 - **Magic link**: `RESEND_API_KEY` not configured — email/password login works.
 - **Inngest**: endpoint deployed but not verified in production dashboard.
 
