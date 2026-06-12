@@ -373,6 +373,8 @@ Resumen de las trampas que costaron tiempo en esta puesta en producción. Léela
 - **Clientes externos (`neon()`, etc.) inicializados en top-level fallan en build sin secrets** — `next build` evalúa el módulo en build-time, donde el runtime secret no existe. Usa inicialización **lazy** (ver el `Proxy` de `lib/db.ts`).
 - **`wrangler secret put` es interactivo** — en contextos no-interactivos pasa el valor por pipe (`printf '%s' 'valor' | ... wrangler secret put NOMBRE`); si no, subirás un secret **vacío**.
 - **La versión de pnpm del CI puede diferir de la local** — fija `"packageManager"` en `package.json` (`pnpm@10.32.1`) para que CI y local usen la misma.
+- **Compound components de Mantine (`Table.Thead`, `Tabs.Panel`, …) rotos en Server Components** — Turbopack tree-shakea las asignaciones internas (`Table.Thead = TableThead`) en el bundle del **servidor**, dejándolas `undefined`; al renderizar revienta con `Element type is invalid: got undefined`. Solo afecta a **Server Components** (en client components con `'use client'` no pasa). **Solución: usa named imports** (`import { TableThead, TabsPanel } from '@mantine/core'` y `<TableThead>`), no la notación de propiedad. Páginas afectadas y arregladas: `proposals/[id]/margin-tab.tsx` (Rentabilidad) y `clients/[id]/page.tsx`. Para encontrarlos: buscar `(Table|Tabs|Menu)\.[A-Z]` en `.tsx` sin `'use client'` en la primera línea.
+- **NO usar `experimental.optimizePackageImports` con `@mantine/*`** — agrava el problema anterior (rompe compound components también en algunos casos) y **no reducía el bundle** (mismo tamaño con y sin). Se eliminó de `next.config.ts`.
 
 ---
 
@@ -382,7 +384,8 @@ Resumen de las trampas que costaron tiempo en esta puesta en producción. Léela
 
 ✅ **Hecho:**
 - Worker `houra` deployado en la cuenta corporativa de Globant (`9abf728949f498dee2e2f57a38e2d9df`) y **producción al día** (ya no congelada en "Phase 02").
-- Bundle reducido de 3225 KiB a 2837 KiB (por debajo del límite de 3 MiB): eliminados `@react-pdf/renderer`, `xlsx`, `@mantine/charts` + `recharts`; `optimizePackageImports` activado en `next.config.ts`.
+- Bundle reducido de 3225 KiB a ~2838 KiB (por debajo del límite de 3 MiB): eliminados `@react-pdf/renderer`, `xlsx`, `@mantine/charts` + `recharts`.
+- **Crashes de Mantine en Server Components** (Rentabilidad y detalle de cliente) corregidos usando named imports en vez de `Table.Thead`/`Tabs.Panel` (ver Gotchas).
 - 6 migraciones Drizzle (`0000`–`0005`) aplicadas en Neon.
 - **Magic link operativo**: dominio `nodox.studio` verificado en Resend (4 registros DNS publicados en Spaceship); click/open tracking desactivado; `BETTER_AUTH_URL` fijado a producción.
 - **Inngest operativo**: `INNGEST_SIGNING_KEY` e `INNGEST_EVENT_KEY` configuradas y app sincronizada (`/api/inngest` responde `401` ante accesos sin firma).
