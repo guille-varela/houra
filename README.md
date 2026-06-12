@@ -15,8 +15,9 @@ Internal time tracker and team visibility tool for Gut. Tracks hours per project
 | Database | Drizzle ORM + Neon (Postgres serverless) |
 | Auth | Better Auth — email/password + magic link (Resend) |
 | Background jobs | Inngest |
-| PDF export | Browser print (`window.print()`) + CSV/XLSX exports |
-| Deploy | Cloudflare Workers via `@opennextjs/cloudflare` |
+| Oferta / PDF | Impresión del navegador (`window.print()` en la carta-oferta) |
+| Data export | CSV con BOM UTF-8 (acentos correctos en Excel) |
+| Deploy | Cloudflare Workers via `@opennextjs/cloudflare` (`pnpm build:cf`) |
 
 ---
 
@@ -135,11 +136,23 @@ Demo accounts: `admin@gut.com`, `manager@gut.com`, `contributor@gut.com` / `@hou
 
 ## Deployment
 
+El Worker `houra` vive en la **cuenta corporativa de Cloudflare (Globant)**. Como hay 2 cuentas Cloudflare asociadas a la máquina, todos los comandos de `wrangler` necesitan el account ID por delante:
+
 ```bash
-pnpm build:cf && pnpm deploy:cf
+# Build local
+pnpm build:cf
+
+# Deploy manual
+CLOUDFLARE_ACCOUNT_ID=9abf728949f498dee2e2f57a38e2d9df wrangler deploy
 ```
 
-Secrets managed with `wrangler secret put`.
+**CI automático**: push a `main` dispara Cloudflare Workers Builds (build `pnpm build:cf` + deploy `npx wrangler deploy`).
+
+> ⚠️ **Límite de 3 MiB gzip** del plan Workers Free. El bundle ronda los 2834 KiB; mantener las dependencias controladas antes de añadir paquetes pesados.
+
+Secrets gestionados con `wrangler secret put` (los valores nunca se commitean).
+
+**Guía completa** de deploy, secrets, DNS y cuentas Cloudflare: [docs/production-runbook.md](docs/production-runbook.md).
 
 ---
 
@@ -154,17 +167,19 @@ Secrets managed with `wrangler secret put`.
 | 04 | Margin + amendments | ✅ |
 | 05 | Reports + sharing | ✅ |
 | 06 | Time off + Inngest + Slack | ✅ |
-| 07 | Audit log UI + exports (CSV/XLSX) | ✅ |
+| 07 | Audit log UI + exports (CSV con BOM UTF-8) | ✅ |
 | 08 | Polish — loading, toasts, mobile, microcopy | ✅ |
 | 09 | Visual identity (DM Sans + paleta azul-gris) | ✅ |
 | Vacaciones | Google Sheets + Calendar + Gantt + team DB | ✅ |
 
 ---
 
-## Known issues
+## Estado de producción
 
-- **Magic link**: `RESEND_API_KEY` not configured — email/password login works.
-- **Inngest**: endpoint deployed but not verified in production dashboard.
+- **Magic link**: operativo. Resend con el dominio `nodox.studio` verificado; remitente `no-reply@nodox.studio`.
+- **Inngest**: operativo. Keys configuradas y app sincronizada en el dashboard de Inngest.
+
+> A futuro: migrar el remitente del dominio personal `nodox.studio` a un dominio de Gut/Globant. Ver [docs/production-runbook.md](docs/production-runbook.md).
 
 ---
 
