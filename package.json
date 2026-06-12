@@ -33,6 +33,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@tabler/icons-react": "^3.44.0",
     "better-auth": "^1.6.11",
+    "dayjs": "^1.11.21",
     "drizzle-orm": "^0.45.2",
     "inngest": "^4.4.0",
     "nanoid": "^5.1.11",

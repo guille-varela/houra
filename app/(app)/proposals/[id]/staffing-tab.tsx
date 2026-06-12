@@ -17,6 +17,7 @@ import {
   Progress,
   Card,
 } from '@mantine/core'
+import { DateInput } from '@mantine/dates'
 import { IconPlus, IconTrash, IconPencil, IconCalendar, IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react'
 import {
   addProposalPhase,
@@ -26,6 +27,7 @@ import {
   deleteStaffingLine,
 } from '@/actions/proposals'
 import { computeFeasibility } from '@/lib/feasibility'
+import { formatDateEU } from '@/lib/dates'
 
 const AREA_OPTIONS = [
   { value: 'research', label: 'Research' },
@@ -291,7 +293,7 @@ export default function StaffingTab({
                   <Text size="sm" fw={500} style={{ color: 'var(--h-text)' }}>{phase.name}</Text>
                   {phase.deliveryDate && (
                     <Badge size="xs" variant="light" color="gray" leftSection={<IconCalendar size={10} />}>
-                      {phase.deliveryDate}
+                      {formatDateEU(phase.deliveryDate)}
                     </Badge>
                   )}
                   {phase.billingAmount && billingModel === 'by_phase' && (
@@ -423,12 +425,14 @@ export default function StaffingTab({
             onChange={(e) => setNewPhaseName(e.currentTarget.value)}
             autoFocus
           />
-          <TextInput
+          <DateInput
             label="Fecha de entrega"
-            placeholder="YYYY-MM-DD"
-            value={newPhaseDelivery}
-            onChange={(e) => setNewPhaseDelivery(e.currentTarget.value)}
+            placeholder="DD/MM/AAAA"
+            valueFormat="DD/MM/YYYY"
+            value={newPhaseDelivery || null}
+            onChange={(v) => setNewPhaseDelivery(v ?? '')}
             leftSection={<IconCalendar size={14} />}
+            clearable
           />
           {billingModel === 'by_phase' && (
             <NumberInput
@@ -608,7 +612,7 @@ function FeasibilityWidget({
                   </Text>
                 </Group>
                 <Badge size="sm" variant="light" color="gray">
-                  Entrega: {latestDeadline}
+                  Entrega: {formatDateEU(latestDeadline)}
                 </Badge>
               </Group>
 

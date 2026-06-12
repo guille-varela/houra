@@ -15,6 +15,7 @@ import {
   Box,
   Divider,
 } from '@mantine/core'
+import { DateInput } from '@mantine/dates'
 import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS, type Allocation } from '@/lib/matrix'
 import { notifications } from '@mantine/notifications'
 import { createAmendment } from '@/actions/amendments'
@@ -170,11 +171,12 @@ export default function AmendmentForm({ projectId, effectiveAllocation, opened, 
 
         <Divider />
 
-        <TextInput
+        <DateInput
           label="Fecha efectiva"
-          type="date"
-          value={effectiveDate}
-          onChange={(e) => setEffectiveDate(e.currentTarget.value)}
+          placeholder="DD/MM/AAAA"
+          valueFormat="DD/MM/YYYY"
+          value={effectiveDate || null}
+          onChange={(v) => setEffectiveDate(v ?? '')}
           required
           disabled={isPending}
         />

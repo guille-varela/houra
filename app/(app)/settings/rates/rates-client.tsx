@@ -14,13 +14,14 @@ import {
   Tooltip,
   Modal,
   Select,
-  TextInput,
   Chip,
 } from '@mantine/core'
+import { DateInput } from '@mantine/dates'
 import { IconEdit, IconTrash, IconPlus, IconInfoCircle } from '@tabler/icons-react'
 import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS } from '@/lib/matrix'
 import { notifications } from '@mantine/notifications'
 import { upsertRate, deleteRate } from '@/actions/rates'
+import { formatDateEU } from '@/lib/dates'
 
 type Rate = {
   id: string
@@ -286,7 +287,7 @@ export default function RatesClient({ rates: initialRates }: Props) {
                     )}
                   </Table.Td>
                   <Table.Td>
-                    <Text size="xs" c="dimmed">{rate.effectiveFrom}</Text>
+                    <Text size="xs" c="dimmed">{formatDateEU(rate.effectiveFrom)}</Text>
                   </Table.Td>
                   <Table.Td>
                     <Group gap={4} justify="flex-end">
@@ -345,12 +346,14 @@ export default function RatesClient({ rates: initialRates }: Props) {
             <NumberInput label="Coste/h (€)" value={newCost} onChange={setNewCost} min={0} step={5} prefix="€" />
             <NumberInput label="Venta/h (€)" value={newSold} onChange={setNewSold} min={0} step={5} prefix="€" />
           </Group>
-          <TextInput
+          <DateInput
             label="Desde"
             description="Fecha desde la que aplica esta tarifa"
-            type="date"
-            value={newFrom}
-            onChange={(e) => setNewFrom(e.currentTarget.value)}
+            placeholder="DD/MM/AAAA"
+            valueFormat="DD/MM/YYYY"
+            value={newFrom || null}
+            onChange={(v) => setNewFrom(v ?? '')}
+            clearable
           />
           <Group justify="flex-end">
             <Button variant="subtle" color="gray" onClick={() => setAddOpen(false)}>Cancelar</Button>

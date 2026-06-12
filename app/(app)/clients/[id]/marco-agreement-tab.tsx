@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import {
   Switch, NumberInput, Group, Text, Stack, Button, Divider,
-  Badge, TextInput, Alert,
+  Badge, Alert,
 } from '@mantine/core'
+import { DateInput } from '@mantine/dates'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { updateMarcoAgreement } from '@/actions/clients'
@@ -114,18 +115,22 @@ export default function MarcoAgreementTab({
         <>
           {/* Fechas de vigencia */}
           <Group grow>
-            <TextInput
+            <DateInput
               label="Inicio del acuerdo"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.currentTarget.value)}
+              placeholder="DD/MM/AAAA"
+              valueFormat="DD/MM/YYYY"
+              value={startDate || null}
+              onChange={(v) => setStartDate(v ?? '')}
+              clearable
               disabled={!isAdmin}
             />
-            <TextInput
+            <DateInput
               label="Fin del acuerdo"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.currentTarget.value)}
+              placeholder="DD/MM/AAAA"
+              valueFormat="DD/MM/YYYY"
+              value={endDate || null}
+              onChange={(v) => setEndDate(v ?? '')}
+              clearable
               disabled={!isAdmin}
             />
           </Group>

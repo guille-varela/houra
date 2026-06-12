@@ -9,9 +9,9 @@ import {
   Textarea,
   Button,
   Alert,
-  Text,
   Group,
 } from '@mantine/core'
+import { DateInput } from '@mantine/dates'
 import { notifications } from '@mantine/notifications'
 import { createTimeEntry } from '@/actions/time-entries'
 import { getLocalDateString } from '@/lib/dates'
@@ -131,24 +131,14 @@ export default function TimeEntryForm({ opened, onClose, assignedProjects, defau
           />
 
           <Group grow>
-            <div>
-              <Text size="sm" fw={500} mb={4}>
-                Fecha
-              </Text>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.currentTarget.value)}
-                required
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid var(--mantine-color-gray-4)',
-                  borderRadius: 'var(--mantine-radius-sm)',
-                  fontSize: 'var(--mantine-font-size-sm)',
-                }}
-              />
-            </div>
+            <DateInput
+              label="Fecha"
+              placeholder="DD/MM/AAAA"
+              valueFormat="DD/MM/YYYY"
+              value={date || null}
+              onChange={(v) => setDate(v ?? '')}
+              required
+            />
 
             <NumberInput
               label="Horas"

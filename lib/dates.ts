@@ -33,3 +33,14 @@ export function formatDateEs(dateStr: string): string {
   const raw = `${DAYS_ES[date.getDay()]} ${d} de ${MONTHS_ES[m - 1]}`
   return raw.charAt(0).toUpperCase() + raw.slice(1)
 }
+
+/**
+ * Formatea una fecha ISO (`YYYY-MM-DD`) al formato europeo corto `DD/MM/YYYY`.
+ * Devuelve cadena vacía si la fecha es nula. Defensivo ante formatos inesperados.
+ */
+export function formatDateEU(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const [y, m, d] = iso.slice(0, 10).split('-')
+  if (!y || !m || !d) return iso
+  return `${d}/${m}/${y}`
+}

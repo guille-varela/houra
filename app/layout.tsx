@@ -3,8 +3,10 @@ import '@mantine/notifications/styles.css'
 import './globals.css'
 import { DM_Sans } from 'next/font/google'
 import { ColorSchemeScript, MantineProvider } from '@mantine/core'
+import { DatesProvider } from '@mantine/dates'
 import { Notifications } from '@mantine/notifications'
 import { theme } from '@/lib/theme'
+import 'dayjs/locale/es'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -23,8 +25,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <MantineProvider theme={theme} defaultColorScheme="auto">
-          <Notifications />
-          {children}
+          <DatesProvider settings={{ locale: 'es', firstDayOfWeek: 1, weekendDays: [0, 6] }}>
+            <Notifications />
+            {children}
+          </DatesProvider>
         </MantineProvider>
       </body>
     </html>
