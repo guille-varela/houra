@@ -130,7 +130,7 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
             billingModel={proposal.billingModel}
             targetMarginPercent={proposal.targetMarginPercent ?? null}
             internalNotes={proposal.internalNotes ?? null}
-            clients={clientList.map((c) => ({ id: c.id, name: c.name }))}
+            clients={clientList.map((c) => ({ id: c.id, name: c.name, hasMarco: c.hasMarco }))}
           />
         }
         staffing={

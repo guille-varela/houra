@@ -6,6 +6,7 @@ import {
   Group,
   Text,
   Button,
+  Badge,
   TextInput,
   Select,
   NumberInput,
@@ -35,7 +36,7 @@ type Props = {
   billingModel: string
   targetMarginPercent: string | null
   internalNotes: string | null
-  clients: Array<{ id: string; name: string }>
+  clients: Array<{ id: string; name: string; hasMarco: boolean }>
 }
 
 export default function SummaryTab({
@@ -96,6 +97,17 @@ export default function SummaryTab({
         value={clientId}
         onChange={setClientId}
         clearable
+        renderOption={({ option }) => {
+          const c = clients.find((x) => x.id === option.value)
+          return (
+            <Group justify="space-between" gap="xs" w="100%" wrap="nowrap">
+              <span>{option.label}</span>
+              {c?.hasMarco && (
+                <Badge size="xs" variant="light" color="blue">Acuerdo Marco</Badge>
+              )}
+            </Group>
+          )
+        }}
       />
 
       <Group grow>
