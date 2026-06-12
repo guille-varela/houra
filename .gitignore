@@ -40,6 +40,11 @@ yarn-error.log*
 .wrangler/
 .open-next/
 
+# playwright (artefactos de pruebas con navegador)
+.playwright-mcp/
+test-results/
+playwright-report/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
