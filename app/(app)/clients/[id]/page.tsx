@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import { Title, Text, Group, Tabs } from '@mantine/core'
+import { Title, Text, Group, Tabs, TabsList, TabsTab, TabsPanel } from '@mantine/core'
 import { IconBuilding } from '@tabler/icons-react'
 import { requireRole } from '@/lib/auth-helpers'
 import { getClient } from '@/actions/clients'
@@ -52,9 +52,9 @@ export default async function ClientDetailPage({ params }: Props) {
       </Group>
 
       <Tabs defaultValue="projects">
-        <Tabs.List mb="lg">
-          <Tabs.Tab value="projects">Proyectos</Tabs.Tab>
-          <Tabs.Tab value="marco">
+        <TabsList mb="lg">
+          <TabsTab value="projects">Proyectos</TabsTab>
+          <TabsTab value="marco">
             Acuerdo Marco
             {client.hasMarco && (
               <span style={{
@@ -67,16 +67,16 @@ export default async function ClientDetailPage({ params }: Props) {
                 fontWeight: 600,
               }}>Activo</span>
             )}
-          </Tabs.Tab>
-        </Tabs.List>
+          </TabsTab>
+        </TabsList>
 
-        <Tabs.Panel value="projects">
+        <TabsPanel value="projects">
           <ClientProjectsTab projects={clientProjects} />
-        </Tabs.Panel>
+        </TabsPanel>
 
-        <Tabs.Panel value="marco">
+        <TabsPanel value="marco">
           <MarcoAgreementTab client={client} isAdmin={isAdmin} />
-        </Tabs.Panel>
+        </TabsPanel>
       </Tabs>
     </div>
   )

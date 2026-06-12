@@ -1,5 +1,5 @@
 import { and, eq, gte, isNull, lte, or } from 'drizzle-orm'
-import { Stack, SimpleGrid, Card, Text, Group, Badge, Table, Alert } from '@mantine/core'
+import { Stack, SimpleGrid, Card, Text, Group, Badge, Table, TableThead, TableTbody, TableTr, TableTh, TableTd, TableTfoot, Alert } from '@mantine/core'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { db } from '@/lib/db'
 import { requireRole } from '@/lib/auth-helpers'
@@ -296,17 +296,17 @@ export default async function MarginTab({ proposalId }: Props) {
           Desglose por línea de equipo
         </Text>
         <Table withTableBorder withColumnBorders fz="sm">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Perfil</Table.Th>
-              <Table.Th ta="right">Horas</Table.Th>
-              <Table.Th ta="right">Coste</Table.Th>
-              <Table.Th ta="right">Estándar</Table.Th>
-              {marcoAvailable && <Table.Th ta="right">Marco</Table.Th>}
-              {fixedBagAvailable && <Table.Th ta="right">Margen bolsa</Table.Th>}
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
+          <TableThead>
+            <TableTr>
+              <TableTh>Perfil</TableTh>
+              <TableTh ta="right">Horas</TableTh>
+              <TableTh ta="right">Coste</TableTh>
+              <TableTh ta="right">Estándar</TableTh>
+              {marcoAvailable && <TableTh ta="right">Marco</TableTh>}
+              {fixedBagAvailable && <TableTh ta="right">Margen bolsa</TableTh>}
+            </TableTr>
+          </TableThead>
+          <TableTbody>
             {lines.map((line, i) => {
               const margin1 = line.revenueScenario1Cents - line.costCents
               const pct1 = marginPct(line.revenueScenario1Cents, line.costCents)
@@ -321,51 +321,51 @@ export default async function MarginTab({ proposalId }: Props) {
               const fixedMarginPct = marginPct(fixedLineRev, line.costCents)
 
               return (
-                <Table.Tr key={i}>
-                  <Table.Td>{line.label}</Table.Td>
-                  <Table.Td ta="right">{line.hours.toFixed(0)}h</Table.Td>
-                  <Table.Td ta="right" c="dimmed">{formatEur(line.costCents)}</Table.Td>
-                  <Table.Td ta="right">
+                <TableTr key={i}>
+                  <TableTd>{line.label}</TableTd>
+                  <TableTd ta="right">{line.hours.toFixed(0)}h</TableTd>
+                  <TableTd ta="right" c="dimmed">{formatEur(line.costCents)}</TableTd>
+                  <TableTd ta="right">
                     <Group gap={4} justify="flex-end">
                       <Text size="sm">{formatEur(line.revenueScenario1Cents)}</Text>
                       {pct1 !== null && (
                         <Text size="xs" c={marginColor(pct1)}>{pct1.toFixed(0)}%</Text>
                       )}
                     </Group>
-                  </Table.Td>
+                  </TableTd>
                   {marcoAvailable && (
-                    <Table.Td ta="right">
+                    <TableTd ta="right">
                       <Group gap={4} justify="flex-end">
                         <Text size="sm">{formatEur(rev2)}</Text>
                         {pct2 !== null && (
                           <Text size="xs" c={marginColor(pct2)}>{pct2.toFixed(0)}%</Text>
                         )}
                       </Group>
-                    </Table.Td>
+                    </TableTd>
                   )}
                   {fixedBagAvailable && (
-                    <Table.Td ta="right">
+                    <TableTd ta="right">
                       {fixedMarginPct !== null && (
                         <Text size="xs" c={marginColor(fixedMarginPct)}>
                           {fixedMarginPct.toFixed(0)}%
                         </Text>
                       )}
-                    </Table.Td>
+                    </TableTd>
                   )}
-                </Table.Tr>
+                </TableTr>
               )
             })}
-          </Table.Tbody>
-          <Table.Tfoot>
-            <Table.Tr style={{ fontWeight: 600 }}>
-              <Table.Td>Total</Table.Td>
-              <Table.Td ta="right">{totalHours.toFixed(0)}h</Table.Td>
-              <Table.Td ta="right">{formatEur(totalCost)}</Table.Td>
-              <Table.Td ta="right">{formatEur(totalRev1)}</Table.Td>
-              {marcoAvailable && <Table.Td ta="right">{formatEur(totalRev2 ?? 0)}</Table.Td>}
-              {fixedBagAvailable && <Table.Td ta="right">{formatEur(totalFixedBillingCents)}</Table.Td>}
-            </Table.Tr>
-          </Table.Tfoot>
+          </TableTbody>
+          <TableTfoot>
+            <TableTr style={{ fontWeight: 600 }}>
+              <TableTd>Total</TableTd>
+              <TableTd ta="right">{totalHours.toFixed(0)}h</TableTd>
+              <TableTd ta="right">{formatEur(totalCost)}</TableTd>
+              <TableTd ta="right">{formatEur(totalRev1)}</TableTd>
+              {marcoAvailable && <TableTd ta="right">{formatEur(totalRev2 ?? 0)}</TableTd>}
+              {fixedBagAvailable && <TableTd ta="right">{formatEur(totalFixedBillingCents)}</TableTd>}
+            </TableTr>
+          </TableTfoot>
         </Table>
       </Stack>
     </Stack>

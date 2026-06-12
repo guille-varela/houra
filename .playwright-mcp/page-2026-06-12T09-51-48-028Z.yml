@@ -1,0 +1,87 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]: H
+        - generic [ref=e6]: houra
+      - button "Buscar… ⌘K" [ref=e7]:
+        - img [ref=e8]
+        - generic [ref=e10]: Buscar…
+        - generic [ref=e11]: ⌘K
+      - generic [ref=e12]:
+        - link "Mi día" [ref=e13] [cursor=pointer]:
+          - /url: /today
+          - img [ref=e14]
+          - generic [ref=e17]: Mi día
+        - link "Semana" [ref=e18] [cursor=pointer]:
+          - /url: /week
+          - img [ref=e19]
+          - generic [ref=e21]: Semana
+        - link "Proyectos" [ref=e22] [cursor=pointer]:
+          - /url: /projects
+          - img [ref=e23]
+          - generic [ref=e26]: Proyectos
+        - link "Dashboard" [ref=e27] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e28]
+          - generic [ref=e33]: Dashboard
+        - link "Workspaces" [ref=e34] [cursor=pointer]:
+          - /url: /workspaces
+          - img [ref=e35]
+          - generic [ref=e39]: Workspaces
+        - link "Propuestas" [ref=e40] [cursor=pointer]:
+          - /url: /proposals
+          - img [ref=e41]
+          - generic [ref=e44]: Propuestas
+        - link "Clientes" [ref=e45] [cursor=pointer]:
+          - /url: /clients
+          - img [ref=e46]
+          - generic [ref=e48]: Clientes
+        - link "Personas" [ref=e49] [cursor=pointer]:
+          - /url: /people
+          - img [ref=e50]
+          - generic [ref=e55]: Personas
+        - link "Libre" [ref=e56] [cursor=pointer]:
+          - /url: /time-off
+          - img [ref=e57]
+          - generic [ref=e60]: Libre
+        - link "Vacaciones" [ref=e61] [cursor=pointer]:
+          - /url: /vacaciones
+          - img [ref=e62]
+          - generic [ref=e68]: Vacaciones
+      - generic [ref=e69]:
+        - link "Configuración" [ref=e70] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e71]
+          - generic [ref=e74]: Configuración
+        - generic [ref=e75]:
+          - button [ref=e76] [cursor=pointer]:
+            - img [ref=e77]
+          - generic [ref=e81]: Ver como…
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - generic [ref=e85]: GV
+            - generic [ref=e86]: Guillermo Varela
+          - button [ref=e87] [cursor=pointer]:
+            - img [ref=e88]
+    - main [ref=e91]:
+      - generic [ref=e92]:
+        - generic [ref=e93]:
+          - generic [ref=e94]:
+            - heading "Propuestas" [level=2] [ref=e95]
+            - paragraph [ref=e96]: 1 propuesta
+          - button "Nueva propuesta" [ref=e97] [cursor=pointer]:
+            - generic [ref=e98]:
+              - img [ref=e100]
+              - generic [ref=e101]: Nueva propuesta
+        - link "Test Propuesta Borrador" [ref=e103] [cursor=pointer]:
+          - /url: /proposals/b72a9156-d428-48bc-9215-67f7e6b80989
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - img [ref=e107]
+              - generic [ref=e110]:
+                - paragraph [ref=e111]: Test Propuesta
+                - generic [ref=e114]: Borrador
+            - img [ref=e115]
+  - button "Open Next.js Dev Tools" [ref=e122] [cursor=pointer]:
+    - img [ref=e123]
