@@ -4,6 +4,15 @@
 
 @import "tailwindcss";
 
+/* ─── Cards navegables (ClickableCard) ───────────────────────────────────────── */
+.h-clickable-card {
+  transition: box-shadow 0.12s ease, transform 0.12s ease;
+}
+.h-clickable-card:hover {
+  box-shadow: var(--mantine-shadow-md);
+  transform: translateY(-1px);
+}
+
 /* ─── Grandis Extended ───────────────────────────────────────────────────────── */
 @font-face {
   font-family: 'Grandis Extended';

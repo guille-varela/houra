@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { eq, sql } from 'drizzle-orm'
 import { Stack, Text, Card, Group, Badge, SimpleGrid } from '@mantine/core'
 import { AnchorLink } from '@/components/ui/anchor-link'
+import { ClickableCard } from '@/components/ui/clickable-card'
 import { db } from '@/lib/db'
 import { amendments, persons, projects, timeEntries, workspaces } from '@/db/schema'
 import { requireRole } from '@/lib/auth-helpers'
@@ -153,13 +154,13 @@ export default async function DashboardPage() {
               const cColor = consumptionColor(p.totals.pct)
               const mColor = marginColor(p.marginTotals.marginPct ?? -1)
               return (
-                <Card key={p.id} p="md">
+                <ClickableCard key={p.id} href={`/projects/${p.id}`} p="md">
                   <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
                     <div style={{ flex: 1, minWidth: 180 }}>
                       <Group gap="xs" mb={4}>
-                        <AnchorLink href={`/projects/${p.id}`} fw={600} size="sm" c="dark">
+                        <Text fw={600} size="sm" style={{ color: 'var(--h-text)' }}>
                           {p.name}
-                        </AnchorLink>
+                        </Text>
                         <Badge size="xs" color={STATUS_COLOR[p.status] ?? 'gray'} variant="light">
                           {STATUS_LABELS[p.status] ?? p.status}
                         </Badge>
@@ -190,7 +191,7 @@ export default async function DashboardPage() {
                       </div>
                     </Group>
                   </Group>
-                </Card>
+                </ClickableCard>
               )
             })}
           </Stack>
