@@ -83,6 +83,8 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
         notifications.show({ color: 'red', title: 'Error', message: result.error })
         return
       }
+      const personName = allPersons.find((p) => p.id === addPersonId)?.name
+      notifications.show({ color: 'green', message: personName ? 'Persona asignada · ' + personName : 'Persona asignada' })
       setShowAddForm(false)
       setAddPersonId(null)
       setAddAreas([])
@@ -92,7 +94,11 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
   function handleDeactivate(assignmentId: string) {
     startTransition(async () => {
       const result = await deactivateAssignment({ assignmentId })
-      if (!result.ok) notifications.show({ color: 'red', title: 'Error', message: result.error })
+      if (!result.ok) {
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
+      } else {
+        notifications.show({ color: 'green', message: 'Persona quitada del equipo' })
+      }
     })
   }
 
@@ -104,7 +110,11 @@ export default function TeamTabClient({ projectId, assignedRows, allPersons }: P
         personId,
         allowedAreas: person ? [person.primaryArea] : ['ux'],
       })
-      if (!result.ok) notifications.show({ color: 'red', title: 'Error', message: result.error })
+      if (!result.ok) {
+        notifications.show({ color: 'red', title: 'Error', message: result.error })
+      } else {
+        notifications.show({ color: 'green', message: person ? 'Persona reactivada · ' + person.name : 'Persona reactivada' })
+      }
     })
   }
 

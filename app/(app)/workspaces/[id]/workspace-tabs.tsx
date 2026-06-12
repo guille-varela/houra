@@ -101,6 +101,7 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
       if (!result.ok) {
         notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
+        notifications.show({ color: 'green', message: 'Transfer realizado · ' + hoursNum + 'h' })
         setDrawerOpen(false)
         resetWizard()
       }
@@ -258,6 +259,7 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
           <Group grow>
             <Select
               label="Área"
+              placeholder="Selecciona…"
               data={AREAS.map((a) => ({ value: a, label: AREA_LABELS[a] }))}
               value={area}
               onChange={setArea}
@@ -265,6 +267,7 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
             />
             <Select
               label="Rol"
+              placeholder="Selecciona…"
               data={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
               value={role}
               onChange={setRole}
@@ -274,6 +277,7 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
 
           <NumberInput
             label="Horas a transferir"
+            placeholder="Ej. 40"
             value={hours}
             onChange={setHours}
             min={0.5}

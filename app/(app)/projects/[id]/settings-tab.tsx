@@ -15,6 +15,7 @@ import {
   Badge,
   Modal,
 } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import { updateProjectStatus, updateAllocation, duplicateProject, updateProjectMeta } from '@/actions/projects'
 import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS, type Allocation } from '@/lib/matrix'
 import { isValidTransition, PROJECT_STATUSES } from '@/lib/schemas/project'
@@ -75,7 +76,11 @@ export default function SettingsTab({ projectId, projectName, status, allocation
     setStatusError(null)
     startTransition(async () => {
       const result = await updateProjectStatus({ projectId, status: selectedStatus })
-      if (!result.ok) setStatusError(result.error)
+      if (!result.ok) {
+        setStatusError(result.error)
+      } else {
+        notifications.show({ color: 'green', message: 'Estado actualizado · ' + (STATUS_LABELS[selectedStatus] ?? selectedStatus) })
+      }
     })
   }
 
@@ -91,7 +96,11 @@ export default function SettingsTab({ projectId, projectName, status, allocation
     setAllocError(null)
     startTransition(async () => {
       const result = await updateAllocation({ projectId, allocation: editAlloc })
-      if (!result.ok) setAllocError(result.error)
+      if (!result.ok) {
+        setAllocError(result.error)
+      } else {
+        notifications.show({ color: 'green', message: 'Asignación de horas guardada' })
+      }
     })
   }
 
@@ -102,7 +111,11 @@ export default function SettingsTab({ projectId, projectName, status, allocation
         clientId: selectedClient,
         billingModel: (selectedBilling ?? 'hour_bag') as 'hour_bag' | 'monthly_fee' | 'by_phase',
       })
-      if (!result.ok) setMetaError(result.error)
+      if (!result.ok) {
+        setMetaError(result.error)
+      } else {
+        notifications.show({ color: 'green', message: 'Facturación actualizada' })
+      }
     })
   }
 
@@ -113,6 +126,7 @@ export default function SettingsTab({ projectId, projectName, status, allocation
       if (!result.ok) {
         setDupError(result.error)
       } else {
+        notifications.show({ color: 'green', message: 'Proyecto duplicado · ' + projectName + ' (copia)' })
         setDupModalOpen(false)
         router.push(`/projects/${result.newProjectId}`)
       }
@@ -137,6 +151,7 @@ export default function SettingsTab({ projectId, projectName, status, allocation
           />
           <Select
             label="Modelo de facturación"
+            placeholder="Selecciona…"
             data={BILLING_MODEL_OPTIONS}
             value={selectedBilling}
             onChange={setSelectedBilling}

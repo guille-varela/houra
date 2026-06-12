@@ -51,6 +51,7 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
       if (!result.ok) {
         notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
+        notifications.show({ color: 'green', message: 'Link de acceso generado' })
         setNewSlug(result.slug)
         setPassword('')
         setReports((prev) => [
@@ -73,6 +74,7 @@ export default function ShareTabClient({ projectId, reports: initialReports }: P
       if (!result.ok) {
         notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
+        notifications.show({ color: 'green', message: 'Acceso cerrado' })
         setReports((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'closed' } : r)))
       }
     })

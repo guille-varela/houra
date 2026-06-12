@@ -18,6 +18,7 @@ import {
   Card,
 } from '@mantine/core'
 import { DateInput } from '@mantine/dates'
+import { notifications } from '@mantine/notifications'
 import { IconPlus, IconTrash, IconPencil, IconCalendar, IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react'
 import {
   addProposalPhase,
@@ -148,6 +149,7 @@ export default function StaffingTab({
                 : p,
             ),
           )
+          notifications.show({ color: 'green', message: 'Fase actualizada · ' + newPhaseName.trim() })
         } else {
           const result = await addProposalPhase(proposalId, {
             name: newPhaseName.trim(),
@@ -164,6 +166,7 @@ export default function StaffingTab({
               sortOrder: String(prev.length),
             },
           ])
+          notifications.show({ color: 'green', message: 'Fase creada · ' + newPhaseName.trim() })
         }
         setPhaseModalOpen(false)
         setEditingPhaseId(null)
@@ -183,6 +186,7 @@ export default function StaffingTab({
       if (result.ok) {
         setPhases((prev) => prev.filter((p) => p.id !== phaseId))
         setStaffing((prev) => prev.filter((s) => s.phaseId !== phaseId))
+        notifications.show({ color: 'green', message: 'Fase eliminada' })
       } else {
         setError(result.error)
       }
@@ -214,6 +218,7 @@ export default function StaffingTab({
             estimatedHours: String(newLineHours),
           },
         ])
+        notifications.show({ color: 'green', message: 'Línea de equipo añadida' })
         setStaffingModalOpen(false)
         setNewLinePhase(null)
         setNewLineArea(null)
@@ -232,6 +237,7 @@ export default function StaffingTab({
       const result = await deleteStaffingLine(lineId)
       if (result.ok) {
         setStaffing((prev) => prev.filter((s) => s.id !== lineId))
+        notifications.show({ color: 'green', message: 'Línea de equipo eliminada' })
       } else {
         setError(result.error)
       }
@@ -475,6 +481,7 @@ export default function StaffingTab({
           )}
           <Select
             label="Tipo"
+            placeholder="Selecciona…"
             data={[
               { value: 'role', label: 'Perfil genérico' },
               { value: 'person', label: 'Persona concreta' },
@@ -484,6 +491,7 @@ export default function StaffingTab({
           />
           <Select
             label="Área"
+            placeholder="Selecciona…"
             data={AREA_OPTIONS}
             value={newLineArea}
             onChange={setNewLineArea}
@@ -510,6 +518,7 @@ export default function StaffingTab({
           )}
           <NumberInput
             label="Horas estimadas"
+            placeholder="Ej. 200"
             value={newLineHours}
             onChange={(v) => setNewLineHours(typeof v === 'number' ? v : '')}
             min={1}

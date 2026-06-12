@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Modal, TextInput, Stack, Alert } from '@mantine/core'
 import { IconPlus } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
 import { createProposal } from '@/actions/proposals'
 
 export default function NewProposalButton() {
@@ -19,6 +20,7 @@ export default function NewProposalButton() {
     startTransition(async () => {
       const result = await createProposal({ name: name.trim() })
       if (result.ok) {
+        notifications.show({ color: 'green', message: 'Propuesta creada · ' + name.trim() })
         setOpen(false)
         setName('')
         router.push(`/proposals/${result.id}`)

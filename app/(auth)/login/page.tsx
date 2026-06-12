@@ -70,6 +70,7 @@ export default function LoginPage() {
             <TextInput
               label="Email"
               type="email"
+              placeholder="Ej. nombre@gut.es"
               value={email}
               onChange={(e) => setEmail(e.currentTarget.value)}
               required

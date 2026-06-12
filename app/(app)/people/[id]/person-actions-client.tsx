@@ -23,6 +23,7 @@ export default function PersonActionsClient({ personId, isDeactivated, isAnonymi
       if (!result.ok) {
         notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
+        notifications.show({ color: 'green', message: 'Persona desactivada' })
         setDeactivateOpen(false)
       }
     })
@@ -34,6 +35,7 @@ export default function PersonActionsClient({ personId, isDeactivated, isAnonymi
       if (!result.ok) {
         notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
+        notifications.show({ color: 'green', message: 'Persona anonimizada' })
         setAnonymizeOpen(false)
       }
     })

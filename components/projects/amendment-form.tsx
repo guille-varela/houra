@@ -96,6 +96,7 @@ export default function AmendmentForm({ projectId, effectiveAllocation, opened, 
       if (!result.ok) {
         notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
+        notifications.show({ color: 'green', message: 'Amendment creado' })
         handleClose()
       }
     })

@@ -98,6 +98,7 @@ export default function TimeEntryForm({ opened, onClose, assignedProjects, defau
         notifications.show({ color: 'red', title: 'Error', message: result.error })
         return
       }
+      notifications.show({ color: 'green', message: 'Entrada registrada · ' + hoursNum + 'h' })
       handleClose()
     })
   }
@@ -142,6 +143,7 @@ export default function TimeEntryForm({ opened, onClose, assignedProjects, defau
 
             <NumberInput
               label="Horas"
+              placeholder="Ej. 8"
               value={hours}
               onChange={setHours}
               min={0.5}
@@ -170,6 +172,7 @@ export default function TimeEntryForm({ opened, onClose, assignedProjects, defau
 
           <Textarea
             label="Descripción (opcional)"
+            placeholder="Ej. Implementar login…"
             value={description}
             onChange={(e) => setDescription(e.currentTarget.value)}
             rows={2}

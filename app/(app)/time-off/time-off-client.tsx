@@ -116,7 +116,11 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
     setDeletingId(id)
     const result = await deleteTimeOffEntry({ id })
     setDeletingId(null)
-    if (!result.ok) notifications.show({ color: 'red', title: 'Error', message: result.error })
+    if (!result.ok) {
+      notifications.show({ color: 'red', title: 'Error', message: result.error })
+    } else {
+      notifications.show({ color: 'green', message: 'Ausencia eliminada' })
+    }
   }
 
   const groups = groupByMonth(entries)
@@ -219,6 +223,7 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
 
           <Select
             label="Tipo"
+            placeholder="Selecciona…"
             value={type}
             onChange={(v) => setType(v ?? 'vacation')}
             data={[
@@ -249,6 +254,7 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
 
           <NumberInput
             label="Horas por día"
+            placeholder="Ej. 8"
             value={hoursPerDay}
             onChange={setHoursPerDay}
             min={0.5}
@@ -259,6 +265,7 @@ export default function TimeOffClient({ entries }: { entries: Entry[] }) {
 
           <Textarea
             label="Nota (opcional)"
+            placeholder="Ej. Permiso médico…"
             value={note}
             onChange={(e) => setNote(e.currentTarget.value)}
             maxLength={200}

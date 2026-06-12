@@ -57,7 +57,11 @@ export default function TodayClient({
     setDeletingId(id)
     const result = await deleteTimeEntry(id)
     setDeletingId(null)
-    if (!result.ok) notifications.show({ color: 'red', title: 'Error', message: result.error })
+    if (!result.ok) {
+      notifications.show({ color: 'red', title: 'Error', message: result.error })
+    } else {
+      notifications.show({ color: 'green', message: 'Entrada eliminada' })
+    }
   }
 
   const over = totalHours >= SOFT_CAP

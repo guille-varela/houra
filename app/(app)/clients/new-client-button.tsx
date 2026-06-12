@@ -20,6 +20,7 @@ export default function NewClientButton() {
     try {
       const result = await createClient({ name })
       if (result.ok) {
+        notifications.show({ color: 'green', message: 'Cliente creado · ' + name })
         setOpen(false)
         setName('')
         router.push(`/clients/${result.id}`)

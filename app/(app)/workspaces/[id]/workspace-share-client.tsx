@@ -34,6 +34,7 @@ export default function WorkspaceShareClient({ workspaceId, existingReports }: P
       if (!result.ok) {
         notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
+        notifications.show({ color: 'green', message: 'Compartido con el comité' })
         setNewSlug(result.slug)
         setReports((prev) => [
           { id: result.slug, slug: result.slug, status: 'open', createdAt: new Date().toISOString() },

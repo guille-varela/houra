@@ -14,6 +14,7 @@ import {
   Modal,
 } from '@mantine/core'
 import { IconArrowRight, IconCopy, IconRocket } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
 import {
   updateProposalStatus,
   duplicateProposal,
@@ -72,6 +73,7 @@ export default function ProposalSettingsTab({
       if (!result.ok) {
         setStatusError(result.error)
       } else {
+        notifications.show({ color: 'green', message: 'Estado actualizado · ' + (STATUS_LABELS[selectedStatus] ?? selectedStatus) })
         router.refresh()
         setSelectedStatus(null)
       }
@@ -85,6 +87,7 @@ export default function ProposalSettingsTab({
       if (!result.ok) {
         setDupError(result.error)
       } else {
+        notifications.show({ color: 'green', message: 'Propuesta duplicada · ' + proposalName + ' (copia)' })
         setDupModalOpen(false)
         router.push(`/proposals/${result.id}`)
       }
@@ -98,6 +101,7 @@ export default function ProposalSettingsTab({
       if (!result.ok) {
         setConvertError(result.error)
       } else {
+        notifications.show({ color: 'green', message: 'Propuesta convertida a proyecto · ' + proposalName })
         setConvertModalOpen(false)
         router.push(`/projects/${result.projectId}`)
       }

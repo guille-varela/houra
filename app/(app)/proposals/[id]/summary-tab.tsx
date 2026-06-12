@@ -14,6 +14,7 @@ import {
   Alert,
   Divider,
 } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import { updateProposal } from '@/actions/proposals'
 
 const BILLING_MODEL_OPTIONS = [
@@ -74,9 +75,11 @@ export default function SummaryTab({
         internalNotes: notes.trim() || null,
       })
       if (result.ok) {
+        notifications.show({ color: 'green', message: 'Propuesta actualizada · ' + (name.trim() || initialName) })
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)
       } else {
+        notifications.show({ color: 'red', message: 'No se pudo actualizar la propuesta' })
         setError('Error al guardar los cambios.')
       }
     })
@@ -86,6 +89,7 @@ export default function SummaryTab({
     <Stack gap="lg" style={{ maxWidth: 560 }}>
       <TextInput
         label="Nombre"
+        placeholder="Ej. Iberdrola Web Consejero Q3 2026"
         value={name}
         onChange={(e) => setName(e.currentTarget.value)}
       />
@@ -113,12 +117,14 @@ export default function SummaryTab({
       <Group grow>
         <Select
           label="Tipo de proyecto"
+          placeholder="Selecciona…"
           data={PROJECT_TYPE_OPTIONS}
           value={projectType}
           onChange={setProjectType}
         />
         <Select
           label="Modelo de facturación"
+          placeholder="Selecciona…"
           data={BILLING_MODEL_OPTIONS}
           value={billingModel}
           onChange={setBillingModel}

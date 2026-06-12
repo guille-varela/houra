@@ -108,6 +108,7 @@ export default function RatesClient({ rates: initialRates }: Props) {
               : r,
           ),
         )
+        notifications.show({ color: 'green', message: 'Tarifa actualizada' })
         setEditingId(null)
       }
     })
@@ -119,6 +120,7 @@ export default function RatesClient({ rates: initialRates }: Props) {
       if (!result.ok) {
         notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
+        notifications.show({ color: 'green', message: 'Tarifa eliminada' })
         setRates((prev) => prev.filter((r) => r.id !== id))
       }
     })
@@ -137,6 +139,7 @@ export default function RatesClient({ rates: initialRates }: Props) {
       if (!result.ok) {
         notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
+        notifications.show({ color: 'green', message: 'Tarifa creada' })
         setAddOpen(false)
         setNewArea(null)
         setNewRole(null)
@@ -329,6 +332,7 @@ export default function RatesClient({ rates: initialRates }: Props) {
           <Group grow>
             <Select
               label="Área"
+              placeholder="Selecciona…"
               data={AREAS.map((a) => ({ value: a, label: AREA_LABELS[a] }))}
               value={newArea}
               onChange={setNewArea}
@@ -336,6 +340,7 @@ export default function RatesClient({ rates: initialRates }: Props) {
             />
             <Select
               label="Rol"
+              placeholder="Selecciona…"
               data={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
               value={newRole}
               onChange={setNewRole}
@@ -343,8 +348,8 @@ export default function RatesClient({ rates: initialRates }: Props) {
             />
           </Group>
           <Group grow>
-            <NumberInput label="Coste/h (€)" value={newCost} onChange={setNewCost} min={0} step={5} prefix="€" />
-            <NumberInput label="Venta/h (€)" value={newSold} onChange={setNewSold} min={0} step={5} prefix="€" />
+            <NumberInput label="Coste/h (€)" placeholder="Ej. 85" value={newCost} onChange={setNewCost} min={0} step={5} prefix="€" />
+            <NumberInput label="Venta/h (€)" placeholder="Ej. 120" value={newSold} onChange={setNewSold} min={0} step={5} prefix="€" />
           </Group>
           <DateInput
             label="Desde"

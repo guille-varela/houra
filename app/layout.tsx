@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <MantineProvider theme={theme} defaultColorScheme="auto">
           <DatesProvider settings={{ locale: 'es', firstDayOfWeek: 1, weekendDays: [0, 6] }}>
-            <Notifications />
+            <Notifications position="bottom-left" />
             {children}
           </DatesProvider>
         </MantineProvider>
