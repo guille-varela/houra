@@ -17,10 +17,11 @@ import {
   Progress,
   Card,
 } from '@mantine/core'
-import { IconPlus, IconTrash, IconCalendar, IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react'
+import { IconPlus, IconTrash, IconPencil, IconCalendar, IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react'
 import {
   addProposalPhase,
   deleteProposalPhase,
+  updateProposalPhase,
   addStaffingLine,
   deleteStaffingLine,
 } from '@/actions/proposals'
@@ -89,11 +90,28 @@ export default function StaffingTab({
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
-  // Add phase form state
+  // Phase form state (sirve para crear y editar)
   const [phaseModalOpen, setPhaseModalOpen] = useState(false)
+  const [editingPhaseId, setEditingPhaseId] = useState<string | null>(null)
   const [newPhaseName, setNewPhaseName] = useState('')
   const [newPhaseDelivery, setNewPhaseDelivery] = useState('')
   const [newPhaseBilling, setNewPhaseBilling] = useState<number | ''>('')
+
+  function openPhaseModal(phase?: Phase) {
+    setError(null)
+    if (phase) {
+      setEditingPhaseId(phase.id)
+      setNewPhaseName(phase.name)
+      setNewPhaseDelivery(phase.deliveryDate ?? '')
+      setNewPhaseBilling(phase.billingAmount ? Number(phase.billingAmount) : '')
+    } else {
+      setEditingPhaseId(null)
+      setNewPhaseName('')
+      setNewPhaseDelivery('')
+      setNewPhaseBilling('')
+    }
+    setPhaseModalOpen(true)
+  }
 
   // Add staffing line form state
   const [staffingModalOpen, setStaffingModalOpen] = useState(false)
@@ -104,32 +122,54 @@ export default function StaffingTab({
   const [newLinePerson, setNewLinePerson] = useState<string | null>(null)
   const [newLineHours, setNewLineHours] = useState<number | ''>(40)
 
-  function handleAddPhase() {
+  function handleSavePhase() {
     if (!newPhaseName.trim()) return
     setError(null)
+    const billing = typeof newPhaseBilling === 'number' ? newPhaseBilling : null
+    const delivery = newPhaseDelivery || null
     startTransition(async () => {
       try {
-        const result = await addProposalPhase(proposalId, {
-          name: newPhaseName.trim(),
-          billingAmount: typeof newPhaseBilling === 'number' ? newPhaseBilling : null,
-          deliveryDate: newPhaseDelivery || null,
-        })
-        setPhases((prev) => [
-          ...prev,
-          {
-            id: result.id,
+        if (editingPhaseId) {
+          const result = await updateProposalPhase(editingPhaseId, {
             name: newPhaseName.trim(),
-            billingAmount: typeof newPhaseBilling === 'number' ? newPhaseBilling.toString() : null,
-            deliveryDate: newPhaseDelivery || null,
-            sortOrder: String(prev.length),
-          },
-        ])
+            billingAmount: billing,
+            deliveryDate: delivery,
+          })
+          if (!result.ok) {
+            setError(result.error)
+            return
+          }
+          setPhases((prev) =>
+            prev.map((p) =>
+              p.id === editingPhaseId
+                ? { ...p, name: newPhaseName.trim(), billingAmount: billing?.toString() ?? null, deliveryDate: delivery }
+                : p,
+            ),
+          )
+        } else {
+          const result = await addProposalPhase(proposalId, {
+            name: newPhaseName.trim(),
+            billingAmount: billing,
+            deliveryDate: delivery,
+          })
+          setPhases((prev) => [
+            ...prev,
+            {
+              id: result.id,
+              name: newPhaseName.trim(),
+              billingAmount: billing?.toString() ?? null,
+              deliveryDate: delivery,
+              sortOrder: String(prev.length),
+            },
+          ])
+        }
         setPhaseModalOpen(false)
+        setEditingPhaseId(null)
         setNewPhaseName('')
         setNewPhaseDelivery('')
         setNewPhaseBilling('')
       } catch {
-        setError('Error al añadir la fase.')
+        setError(editingPhaseId ? 'Error al guardar la fase.' : 'Error al añadir la fase.')
       }
     })
   }
@@ -225,7 +265,7 @@ export default function StaffingTab({
             size="xs"
             variant="light"
             leftSection={<IconPlus size={12} />}
-            onClick={() => setPhaseModalOpen(true)}
+            onClick={() => openPhaseModal()}
           >
             Añadir fase
           </Button>
@@ -260,15 +300,28 @@ export default function StaffingTab({
                     </Badge>
                   )}
                 </Group>
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  size="sm"
-                  disabled={isPending}
-                  onClick={() => handleDeletePhase(phase.id)}
-                >
-                  <IconTrash size={14} />
-                </ActionIcon>
+                <Group gap={4}>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => openPhaseModal(phase)}
+                    aria-label="Editar fase"
+                  >
+                    <IconPencil size={14} />
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="subtle"
+                    color="red"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => handleDeletePhase(phase.id)}
+                    aria-label="Borrar fase"
+                  >
+                    <IconTrash size={14} />
+                  </ActionIcon>
+                </Group>
               </Group>
             ))}
           </Stack>
@@ -358,8 +411,8 @@ export default function StaffingTab({
       {/* Add phase modal */}
       <Modal
         opened={phaseModalOpen}
-        onClose={() => setPhaseModalOpen(false)}
-        title="Añadir fase"
+        onClose={() => { setPhaseModalOpen(false); setEditingPhaseId(null) }}
+        title={editingPhaseId ? 'Editar fase' : 'Añadir fase'}
         size="sm"
       >
         <Stack gap="md">
@@ -391,8 +444,8 @@ export default function StaffingTab({
             <Button variant="subtle" color="gray" onClick={() => setPhaseModalOpen(false)}>
               Cancelar
             </Button>
-            <Button loading={isPending} disabled={!newPhaseName.trim()} onClick={handleAddPhase}>
-              Añadir
+            <Button loading={isPending} disabled={!newPhaseName.trim()} onClick={handleSavePhase}>
+              {editingPhaseId ? 'Guardar' : 'Añadir'}
             </Button>
           </Group>
         </Stack>

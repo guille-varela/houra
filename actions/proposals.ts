@@ -223,6 +223,33 @@ export async function deleteProposalPhase(phaseId: string) {
   return { ok: true as const }
 }
 
+export async function updateProposalPhase(
+  phaseId: string,
+  data: { name: string; billingAmount?: number | null; deliveryDate?: string | null },
+) {
+  const person = await requireRole('manager')
+
+  const [phase] = await db
+    .select()
+    .from(proposalPhases)
+    .where(and(eq(proposalPhases.id, phaseId), eq(proposalPhases.organizationId, person.organizationId)))
+    .limit(1)
+
+  if (!phase) return { ok: false as const, error: 'Fase no encontrada.' }
+
+  await db
+    .update(proposalPhases)
+    .set({
+      name: data.name.trim(),
+      billingAmount: data.billingAmount?.toString() ?? null,
+      deliveryDate: data.deliveryDate ?? null,
+    })
+    .where(eq(proposalPhases.id, phaseId))
+
+  revalidatePath(`/proposals/${phase.proposalId}`)
+  return { ok: true as const }
+}
+
 // ─── Staffing ────────────────────────────────────────────────────────────────
 
 export async function addStaffingLine(
