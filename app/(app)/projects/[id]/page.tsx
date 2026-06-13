@@ -13,6 +13,7 @@ import MarginTab from './margin-tab'
 import AmendmentsTab from './amendments-tab'
 import ShareTab from './share-tab'
 import ProjectTabs from './project-tabs'
+import BackLink from '@/components/ui/back-link'
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador',
@@ -79,6 +80,7 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
 
   return (
     <Stack p="md" gap="md">
+      <BackLink href="/projects" label="Proyectos" />
       <Card p="md">
         <Group justify="space-between" align="flex-start" mb={6}>
           <Text style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>

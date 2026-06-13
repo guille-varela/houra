@@ -6,6 +6,14 @@ import { requireRole } from '@/lib/auth-helpers'
 import { rates, clients, persons, proposals, proposalPhases, proposalStaffing } from '@/db/schema'
 import { formatEur } from '@/lib/margin'
 import { marginColor } from '@/lib/tokens'
+import InfoTooltip from '@/components/ui/info-tooltip'
+
+const METRIC_HELP = {
+  hours: 'Suma de horas asignadas a todos los perfiles de la propuesta.',
+  cost: 'Σ (horas × coste/hora) por cada perfil. El coste/hora sale de la tarifa vigente a la fecha de la propuesta.',
+  revenue: 'Σ (horas × venta/hora) por cada perfil. La venta/hora sale del acuerdo marco si aplica, o de la tarifa estándar.',
+  margin: '(Ingresos − Coste) ÷ Ingresos × 100. El importe en euros es Ingresos − Coste.',
+}
 
 type RateRow = typeof rates.$inferSelect
 type ClientRow = typeof clients.$inferSelect
@@ -72,19 +80,31 @@ function ScenarioCard({
       ) : (
         <Stack gap={6}>
           <Group justify="space-between">
-            <Text size="xs" c="dimmed">Horas</Text>
+            <Group gap={2} align="center">
+              <Text size="xs" c="dimmed">Horas</Text>
+              <InfoTooltip label={METRIC_HELP.hours} size={12} />
+            </Group>
             <Text size="sm" fw={500}>{totalHours.toFixed(0)}h</Text>
           </Group>
           <Group justify="space-between">
-            <Text size="xs" c="dimmed">Coste</Text>
+            <Group gap={2} align="center">
+              <Text size="xs" c="dimmed">Coste</Text>
+              <InfoTooltip label={METRIC_HELP.cost} size={12} />
+            </Group>
             <Text size="sm" fw={500}>{formatEur(cost)}</Text>
           </Group>
           <Group justify="space-between">
-            <Text size="xs" c="dimmed">Ingresos</Text>
+            <Group gap={2} align="center">
+              <Text size="xs" c="dimmed">Ingresos</Text>
+              <InfoTooltip label={METRIC_HELP.revenue} size={12} />
+            </Group>
             <Text size="sm" fw={500}>{formatEur(revenue)}</Text>
           </Group>
           <Group justify="space-between" mt={4}>
-            <Text size="xs" c="dimmed">Margen</Text>
+            <Group gap={2} align="center">
+              <Text size="xs" c="dimmed">Margen</Text>
+              <InfoTooltip label={METRIC_HELP.margin} size={12} />
+            </Group>
             <Group gap={6} align="center">
               <Text size="sm" fw={700} c={color}>
                 {pct !== null ? `${pct.toFixed(1)}%` : 'n/d'}
@@ -92,14 +112,15 @@ function ScenarioCard({
               <Text size="xs" c="dimmed">{formatEur(margin)}</Text>
             </Group>
           </Group>
-          {targetDelta !== null && (
+          {targetDelta !== null && pct !== null && targetPct !== null && (
             <Group justify="flex-end">
               <Badge
                 size="xs"
                 variant="light"
                 color={targetDelta >= 0 ? 'green' : 'red'}
               >
-                {targetDelta >= 0 ? '+' : ''}{targetDelta.toFixed(1)}% vs objetivo
+                {Math.abs(targetDelta).toFixed(1)} pp {targetDelta >= 0 ? 'sobre' : 'bajo'} objetivo
+                {' · '}{pct.toFixed(0)}% vs {targetPct.toFixed(0)}%
               </Badge>
             </Group>
           )}

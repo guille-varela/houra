@@ -29,6 +29,20 @@ import {
 } from '@/actions/proposals'
 import { computeFeasibility } from '@/lib/feasibility'
 import { formatDateEU } from '@/lib/dates'
+import InfoTooltip from '@/components/ui/info-tooltip'
+
+const STAFFING_TYPE_OPTIONS = [
+  {
+    value: 'role',
+    label: 'Perfil',
+    description: 'Reserva una categoría sin asignar a una persona concreta todavía',
+  },
+  {
+    value: 'person',
+    label: 'Persona',
+    description: 'Asigna una persona específica del equipo',
+  },
+]
 
 const AREA_OPTIONS = [
   { value: 'research', label: 'Research' },
@@ -382,7 +396,7 @@ export default function StaffingTab({
                     <Text size="sm" style={{ color: 'var(--h-text)' }}>
                       {line.staffingType === 'person'
                         ? getPersonName(line.personId!)
-                        : (line.roleCategory ?? 'Perfil genérico')}
+                        : (line.roleCategory ?? 'Perfil sin categoría')}
                     </Text>
                     <Badge size="xs" variant="outline" color="blue">{line.estimatedHours}h</Badge>
                     {phaseName && (
@@ -480,14 +494,20 @@ export default function StaffingTab({
             />
           )}
           <Select
-            label="Tipo"
+            label="Tipo de persona"
             placeholder="Selecciona…"
-            data={[
-              { value: 'role', label: 'Perfil genérico' },
-              { value: 'person', label: 'Persona concreta' },
-            ]}
+            data={STAFFING_TYPE_OPTIONS}
             value={newLineType}
             onChange={setNewLineType}
+            renderOption={({ option }) => {
+              const meta = STAFFING_TYPE_OPTIONS.find((o) => o.value === option.value)
+              return (
+                <Stack gap={0}>
+                  <Text size="sm">{option.label}</Text>
+                  {meta && <Text size="xs" c="dimmed">{meta.description}</Text>}
+                </Stack>
+              )
+            }}
           />
           <Select
             label="Área"
@@ -631,7 +651,12 @@ function FeasibilityWidget({
                   <Text size="sm" fw={600}>{result.workingDays} días</Text>
                 </Stack>
                 <Stack gap={2}>
-                  <Text size="xs" c="dimmed">Capacidad (1 perfil)</Text>
+                  <Group gap={2} align="center">
+                    <Text size="xs" c="dimmed">Capacidad (1 perfil)</Text>
+                    <InfoTooltip
+                      label="Capacidad disponible de un perfil en horas. Calculado como: días laborables del plazo × horas/día útil − festivos. No incluye vacaciones planificadas ni la carga de otros proyectos en paralelo."
+                    />
+                  </Group>
                   <Text size="sm" fw={600}>{result.availableHours.toFixed(0)}h</Text>
                 </Stack>
                 <Stack gap={2}>

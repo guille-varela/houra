@@ -101,7 +101,7 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
       if (!result.ok) {
         notifications.show({ color: 'red', title: 'Error', message: result.error })
       } else {
-        notifications.show({ color: 'green', message: 'Transfer realizado · ' + hoursNum + 'h' })
+        notifications.show({ color: 'green', message: 'Horas transferidas · ' + hoursNum + 'h' })
         setDrawerOpen(false)
         resetWizard()
       }
@@ -121,7 +121,7 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
                 ? <Badge size="xs" variant="light" color="gray" circle>{transfers.length}</Badge>
                 : undefined
             }>
-              Transfers
+              Transferencias
             </Tabs.Tab>
           </Tabs.List>
           <Button
@@ -129,7 +129,7 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
             leftSection={<IconArrowsTransferDown size={13} />}
             onClick={() => setDrawerOpen(true)}
           >
-            Nuevo transfer
+            Mover horas
           </Button>
         </Group>
 
@@ -184,9 +184,12 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
 
         <Tabs.Panel value="transfers">
           <Stack gap="sm">
+            <Text size="xs" c="dimmed">
+              Mueve horas no consumidas de un proyecto a otro. Útil cuando un proyecto va sobrado de horas y otro está corto.
+            </Text>
             {transfers.length === 0 && (
               <Card>
-                <Text size="sm" c="dimmed" ta="center" py="lg">Sin transfers registrados.</Text>
+                <Text size="sm" c="dimmed" ta="center" py="lg">Aún no hay transferencias registradas.</Text>
               </Card>
             )}
             {transfers.map((t) => (
@@ -226,7 +229,7 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
       <Drawer
         opened={drawerOpen}
         onClose={() => { setDrawerOpen(false); resetWizard() }}
-        title="Nuevo transfer de horas"
+        title="Mover horas entre proyectos"
         position="right"
         size="md"
       >
@@ -276,7 +279,7 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
           </Group>
 
           <NumberInput
-            label="Horas a transferir"
+            label="Horas a mover"
             placeholder="Ej. 40"
             value={hours}
             onChange={setHours}
@@ -297,11 +300,11 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
           />
 
           <Text size="xs" c="dimmed">
-            El transfer es atómico e irreversible. Las horas se mueven de la asignación efectiva del proyecto origen al destino en la misma celda (área × rol).
+            La transferencia es atómica e irreversible. Las horas se mueven de la asignación efectiva del proyecto origen al destino en la misma celda (área × rol).
           </Text>
 
           <Button onClick={handleTransfer} loading={isPending} mt="xs">
-            Confirmar transfer
+            Confirmar transferencia
           </Button>
         </Stack>
       </Drawer>

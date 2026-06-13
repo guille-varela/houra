@@ -14,6 +14,7 @@ import {
   Group,
   Box,
   Divider,
+  SegmentedControl,
 } from '@mantine/core'
 import { DateInput } from '@mantine/dates'
 import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS, type Allocation } from '@/lib/matrix'
@@ -38,17 +39,29 @@ type DeltaAllocation = Record<string, Record<string, number>>
 export default function AmendmentForm({ projectId, effectiveAllocation, opened, onClose }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  // 'delta': el usuario introduce el cambio (+20/−20). 'absolute': introduce el valor final.
+  const [mode, setMode] = useState<'delta' | 'absolute'>('delta')
 
-  const [delta, setDelta] = useState<DeltaAllocation>(() => {
+  // Construye la cuadrícula base según el modo: ceros en delta, valores actuales en absoluto.
+  function buildBaseline(forMode: 'delta' | 'absolute'): DeltaAllocation {
     const d: DeltaAllocation = {}
     for (const area of AREAS) {
       d[area] = {}
       for (const role of ROLES) {
-        d[area]![role] = 0
+        d[area]![role] = forMode === 'absolute' ? (effectiveAllocation[area]?.[role] ?? 0) : 0
       }
     }
     return d
-  })
+  }
+
+  // En delta guarda el incremento tecleado; en absoluto guarda el valor final tecleado.
+  const [delta, setDelta] = useState<DeltaAllocation>(() => buildBaseline('delta'))
+
+  function handleModeChange(value: string) {
+    const next = value as 'delta' | 'absolute'
+    setMode(next)
+    setDelta(buildBaseline(next))
+  }
 
   const [reason, setReason] = useState('')
   const [clientRef, setClientRef] = useState('')
@@ -67,14 +80,16 @@ export default function AmendmentForm({ projectId, effectiveAllocation, opened, 
   }
 
   function handleSubmit() {
-    // Filter out zero deltas for cleaner storage
+    // Calcula el delta final: en modo absoluto es (valor tecleado − valor actual).
     const filteredDelta: DeltaAllocation = {}
     for (const area of AREAS) {
       for (const role of ROLES) {
-        const v = delta[area]?.[role] ?? 0
-        if (v !== 0) {
+        const typed = delta[area]?.[role] ?? 0
+        const current = effectiveAllocation[area]?.[role] ?? 0
+        const change = mode === 'absolute' ? typed - current : typed
+        if (change !== 0) {
           if (!filteredDelta[area]) filteredDelta[area] = {}
-          filteredDelta[area]![role] = v
+          filteredDelta[area]![role] = change
         }
       }
     }
@@ -112,9 +127,31 @@ export default function AmendmentForm({ projectId, effectiveAllocation, opened, 
       padding="md"
     >
       <Stack gap="md">
+        <SegmentedControl
+          fullWidth
+          size="xs"
+          value={mode}
+          onChange={handleModeChange}
+          data={[
+            { label: 'Modo delta', value: 'delta' },
+            { label: 'Modo absoluto', value: 'absolute' },
+          ]}
+        />
+
         <Text size="sm" c="dimmed">
-          Introduce los cambios de horas por celda (positivo para añadir, negativo para reducir).
-          Los valores actuales se muestran debajo de cada campo.
+          {mode === 'delta' ? (
+            <>
+              Introduce el <strong>cambio</strong> respecto a los valores actuales. Ejemplo: si UX-Senior
+              tiene 80h y quieres dejarlo en 100h, escribe <strong>+20</strong>; para bajarlo a 60h, escribe <strong>−20</strong>.
+              Los valores actuales se muestran debajo de cada campo.
+            </>
+          ) : (
+            <>
+              Introduce el <strong>valor final</strong> de horas de cada celda. Ejemplo: si quieres que
+              UX-Senior quede en 100h, escribe <strong>100</strong> (sin importar cuánto tenía).
+              Los campos parten del valor actual.
+            </>
+          )}
         </Text>
 
         {error && (

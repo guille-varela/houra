@@ -12,6 +12,7 @@ import SummaryTab from './summary-tab'
 import StaffingTab from './staffing-tab'
 import MarginTab from './margin-tab'
 import ProposalSettingsTab from './settings-tab'
+import BackLink from '@/components/ui/back-link'
 import type { ProposalStatus } from '@/lib/schemas/proposal'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -82,6 +83,7 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
 
   return (
     <Stack p="md" gap="md">
+      <BackLink href="/proposals" label="Propuestas" />
       <Card p="md">
         <Group justify="space-between" align="flex-start">
           <Text style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
