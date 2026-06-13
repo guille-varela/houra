@@ -16,6 +16,7 @@ import {
   IconCommand,
   IconFileText,
   IconBeach,
+  IconChartHistogram,
 } from '@tabler/icons-react'
 import RoleSwitcher from './role-switcher'
 import ThemeToggle from './theme-toggle'
@@ -30,6 +31,7 @@ type NavItem = {
   Icon: React.ComponentType<{ size: number; strokeWidth: number; style?: React.CSSProperties }>
   roles?: string[]
   exact?: boolean
+  insights?: boolean
 }
 
 const NAV_TOP: NavItem[] = [
@@ -38,6 +40,7 @@ const NAV_TOP: NavItem[] = [
   { href: '/my-projects', label: 'Mis proyectos', Icon: IconFolders, roles: ['contributor'] },
   { href: '/projects', label: 'Proyectos', Icon: IconFolders, roles: ['admin', 'manager'] },
   { href: '/dashboard', label: 'Dashboard', Icon: IconLayoutDashboard, roles: ['admin', 'manager'] },
+  { href: '/insights', label: 'Insights', Icon: IconChartHistogram, insights: true },
   { href: '/workspaces', label: 'Cuentas', Icon: IconBriefcase, roles: ['admin', 'manager'] },
   { href: '/proposals', label: 'Propuestas', Icon: IconFileText, roles: ['admin', 'manager'] },
   { href: '/clients', label: 'Clientes', Icon: IconBuilding, roles: ['admin', 'manager'] },
@@ -54,6 +57,7 @@ type Props = {
   appRole: string
   displayRole: string
   personName: string
+  canSeeInsights: boolean
 }
 
 function NavBtn({ item, active }: { item: NavItem; active: boolean }) {
@@ -123,7 +127,7 @@ function Monogram({ name }: { name: string }) {
   )
 }
 
-export default function AppSidebar({ appRole, displayRole, personName }: Props) {
+export default function AppSidebar({ appRole, displayRole, personName, canSeeInsights }: Props) {
   const pathname = usePathname()
 
   function isActive(item: NavItem) {
@@ -132,6 +136,7 @@ export default function AppSidebar({ appRole, displayRole, personName }: Props) 
   }
 
   function visible(item: NavItem) {
+    if (item.insights) return canSeeInsights
     if (!item.roles) return true
     return item.roles.includes(displayRole)
   }

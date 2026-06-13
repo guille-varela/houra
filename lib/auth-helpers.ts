@@ -41,3 +41,24 @@ export async function requireRole(minimumRole: AppRole) {
   }
   return person
 }
+
+/**
+ * F3.5 — Acceso a Insights (ver ADR-0011): app role admin/manager, o categoría
+ * profesional Lead/Head (un Lead puede tener appRole=contributor y aun así verlo).
+ */
+export function canAccessInsights(person: {
+  appRole: string
+  professionalCategory: string
+}): boolean {
+  return (
+    ['admin', 'manager'].includes(person.appRole) ||
+    ['lead', 'head'].includes(person.professionalCategory)
+  )
+}
+
+export async function requireInsightsAccess() {
+  const person = await getCurrentPerson()
+  if (!person) throw new Error('Unauthenticated')
+  if (!canAccessInsights(person)) throw new Error('Forbidden')
+  return person
+}

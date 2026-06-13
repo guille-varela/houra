@@ -17,6 +17,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? previewRole
     : person.appRole
 
+  // F3.5 — Insights: admin/manager o categoría profesional Lead/Head (ver ADR-0011).
+  const canSeeInsights =
+    ['admin', 'manager'].includes(displayRole) ||
+    ['lead', 'head'].includes(person.professionalCategory)
+
   return (
     <>
       {/* Desktop shell */}
@@ -29,7 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         }}
         className="hidden md:flex"
       >
-        <AppSidebar appRole={person.appRole} displayRole={displayRole} personName={person.name} />
+        <AppSidebar appRole={person.appRole} displayRole={displayRole} personName={person.name} canSeeInsights={canSeeInsights} />
         <div
           style={{
             flex: 1,
