@@ -19,11 +19,12 @@ import {
 } from '@mantine/core'
 import { DateInput } from '@mantine/dates'
 import { notifications } from '@mantine/notifications'
-import { IconPlus, IconTrash, IconPencil, IconCalendar, IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react'
+import { IconPlus, IconTrash, IconPencil, IconCalendar, IconAlertTriangle, IconCircleCheck, IconGripVertical } from '@tabler/icons-react'
 import {
   addProposalPhase,
   deleteProposalPhase,
   updateProposalPhase,
+  reorderProposalPhases,
   addStaffingLine,
   deleteStaffingLine,
 } from '@/actions/proposals'
@@ -193,6 +194,31 @@ export default function StaffingTab({
     })
   }
 
+  // Drag & drop nativo para reordenar fases (auto-numeradas por orden visual)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [overIndex, setOverIndex] = useState<number | null>(null)
+
+  function handleDropPhase(targetIndex: number) {
+    const from = dragIndex
+    setDragIndex(null)
+    setOverIndex(null)
+    if (from === null || from === targetIndex) return
+    const reordered = [...phases]
+    const [moved] = reordered.splice(from, 1)
+    reordered.splice(targetIndex, 0, moved!)
+    const prev = phases
+    setPhases(reordered)
+    startTransition(async () => {
+      const result = await reorderProposalPhases(proposalId, reordered.map((p) => p.id))
+      if (!result.ok) {
+        setPhases(prev) // revertir si falla
+        setError(result.error)
+      } else {
+        notifications.show({ color: 'green', message: 'Orden de fases actualizado' })
+      }
+    })
+  }
+
   function handleDeletePhase(phaseId: string) {
     setError(null)
     startTransition(async () => {
@@ -297,19 +323,35 @@ export default function StaffingTab({
           <Text size="sm" c="dimmed">Sin fases definidas. Las fases permiten organizar el trabajo en entregables.</Text>
         ) : (
           <Stack gap={4}>
-            {phases.map((phase) => (
+            {phases.map((phase, index) => (
               <Group
                 key={phase.id}
                 justify="space-between"
                 align="center"
                 p="sm"
+                draggable
+                onDragStart={() => setDragIndex(index)}
+                onDragOver={(e) => { e.preventDefault(); setOverIndex(index) }}
+                onDrop={() => handleDropPhase(index)}
+                onDragEnd={() => { setDragIndex(null); setOverIndex(null) }}
+                className="phase-row"
                 style={{
                   borderRadius: 8,
-                  border: '1px solid var(--h-border)',
+                  border: overIndex === index && dragIndex !== null && dragIndex !== index
+                    ? '1px dashed var(--mantine-color-blue-5)'
+                    : '1px solid var(--h-border)',
                   background: 'var(--h-surface-raised)',
+                  opacity: dragIndex === index ? 0.4 : 1,
+                  cursor: 'grab',
                 }}
               >
                 <Group gap="sm">
+                  <IconGripVertical
+                    size={14}
+                    style={{ color: 'var(--mantine-color-gray-5)', flexShrink: 0 }}
+                    aria-label="Arrastrar para reordenar"
+                  />
+                  <Badge size="sm" variant="light" color="gray" circle>{index + 1}</Badge>
                   <Text size="sm" fw={500} style={{ color: 'var(--h-text)' }}>{phase.name}</Text>
                   {phase.deliveryDate && (
                     <Badge size="xs" variant="light" color="gray" leftSection={<IconCalendar size={10} />}>

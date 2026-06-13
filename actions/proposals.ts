@@ -250,6 +250,36 @@ export async function updateProposalPhase(
   return { ok: true as const }
 }
 
+export async function reorderProposalPhases(proposalId: string, orderedPhaseIds: string[]) {
+  const person = await requireRole('manager')
+
+  // Verifica que todas las fases pertenecen a la propuesta y a la organización
+  const existing = await db
+    .select({ id: proposalPhases.id })
+    .from(proposalPhases)
+    .where(
+      and(
+        eq(proposalPhases.proposalId, proposalId),
+        eq(proposalPhases.organizationId, person.organizationId),
+      ),
+    )
+  const validIds = new Set(existing.map((p) => p.id))
+  if (orderedPhaseIds.length !== validIds.size || !orderedPhaseIds.every((id) => validIds.has(id))) {
+    return { ok: false as const, error: 'Orden de fases inválido.' }
+  }
+
+  // Persiste el nuevo sortOrder según el orden visual
+  for (let i = 0; i < orderedPhaseIds.length; i++) {
+    await db
+      .update(proposalPhases)
+      .set({ sortOrder: i.toString() })
+      .where(eq(proposalPhases.id, orderedPhaseIds[i]!))
+  }
+
+  revalidatePath(`/proposals/${proposalId}`)
+  return { ok: true as const }
+}
+
 // ─── Staffing ────────────────────────────────────────────────────────────────
 
 export async function addStaffingLine(
