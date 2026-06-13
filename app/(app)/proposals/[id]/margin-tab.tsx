@@ -7,6 +7,7 @@ import { rates, clients, persons, proposals, proposalPhases, proposalStaffing } 
 import { formatEur } from '@/lib/margin'
 import { marginColor } from '@/lib/tokens'
 import InfoTooltip from '@/components/ui/info-tooltip'
+import FrameworkRateToggle from './framework-rate-toggle'
 
 const METRIC_HELP = {
   hours: 'Suma de horas asignadas a todos los perfiles de la propuesta.',
@@ -142,6 +143,7 @@ export default async function MarginTab({ proposalId }: Props) {
         clientId: proposals.clientId,
         billingModel: proposals.billingModel,
         targetMarginPercent: proposals.targetMarginPercent,
+        useFrameworkAgreementRate: proposals.useFrameworkAgreementRate,
       })
       .from(proposals)
       .where(and(eq(proposals.id, proposalId), eq(proposals.organizationId, person.organizationId)))
@@ -258,8 +260,22 @@ export default async function MarginTab({ proposalId }: Props) {
 
   const targetPct = proposal.targetMarginPercent ? parseFloat(proposal.targetMarginPercent) : null
 
+  // F2.12 — cuánto suben los precios al pasar de marco → estándar
+  const priceIncreasePct =
+    marcoAvailable && totalRev2 != null && totalRev2 > 0
+      ? ((totalRev1 - totalRev2) / totalRev2) * 100
+      : null
+
   return (
     <Stack gap="xl">
+      <FrameworkRateToggle
+        proposalId={proposalId}
+        marcoAvailable={marcoAvailable}
+        initialUseFramework={proposal.useFrameworkAgreementRate}
+        clientName={client?.name ?? null}
+        priceIncreasePct={priceIncreasePct}
+      />
+
       {missingRates.length > 0 && (
         <Alert
           icon={<IconInfoCircle size={16} />}

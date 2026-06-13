@@ -118,17 +118,22 @@ export async function updateProposal(
     projectType?: string
     billingModel?: string
     targetMarginPercent?: number | null
+    useDefaultMargin?: boolean
+    totalBagHours?: number | null
+    useFrameworkAgreementRate?: boolean
     internalNotes?: string | null
   },
 ) {
   const person = await requireRole('manager')
 
+  const { totalBagHours, targetMarginPercent, ...rest } = data
   await db
     .update(proposals)
     .set({
-      ...data,
+      ...rest,
       name: data.name?.trim(),
-      targetMarginPercent: data.targetMarginPercent?.toString() ?? null,
+      targetMarginPercent: targetMarginPercent != null ? targetMarginPercent.toString() : null,
+      totalBagHours: totalBagHours != null ? totalBagHours.toString() : null,
       updatedAt: new Date(),
     })
     .where(and(eq(proposals.id, id), eq(proposals.organizationId, person.organizationId)))
@@ -176,6 +181,38 @@ export async function updateProposalStatus(id: string, status: ProposalStatus) {
   })
 
   revalidatePath('/proposals')
+  revalidatePath(`/proposals/${id}`)
+  return { ok: true as const }
+}
+
+export async function updateProposalFrameworkRate(id: string, useFrameworkAgreementRate: boolean) {
+  const person = await requireRole('manager')
+
+  const [proposal] = await db
+    .select({ useFrameworkAgreementRate: proposals.useFrameworkAgreementRate })
+    .from(proposals)
+    .where(and(eq(proposals.id, id), eq(proposals.organizationId, person.organizationId)))
+    .limit(1)
+
+  if (!proposal) return { ok: false as const, error: 'Propuesta no encontrada.' }
+
+  await db
+    .update(proposals)
+    .set({ useFrameworkAgreementRate, updatedAt: new Date() })
+    .where(eq(proposals.id, id))
+
+  await logAuditEvent({
+    organizationId: person.organizationId,
+    actorId: person.id,
+    entityType: 'proposal',
+    entityId: id,
+    action: 'framework_rate_changed',
+    diff: {
+      before: { useFrameworkAgreementRate: proposal.useFrameworkAgreementRate },
+      after: { useFrameworkAgreementRate },
+    },
+  })
+
   revalidatePath(`/proposals/${id}`)
   return { ok: true as const }
 }

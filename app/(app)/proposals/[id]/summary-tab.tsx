@@ -4,7 +4,6 @@ import { useState, useTransition } from 'react'
 import {
   Stack,
   Group,
-  Text,
   Button,
   Badge,
   TextInput,
@@ -13,9 +12,13 @@ import {
   Textarea,
   Alert,
   Divider,
+  Switch,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { updateProposal } from '@/actions/proposals'
+
+// Modelos de proyecto que requieren definir una bolsa de horas total (F2.2)
+const BAG_PROJECT_TYPES = ['fixed_bag', 'renewable_bag']
 
 const BILLING_MODEL_OPTIONS = [
   { value: 'hour_bag', label: 'Bolsa de horas' },
@@ -36,6 +39,9 @@ type Props = {
   projectType: string
   billingModel: string
   targetMarginPercent: string | null
+  useDefaultMargin: boolean
+  totalBagHours: string | null
+  orgDefaultMargin: string
   internalNotes: string | null
   clients: Array<{ id: string; name: string; hasMarco: boolean }>
 }
@@ -47,6 +53,9 @@ export default function SummaryTab({
   projectType: initialProjectType,
   billingModel: initialBillingModel,
   targetMarginPercent: initialMargin,
+  useDefaultMargin: initialUseDefaultMargin,
+  totalBagHours: initialBagHours,
+  orgDefaultMargin,
   internalNotes: initialNotes,
   clients,
 }: Props) {
@@ -54,13 +63,20 @@ export default function SummaryTab({
   const [clientId, setClientId] = useState<string | null>(initialClientId)
   const [projectType, setProjectType] = useState<string | null>(initialProjectType)
   const [billingModel, setBillingModel] = useState<string | null>(initialBillingModel)
+  const [useDefaultMargin, setUseDefaultMargin] = useState(initialUseDefaultMargin)
   const [margin, setMargin] = useState<number | ''>(
     initialMargin ? Number(initialMargin) : '',
+  )
+  const [bagHours, setBagHours] = useState<number | ''>(
+    initialBagHours ? Number(initialBagHours) : '',
   )
   const [notes, setNotes] = useState(initialNotes ?? '')
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  const showBagHours = projectType != null && BAG_PROJECT_TYPES.includes(projectType)
+  const effectiveMargin = useDefaultMargin ? Number(orgDefaultMargin) : margin
 
   function handleSave() {
     setError(null)
@@ -71,7 +87,11 @@ export default function SummaryTab({
         clientId,
         projectType: projectType ?? 'fixed_bag',
         billingModel: billingModel ?? 'hour_bag',
-        targetMarginPercent: typeof margin === 'number' ? margin : null,
+        targetMarginPercent: useDefaultMargin
+          ? Number(orgDefaultMargin)
+          : (typeof margin === 'number' ? margin : null),
+        useDefaultMargin,
+        totalBagHours: showBagHours && typeof bagHours === 'number' ? bagHours : null,
         internalNotes: notes.trim() || null,
       })
       if (result.ok) {
@@ -131,16 +151,38 @@ export default function SummaryTab({
         />
       </Group>
 
-      <NumberInput
-        label="Margen objetivo (%)"
-        placeholder="Ej: 35"
-        value={margin}
-        onChange={(v) => setMargin(typeof v === 'number' ? v : '')}
-        min={0}
-        max={100}
-        suffix="%"
-        style={{ maxWidth: 200 }}
-      />
+      {showBagHours && (
+        <NumberInput
+          label="Horas totales de la bolsa"
+          description="Horas contratadas en total para este proyecto"
+          placeholder="Ej. 200"
+          value={bagHours}
+          onChange={(v) => setBagHours(typeof v === 'number' ? v : '')}
+          min={0}
+          suffix="h"
+          style={{ maxWidth: 240 }}
+        />
+      )}
+
+      <Stack gap={6} style={{ maxWidth: 320 }}>
+        <Switch
+          label="Usar margen estándar de empresa"
+          checked={useDefaultMargin}
+          onChange={(e) => setUseDefaultMargin(e.currentTarget.checked)}
+        />
+        <NumberInput
+          label="Margen objetivo (%)"
+          description={useDefaultMargin ? `Estándar de la organización: ${orgDefaultMargin}%` : undefined}
+          placeholder="Ej: 35"
+          value={effectiveMargin}
+          onChange={(v) => setMargin(typeof v === 'number' ? v : '')}
+          disabled={useDefaultMargin}
+          min={0}
+          max={100}
+          suffix="%"
+          style={{ maxWidth: 200 }}
+        />
+      </Stack>
 
       <Divider />
 

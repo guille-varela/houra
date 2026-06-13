@@ -20,6 +20,8 @@ const STATUS_LABELS: Record<string, string> = {
   internal_review: 'Revisión interna',
   pending_approval: 'Pendiente aprobación',
   approved: 'Aprobada',
+  paused: 'Pausada',
+  expired: 'Caducada',
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -27,6 +29,8 @@ const STATUS_COLOR: Record<string, string> = {
   internal_review: 'blue',
   pending_approval: 'orange',
   approved: 'green',
+  paused: 'dark',
+  expired: 'red',
 }
 
 type Props = {
@@ -59,7 +63,10 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
       .from(persons)
       .where(eq(persons.organizationId, person.organizationId)),
     db
-      .select({ defaultWeeklyHours: organizations.defaultWeeklyHours })
+      .select({
+        defaultWeeklyHours: organizations.defaultWeeklyHours,
+        defaultTargetMarginPct: organizations.defaultTargetMarginPct,
+      })
       .from(organizations)
       .where(eq(organizations.id, person.organizationId))
       .limit(1)
@@ -155,6 +162,9 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
             projectType={proposal.projectType}
             billingModel={proposal.billingModel}
             targetMarginPercent={proposal.targetMarginPercent ?? null}
+            useDefaultMargin={proposal.useDefaultMargin}
+            totalBagHours={proposal.totalBagHours ?? null}
+            orgDefaultMargin={org?.defaultTargetMarginPct ?? '40'}
             internalNotes={proposal.internalNotes ?? null}
             clients={clientList.map((c) => ({ id: c.id, name: c.name, hasMarco: c.hasMarco }))}
           />
@@ -183,6 +193,7 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
             hoursPerDay={hoursPerDay}
             holidays={holidays}
             personTimeOff={personTimeOff}
+            totalBagHours={proposal.totalBagHours ?? null}
           />
         }
         margin={<MarginTab proposalId={id} />}

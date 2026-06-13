@@ -26,6 +26,20 @@ export default async function SettingsPage() {
         <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
           Organización
         </Text>
+        <Link href="/settings/organization" style={{ textDecoration: 'none', display: 'block' }}>
+          <Card p="md" style={{ cursor: 'pointer' }}>
+            <Group justify="space-between" align="center">
+              <Group gap="sm">
+                <IconBriefcase size={18} stroke={1.5} color="var(--mantine-color-gray-6)" />
+                <div>
+                  <Text size="sm" fw={500}>Organización</Text>
+                  <Text size="xs" c="dimmed">Margen objetivo por defecto y caducidad de propuestas</Text>
+                </div>
+              </Group>
+              <IconChevronRight size={16} color="var(--mantine-color-gray-4)" />
+            </Group>
+          </Card>
+        </Link>
         <Link href="/settings/rates" style={{ textDecoration: 'none', display: 'block' }}>
           <Card p="md" style={{ cursor: 'pointer' }}>
             <Group justify="space-between" align="center">

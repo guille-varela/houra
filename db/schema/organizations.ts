@@ -1,4 +1,4 @@
-import { jsonb, numeric, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { integer, jsonb, numeric, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
 export const renewalBehaviorEnum = pgEnum('renewal_behavior', ['reset', 'carry_over'])
 
@@ -17,6 +17,12 @@ export const organizations = pgTable('organizations', {
   defaultRenewalBehavior: renewalBehaviorEnum('default_renewal_behavior')
     .notNull()
     .default('reset'),
+  // Margen objetivo por defecto de la organización (F2.1)
+  defaultTargetMarginPct: numeric('default_target_margin_pct', { precision: 5, scale: 2 })
+    .notNull()
+    .default('40'),
+  // Días sin actualizar tras los que una propuesta pendiente caduca (F2.15)
+  proposalExpiryDays: integer('proposal_expiry_days').notNull().default(90),
   defaultNotificationChannels: jsonb('default_notification_channels'),
   digestSchedule: jsonb('digest_schedule'),
   reportDefaultPasswordHash: text('report_default_password_hash'),

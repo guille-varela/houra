@@ -1,4 +1,5 @@
 import {
+  boolean,
   date,
   index,
   numeric,
@@ -18,6 +19,8 @@ export const proposalStatusEnum = pgEnum('proposal_status', [
   'internal_review',
   'pending_approval',
   'approved',
+  'paused',
+  'expired',
 ])
 
 export const proposalStaffingTypeEnum = pgEnum('proposal_staffing_type', [
@@ -39,9 +42,17 @@ export const proposals = pgTable(
     projectType: text('project_type').notNull().default('fixed_bag'),
     billingModel: text('billing_model').notNull().default('hour_bag'),
     targetMarginPercent: numeric('target_margin_percent', { precision: 5, scale: 2 }),
+    // Usa el margen estándar de la organización (F2.1)
+    useDefaultMargin: boolean('use_default_margin').notNull().default(true),
+    // Horas totales de la bolsa cuando el modelo lo requiere (F2.2)
+    totalBagHours: numeric('total_bag_hours', { precision: 8, scale: 2 }),
+    // Aplica la tarifa del acuerdo marco del cliente (F2.12)
+    useFrameworkAgreementRate: boolean('use_framework_agreement_rate').notNull().default(true),
     internalNotes: text('internal_notes'),
     // Referencia al proyecto creado al convertir la propuesta aprobada
     convertedProjectId: uuid('converted_project_id').references(() => projects.id),
+    // Marca de la notificación "caduca en 7 días" para no repetirla (F2.15)
+    expiryNotifiedAt: timestamp('expiry_notified_at', { withTimezone: true }),
     createdBy: uuid('created_by')
       .notNull()
       .references(() => persons.id),

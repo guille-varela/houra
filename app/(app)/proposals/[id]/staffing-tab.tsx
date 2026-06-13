@@ -19,7 +19,7 @@ import {
 } from '@mantine/core'
 import { DateInput } from '@mantine/dates'
 import { notifications } from '@mantine/notifications'
-import { IconPlus, IconTrash, IconPencil, IconCalendar, IconAlertTriangle, IconCircleCheck, IconGripVertical } from '@tabler/icons-react'
+import { IconPlus, IconTrash, IconPencil, IconCalendar, IconAlertTriangle, IconCircleCheck, IconGripVertical, IconInfoCircle } from '@tabler/icons-react'
 import {
   addProposalPhase,
   deleteProposalPhase,
@@ -99,6 +99,7 @@ type Props = {
   hoursPerDay: number
   holidays: string[]
   personTimeOff: PersonTimeOff[]
+  totalBagHours: string | null
 }
 
 export default function StaffingTab({
@@ -110,6 +111,7 @@ export default function StaffingTab({
   hoursPerDay,
   holidays,
   personTimeOff,
+  totalBagHours,
 }: Props) {
   const [phases, setPhases] = useState<Phase[]>(initialPhases)
   const [staffing, setStaffing] = useState<StaffingLine[]>(initialStaffing)
@@ -496,6 +498,33 @@ export default function StaffingTab({
           </Stack>
         )}
       </Stack>
+
+      {/* F2.5 — validación cruzada: suma por perfil vs horas totales de la bolsa */}
+      {totalBagHours && Number(totalBagHours) > 0 && staffing.length > 0 && (() => {
+        const bag = Number(totalBagHours)
+        const diff = totalHours - bag
+        if (diff > 0) {
+          return (
+            <Alert color="red" variant="light" icon={<IconAlertTriangle size={16} />}>
+              Has asignado <strong>{totalHours}h</strong> pero el proyecto tiene <strong>{bag}h</strong> de bolsa.
+              {' '}Diferencia: <strong>+{diff}h</strong>. Reduce horas o amplía la bolsa.
+            </Alert>
+          )
+        }
+        if (diff < 0) {
+          return (
+            <Alert color="blue" variant="light" icon={<IconInfoCircle size={16} />}>
+              Has asignado <strong>{totalHours}h</strong> de <strong>{bag}h</strong> de la bolsa.
+              {' '}Quedan <strong>{-diff}h</strong> por asignar.
+            </Alert>
+          )
+        }
+        return (
+          <Alert color="green" variant="light" icon={<IconCircleCheck size={16} />}>
+            <strong>{bag}h</strong> asignadas · cuadra con la bolsa.
+          </Alert>
+        )
+      })()}
 
       {/* Feasibility section */}
       <FeasibilityWidget

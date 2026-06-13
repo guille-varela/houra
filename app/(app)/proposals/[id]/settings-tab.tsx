@@ -28,6 +28,8 @@ const STATUS_LABELS: Record<string, string> = {
   internal_review: 'Revisión interna',
   pending_approval: 'Pendiente aprobación',
   approved: 'Aprobada',
+  paused: 'Pausada',
+  expired: 'Caducada',
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -35,9 +37,18 @@ const STATUS_COLOR: Record<string, string> = {
   internal_review: 'blue',
   pending_approval: 'orange',
   approved: 'green',
+  paused: 'dark',
+  expired: 'red',
 }
 
-const ALL_STATUSES: ProposalStatus[] = ['draft', 'internal_review', 'pending_approval', 'approved']
+const ALL_STATUSES: ProposalStatus[] = [
+  'draft',
+  'internal_review',
+  'pending_approval',
+  'approved',
+  'paused',
+  'expired',
+]
 
 type Props = {
   proposalId: string

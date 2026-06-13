@@ -43,6 +43,13 @@
       "when": 1779991581482,
       "tag": "0005_fast_the_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781363948191,
+      "tag": "0006_rainy_avengers",
+      "breakpoints": true
     }
   ]
 }
