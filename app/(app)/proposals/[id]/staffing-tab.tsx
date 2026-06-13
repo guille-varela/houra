@@ -84,6 +84,12 @@ type Person = {
   professionalCategory: string
 }
 
+type PersonTimeOff = {
+  personId: string
+  date: string
+  type: string
+}
+
 type Props = {
   proposalId: string
   phases: Phase[]
@@ -92,6 +98,7 @@ type Props = {
   billingModel: string
   hoursPerDay: number
   holidays: string[]
+  personTimeOff: PersonTimeOff[]
 }
 
 export default function StaffingTab({
@@ -102,6 +109,7 @@ export default function StaffingTab({
   billingModel,
   hoursPerDay,
   holidays,
+  personTimeOff,
 }: Props) {
   const [phases, setPhases] = useState<Phase[]>(initialPhases)
   const [staffing, setStaffing] = useState<StaffingLine[]>(initialStaffing)
@@ -216,6 +224,31 @@ export default function StaffingTab({
       } else {
         notifications.show({ color: 'green', message: 'Orden de fases actualizado' })
       }
+    })
+  }
+
+  // F2.6 — acción "Extender plazo": desplaza la entrega de la última fase N días
+  function handleExtendDeadline(days: number) {
+    const withDates = phases.filter((p) => p.deliveryDate)
+    if (withDates.length === 0 || days <= 0) return
+    const latest = withDates.reduce((a, b) => ((a.deliveryDate ?? '') > (b.deliveryDate ?? '') ? a : b))
+    const [y, m, d] = latest.deliveryDate!.split('-').map(Number) as [number, number, number]
+    const dt = new Date(y, m - 1, d)
+    dt.setDate(dt.getDate() + days)
+    const newDate = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
+    setError(null)
+    startTransition(async () => {
+      const result = await updateProposalPhase(latest.id, {
+        name: latest.name,
+        billingAmount: latest.billingAmount ? Number(latest.billingAmount) : null,
+        deliveryDate: newDate,
+      })
+      if (!result.ok) {
+        setError(result.error)
+        return
+      }
+      setPhases((prev) => prev.map((p) => (p.id === latest.id ? { ...p, deliveryDate: newDate } : p)))
+      notifications.show({ color: 'green', message: `Plazo ampliado ${days} días · entrega ${formatDateEU(newDate)}` })
     })
   }
 
@@ -470,6 +503,10 @@ export default function StaffingTab({
         staffing={staffing}
         hoursPerDay={hoursPerDay}
         holidays={holidays}
+        people={people}
+        personTimeOff={personTimeOff}
+        onExtendDeadline={handleExtendDeadline}
+        onSubstitute={() => setStaffingModalOpen(true)}
       />
 
       {/* Add phase modal */}
@@ -611,11 +648,19 @@ function FeasibilityWidget({
   staffing,
   hoursPerDay,
   holidays,
+  people,
+  personTimeOff,
+  onExtendDeadline,
+  onSubstitute,
 }: {
   phases: Phase[]
   staffing: StaffingLine[]
   hoursPerDay: number
   holidays: string[]
+  people: Person[]
+  personTimeOff: PersonTimeOff[]
+  onExtendDeadline: (days: number) => void
+  onSubstitute: () => void
 }) {
   const today = new Date()
   const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
@@ -643,9 +688,32 @@ function FeasibilityWidget({
     })
   }, [latestDeadline, totalHours, staffing.length, hoursPerDay, holidaySet, todayIso])
 
+  // F2.6 — personas concretas con ausencias dentro del plazo del proyecto
+  const vacationAlerts = useMemo(() => {
+    if (!latestDeadline) return []
+    const assigned = [
+      ...new Set(staffing.filter((s) => s.staffingType === 'person' && s.personId).map((s) => s.personId!)),
+    ]
+    return assigned
+      .map((pid) => {
+        const days = personTimeOff
+          .filter((t) => t.personId === pid && t.date >= todayIso && t.date <= latestDeadline)
+          .map((t) => t.date)
+          .sort()
+        if (days.length === 0) return null
+        return {
+          personId: pid,
+          name: people.find((p) => p.id === pid)?.name ?? 'Persona',
+          count: days.length,
+          from: days[0]!,
+          to: days[days.length - 1]!,
+        }
+      })
+      .filter((a): a is { personId: string; name: string; count: number; from: string; to: string } => a !== null)
+  }, [staffing, personTimeOff, latestDeadline, todayIso, people])
+
   if (staffing.length === 0 || totalHours === 0) return null
 
-  const loadPct = result ? Math.min((result.fteNeeded / Math.max(result.staffingLines, 1)) * 100, 200) : 0
   const barColor = result?.ok ? 'green' : 'red'
 
   return (
@@ -742,6 +810,32 @@ function FeasibilityWidget({
             </Stack>
           </Card>
         ) : null}
+
+        {/* F2.6 — alertas de vacaciones de personas concretas dentro del plazo */}
+        {vacationAlerts.map((a) => (
+          <Alert
+            key={a.personId}
+            color="orange"
+            variant="light"
+            icon={<IconAlertTriangle size={16} />}
+          >
+            <Text size="sm">
+              <strong>{a.name}</strong> tiene {a.count} {a.count === 1 ? 'día' : 'días'} de ausencia
+              {a.from === a.to
+                ? ` el ${formatDateEU(a.from)}`
+                : ` entre ${formatDateEU(a.from)} y ${formatDateEU(a.to)}`}
+              , dentro del plazo del proyecto. Esto reduce su capacidad efectiva.
+            </Text>
+            <Group gap="xs" mt="xs">
+              <Button size="xs" variant="light" color="orange" onClick={() => onExtendDeadline(a.count)}>
+                Extender plazo {a.count} {a.count === 1 ? 'día' : 'días'}
+              </Button>
+              <Button size="xs" variant="subtle" color="gray" onClick={onSubstitute}>
+                Sustituir con otro perfil
+              </Button>
+            </Group>
+          </Alert>
+        ))}
       </Stack>
     </>
   )

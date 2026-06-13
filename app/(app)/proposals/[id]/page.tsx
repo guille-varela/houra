@@ -1,10 +1,10 @@
 import { notFound, redirect } from 'next/navigation'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, gte, inArray } from 'drizzle-orm'
 import { Stack, Group, Badge, Text, Card, Anchor } from '@mantine/core'
 import { IconFileText } from '@tabler/icons-react'
 import { db } from '@/lib/db'
-import { requireRole, getOrganizationContext } from '@/lib/auth-helpers'
-import { persons, holidayPresets, organizations } from '@/db/schema'
+import { requireRole } from '@/lib/auth-helpers'
+import { persons, holidayPresets, organizations, timeOffEntries } from '@/db/schema'
 import { getProposal, getProposalPhases, getProposalStaffing } from '@/actions/proposals'
 import { getClients } from '@/actions/clients'
 import ProposalTabs from './proposal-tabs'
@@ -77,6 +77,30 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
   )
   // hoursPerDay = weeklyHours / 5 work days
   const hoursPerDay = org?.defaultWeeklyHours ? parseFloat(org.defaultWeeklyHours) / 5 : 7.5
+
+  // F2.6 — vacaciones/bajas de las personas concretas asignadas, desde hoy en adelante
+  const todayIso = new Date().toISOString().split('T')[0]!
+  const assignedPersonIds = [
+    ...new Set(staffing.filter((s) => s.staffingType === 'person' && s.personId).map((s) => s.personId!)),
+  ]
+  const personTimeOff =
+    assignedPersonIds.length > 0
+      ? await db
+          .select({
+            personId: timeOffEntries.personId,
+            date: timeOffEntries.date,
+            type: timeOffEntries.type,
+          })
+          .from(timeOffEntries)
+          .where(
+            and(
+              eq(timeOffEntries.organizationId, person.organizationId),
+              inArray(timeOffEntries.personId, assignedPersonIds),
+              inArray(timeOffEntries.type, ['vacation', 'sick_leave']),
+              gte(timeOffEntries.date, todayIso),
+            ),
+          )
+      : []
 
   const isAdmin = person.appRole === 'admin'
   const activeTab = tab ?? 'summary'
@@ -158,6 +182,7 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
             billingModel={proposal.billingModel}
             hoursPerDay={hoursPerDay}
             holidays={holidays}
+            personTimeOff={personTimeOff}
           />
         }
         margin={<MarginTab proposalId={id} />}
