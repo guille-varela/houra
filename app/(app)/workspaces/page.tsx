@@ -49,13 +49,13 @@ export default async function WorkspacesPage() {
   return (
     <Stack p="md" gap="xl">
       <Text style={{ fontSize: '1.0625rem', fontWeight: 600, letterSpacing: '-0.02em' }}>
-        Workspaces
+        Cuentas
       </Text>
 
       <Stack gap="sm">
         {workspaceData.length === 0 && (
           <Card>
-            <Text size="sm" c="dimmed" ta="center" py="lg">Sin workspaces registrados.</Text>
+            <Text size="sm" c="dimmed" ta="center" py="lg">Sin cuentas registradas.</Text>
           </Card>
         )}
         {workspaceData.map((w) => (

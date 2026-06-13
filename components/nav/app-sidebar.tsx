@@ -38,7 +38,7 @@ const NAV_TOP: NavItem[] = [
   { href: '/my-projects', label: 'Mis proyectos', Icon: IconFolders, roles: ['contributor'] },
   { href: '/projects', label: 'Proyectos', Icon: IconFolders, roles: ['admin', 'manager'] },
   { href: '/dashboard', label: 'Dashboard', Icon: IconLayoutDashboard, roles: ['admin', 'manager'] },
-  { href: '/workspaces', label: 'Workspaces', Icon: IconBriefcase, roles: ['admin', 'manager'] },
+  { href: '/workspaces', label: 'Cuentas', Icon: IconBriefcase, roles: ['admin', 'manager'] },
   { href: '/proposals', label: 'Propuestas', Icon: IconFileText, roles: ['admin', 'manager'] },
   { href: '/clients', label: 'Clientes', Icon: IconBuilding, roles: ['admin', 'manager'] },
   { href: '/people', label: 'Personas', Icon: IconUsers, roles: ['admin'] },

@@ -182,7 +182,7 @@ async function WorkspaceView({ workspaceId }: { workspaceId: string }) {
     .select({ id: workspaces.id, name: workspaces.name })
     .from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1)
 
-  if (!workspace) return <Text c="dimmed">Workspace no encontrado.</Text>
+  if (!workspace) return <Text c="dimmed">Cuenta no encontrada.</Text>
 
   const projectRows = await db
     .select({ id: projects.id, name: projects.name, type: projects.type, status: projects.status, originalAllocation: projects.originalAllocation })

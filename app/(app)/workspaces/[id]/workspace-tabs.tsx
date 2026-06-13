@@ -15,9 +15,16 @@ import {
   Textarea,
   Alert,
   Tabs,
+  Table,
+  TableThead,
+  TableTbody,
+  TableTr,
+  TableTh,
+  TableTd,
+  Progress,
 } from '@mantine/core'
 import Link from 'next/link'
-import { IconArrowsTransferDown, IconPlus } from '@tabler/icons-react'
+import { IconArrowsTransferDown, IconArrowsExchange } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { createHourTransfer } from '@/actions/hour-transfers'
 import { AREAS, ROLES, AREA_LABELS, ROLE_LABELS, type Area, type Role } from '@/lib/matrix'
@@ -27,10 +34,20 @@ import { formatEur } from '@/lib/margin'
 type ProjectRow = {
   id: string
   name: string
+  type: string
   status: string
   totals: { consumed: number; planned: number; pct: number | null }
   marginTotals: { soldCents: number; marginPct: number | null }
 }
+
+type TransferSuggestion = {
+  fromProjectId: string
+  fromName: string
+  freeHours: number
+  toProjectId: string
+  toName: string
+  overHours: number
+} | null
 
 type TransferRow = {
   id: string
@@ -48,6 +65,7 @@ type Props = {
   workspaceId: string
   projects: ProjectRow[]
   transfers: TransferRow[]
+  transferSuggestion: TransferSuggestion
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -57,6 +75,12 @@ const STATUS_LABELS: Record<string, string> = {
   closed: 'Cerrado',
 }
 
+const TYPE_LABELS: Record<string, string> = {
+  fixed_bag: 'Bolsa fija',
+  renewable_bag: 'Bolsa renovable',
+  ongoing_capacity: 'Capacidad continua',
+}
+
 const STATUS_COLOR: Record<string, string> = {
   draft: 'gray',
   active: 'green',
@@ -64,7 +88,7 @@ const STATUS_COLOR: Record<string, string> = {
   closed: 'red',
 }
 
-export default function WorkspaceTabs({ workspaceId, projects, transfers }: Props) {
+export default function WorkspaceTabs({ workspaceId, projects, transfers, transferSuggestion }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -110,8 +134,36 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
 
   const activeProjects = projects.filter((p) => p.status !== 'closed')
 
+  function openSuggestedTransfer() {
+    if (!transferSuggestion) return
+    setFromProjectId(transferSuggestion.fromProjectId)
+    setToProjectId(transferSuggestion.toProjectId)
+    setDrawerOpen(true)
+  }
+
   return (
     <>
+      {transferSuggestion && (
+        <Alert
+          color="blue"
+          variant="light"
+          icon={<IconArrowsExchange size={16} />}
+          mb="md"
+        >
+          <Group justify="space-between" align="center" wrap="wrap" gap="xs">
+            <Text size="sm">
+              Hay <strong>{transferSuggestion.freeHours.toFixed(0)}h</strong> libres en{' '}
+              <strong>{transferSuggestion.fromName}</strong> y faltan{' '}
+              <strong>{transferSuggestion.overHours.toFixed(0)}h</strong> en{' '}
+              <strong>{transferSuggestion.toName}</strong>.
+            </Text>
+            <Button size="compact-sm" variant="light" onClick={openSuggestedTransfer}>
+              Mover horas
+            </Button>
+          </Group>
+        </Alert>
+      )}
+
       <Tabs defaultValue="projects" variant="pills">
         <Group justify="space-between" align="center" mb="md">
           <Tabs.List>
@@ -134,52 +186,66 @@ export default function WorkspaceTabs({ workspaceId, projects, transfers }: Prop
         </Group>
 
         <Tabs.Panel value="projects">
-          <Stack gap="sm">
-            {projects.length === 0 && (
-              <Card>
-                <Text size="sm" c="dimmed" ta="center" py="lg">Sin proyectos en este workspace.</Text>
-              </Card>
-            )}
-            {projects.map((p) => {
-              const mColor = marginColor(p.marginTotals.marginPct ?? -1)
-              const cColor = consumptionColor(p.totals.pct)
-              return (
-                <Card key={p.id} p="md">
-                  <Group justify="space-between" align="flex-start">
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <Group gap="xs" mb={4}>
-                        <Anchor component={Link} href={`/projects/${p.id}`} fw={600} size="sm" c="dark">
-                          {p.name}
-                        </Anchor>
-                        <Badge size="xs" color={STATUS_COLOR[p.status] ?? 'gray'} variant="light">
-                          {STATUS_LABELS[p.status] ?? p.status}
-                        </Badge>
-                      </Group>
-                      <Text size="xs" c="dimmed">
-                        <Text span c={cColor} fw={500} size="xs">
-                          {p.totals.consumed.toFixed(1)}h
-                        </Text>
-                        {p.totals.planned > 0 ? ` / ${p.totals.planned.toFixed(0)}h` : ''}
-                        {p.totals.pct !== null ? ` · ${Math.round(p.totals.pct)}%` : ''}
-                      </Text>
-                    </div>
-                    <Group gap="xl">
-                      <div style={{ textAlign: 'right' }}>
-                        <Text size="xs" c="dimmed">Ingresos</Text>
-                        <Text size="sm" fw={600}>{formatEur(p.marginTotals.soldCents)}</Text>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <Text size="xs" c="dimmed">Margen</Text>
-                        <Text size="sm" fw={600} c={mColor}>
+          {projects.length === 0 ? (
+            <Card>
+              <Text size="sm" c="dimmed" ta="center" py="lg">Sin proyectos en esta cuenta.</Text>
+            </Card>
+          ) : (
+            <Table.ScrollContainer minWidth={560}>
+              <Table verticalSpacing="sm" fz="sm" highlightOnHover>
+                <TableThead>
+                  <TableTr>
+                    <TableTh>Proyecto</TableTh>
+                    <TableTh>Tipo</TableTh>
+                    <TableTh>Consumo</TableTh>
+                    <TableTh ta="right">Ingresos</TableTh>
+                    <TableTh ta="right">Margen</TableTh>
+                    <TableTh>Estado</TableTh>
+                  </TableTr>
+                </TableThead>
+                <TableTbody>
+                  {projects.map((p) => {
+                    const mColor = marginColor(p.marginTotals.marginPct ?? -1)
+                    const cColor = consumptionColor(p.totals.pct)
+                    const pct = p.totals.pct
+                    return (
+                      <TableTr key={p.id}>
+                        <TableTd>
+                          <Anchor component={Link} href={`/projects/${p.id}`} fw={500} size="sm" c="dark">
+                            {p.name}
+                          </Anchor>
+                        </TableTd>
+                        <TableTd c="dimmed">{TYPE_LABELS[p.type] ?? p.type}</TableTd>
+                        <TableTd>
+                          <Stack gap={2} style={{ minWidth: 110 }}>
+                            <Group justify="space-between" gap={4}>
+                              <Text size="xs" c={cColor} fw={500}>
+                                {p.totals.consumed.toFixed(0)}h
+                                {p.totals.planned > 0 ? ` / ${p.totals.planned.toFixed(0)}h` : ''}
+                              </Text>
+                              {pct !== null && <Text size="xs" c="dimmed">{Math.round(pct)}%</Text>}
+                            </Group>
+                            {pct !== null && p.totals.planned > 0 && (
+                              <Progress value={Math.min(pct, 100)} color={cColor} size="xs" />
+                            )}
+                          </Stack>
+                        </TableTd>
+                        <TableTd ta="right" fw={500}>{formatEur(p.marginTotals.soldCents)}</TableTd>
+                        <TableTd ta="right" fw={600} c={mColor}>
                           {p.marginTotals.marginPct !== null ? `${p.marginTotals.marginPct.toFixed(1)}%` : '—'}
-                        </Text>
-                      </div>
-                    </Group>
-                  </Group>
-                </Card>
-              )
-            })}
-          </Stack>
+                        </TableTd>
+                        <TableTd>
+                          <Badge size="xs" color={STATUS_COLOR[p.status] ?? 'gray'} variant="light">
+                            {STATUS_LABELS[p.status] ?? p.status}
+                          </Badge>
+                        </TableTd>
+                      </TableTr>
+                    )
+                  })}
+                </TableTbody>
+              </Table>
+            </Table.ScrollContainer>
+          )}
         </Tabs.Panel>
 
         <Tabs.Panel value="transfers">
