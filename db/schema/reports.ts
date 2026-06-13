@@ -16,6 +16,7 @@ export const reportScopeEnum = pgEnum('report_scope', [
   'workspace',
   'organization',
   'person',
+  'proposal',
 ])
 export const reportStatusEnum = pgEnum('report_status', ['open', 'closed'])
 

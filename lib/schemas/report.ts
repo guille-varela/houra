@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const createReportSchema = z.object({
-  scope: z.enum(['project', 'workspace']),
+  scope: z.enum(['project', 'workspace', 'proposal']),
   scopeId: z.string().uuid(),
   password: z.string().min(4, 'Mínimo 4 caracteres').optional(),
 })

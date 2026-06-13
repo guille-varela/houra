@@ -1,0 +1,1 @@
+ALTER TYPE "public"."report_scope" ADD VALUE 'proposal';

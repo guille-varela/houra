@@ -1,10 +1,13 @@
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { eq, and } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { Stack, Container, Text, Title } from '@mantine/core'
 import { db } from '@/lib/db'
 import { organizations, reports } from '@/db/schema'
 import { verifyReportToken } from '@/lib/report-auth'
+import { getCartaOfertaData } from '@/lib/carta-oferta-data'
+import CartaOfertaDocument from '@/app/(print)/proposals/[id]/carta-oferta/carta-document'
+import PrintButton from '@/app/(print)/proposals/[id]/carta-oferta/print-button'
 import PasswordForm from './password-form'
 import ReportView from './report-view'
 
@@ -77,6 +80,20 @@ export default async function PublicReportPage({ params }: Props) {
     if (!authenticated) {
       return <PasswordForm slug={slug} orgName={orgName} />
     }
+  }
+
+  // Carta oferta (F2.13): documento a pantalla completa, fuera del Container
+  if (report.scope === 'proposal') {
+    const data = await getCartaOfertaData(report.scopeId, report.organizationId)
+    if (!data) notFound()
+    return (
+      <>
+        <div className="print-bar no-print">
+          <PrintButton />
+        </div>
+        <CartaOfertaDocument data={data} />
+      </>
+    )
   }
 
   return (
