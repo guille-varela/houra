@@ -8,6 +8,8 @@ import { formatEur } from '@/lib/margin'
 import { marginColor } from '@/lib/tokens'
 import InfoTooltip from '@/components/ui/info-tooltip'
 import FrameworkRateToggle from './framework-rate-toggle'
+import MarginSuggestions from './margin-suggestions'
+import { computeMarginSuggestions, type SuggestionLine } from '@/lib/margin-suggestions'
 
 const METRIC_HELP = {
   hours: 'Suma de horas asignadas a todos los perfiles de la propuesta.',
@@ -266,6 +268,27 @@ export default async function MarginTab({ proposalId }: Props) {
       ? ((totalRev1 - totalRev2) / totalRev2) * 100
       : null
 
+  // F2.11 — sugerencias de margen sobre el escenario aplicado (marco si procede)
+  const marcoApplied = marcoAvailable && proposal.useFrameworkAgreementRate
+  const appliedRateFor = (area: string, role: string) => {
+    const { costRateCents, soldRateCents } = rateFor(area, role, orgRates)
+    const sold = marcoApplied && client ? (marcoSoldRateCents(role, client) ?? soldRateCents) : soldRateCents
+    return { costRateCents, soldRateCents: sold }
+  }
+  const suggestionLines: SuggestionLine[] = staffingRows.map((s) => {
+    const role = s.staffingType === 'person' ? (s.personCategory ?? 'mid') : (s.roleCategory ?? 'mid')
+    const r = appliedRateFor(s.area, role)
+    return {
+      id: s.id,
+      area: s.area,
+      role,
+      hours: parseFloat(s.estimatedHours),
+      costRateCents: r.costRateCents,
+      soldRateCents: r.soldRateCents,
+    }
+  })
+  const marginSuggestions = computeMarginSuggestions(suggestionLines, targetPct, appliedRateFor)
+
   return (
     <Stack gap="xl">
       <FrameworkRateToggle
@@ -326,6 +349,10 @@ export default async function MarginTab({ proposalId }: Props) {
           }
         />
       </SimpleGrid>
+
+      {marginSuggestions.length > 0 && targetPct != null && (
+        <MarginSuggestions suggestions={marginSuggestions} targetPct={targetPct} />
+      )}
 
       {/* Desglose por línea */}
       <Stack gap="xs">

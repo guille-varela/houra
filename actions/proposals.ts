@@ -350,6 +350,36 @@ export async function addStaffingLine(
   return { ok: true as const, id: line!.id }
 }
 
+export async function updateProposalStaffing(
+  lineId: string,
+  patch: { estimatedHours?: number; roleCategory?: string; staffingType?: 'person' | 'role' },
+) {
+  const person = await requireRole('manager')
+
+  const [line] = await db
+    .select()
+    .from(proposalStaffing)
+    .where(and(eq(proposalStaffing.id, lineId), eq(proposalStaffing.organizationId, person.organizationId)))
+    .limit(1)
+
+  if (!line) return { ok: false as const, error: 'Línea no encontrada.' }
+
+  await db
+    .update(proposalStaffing)
+    .set({
+      ...(patch.estimatedHours != null ? { estimatedHours: patch.estimatedHours.toString() } : {}),
+      ...(patch.roleCategory != null ? { roleCategory: patch.roleCategory } : {}),
+      ...(patch.staffingType != null ? { staffingType: patch.staffingType } : {}),
+      // Al pasar a perfil genérico, se desvincula la persona concreta
+      ...(patch.staffingType === 'role' ? { personId: null } : {}),
+      updatedAt: new Date(),
+    })
+    .where(eq(proposalStaffing.id, lineId))
+
+  revalidatePath(`/proposals/${line.proposalId}`)
+  return { ok: true as const }
+}
+
 export async function deleteStaffingLine(lineId: string) {
   const person = await requireRole('manager')
 
