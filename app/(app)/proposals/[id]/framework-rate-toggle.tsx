@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { Card, Group, Stack, Text, Badge, Anchor, Modal, Button } from '@mantine/core'
 import { IconShieldCheck, IconAlertTriangle } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
@@ -15,6 +16,8 @@ type Props = {
   initialUseFramework: boolean
   /** Nombre del cliente (para el copy del modal) */
   clientName: string | null
+  /** ID del cliente (para enlazar a su configuración de acuerdo marco) */
+  clientId: string | null
   /** % que suben los precios al pasar de marco → estándar (positivo) */
   priceIncreasePct: number | null
 }
@@ -28,6 +31,7 @@ export default function FrameworkRateToggle({
   marcoAvailable,
   initialUseFramework,
   clientName,
+  clientId,
   priceIncreasePct,
 }: Props) {
   const [useFramework, setUseFramework] = useState(initialUseFramework)
@@ -57,6 +61,11 @@ export default function FrameworkRateToggle({
           <Text size="sm" c="dimmed">Tarifa aplicada:</Text>
           <Text size="sm" fw={500}>Tarifa estándar</Text>
           <Text size="xs" c="dimmed">· Este cliente no tiene acuerdo marco activo.</Text>
+          {clientId && (
+            <Anchor component={Link} href={`/clients/${clientId}`} size="xs">
+              Configurar en Clientes
+            </Anchor>
+          )}
         </Group>
       </Card>
     )

@@ -296,6 +296,7 @@ export default async function MarginTab({ proposalId }: Props) {
         marcoAvailable={marcoAvailable}
         initialUseFramework={proposal.useFrameworkAgreementRate}
         clientName={client?.name ?? null}
+        clientId={proposal.clientId ?? null}
         priceIncreasePct={priceIncreasePct}
       />
 

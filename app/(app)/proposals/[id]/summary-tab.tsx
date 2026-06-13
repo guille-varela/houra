@@ -13,6 +13,9 @@ import {
   Alert,
   Divider,
   Switch,
+  SimpleGrid,
+  Card,
+  Text,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { updateProposal } from '@/actions/proposals'
@@ -31,6 +34,18 @@ const PROJECT_TYPE_OPTIONS = [
   { value: 'renewable_bag', label: 'Bolsa renovable' },
   { value: 'ongoing_capacity', label: 'Capacidad continua' },
 ]
+
+// F3.1 — presets que unifican tipo de proyecto + modelo de facturación
+const PROJECT_PRESETS = [
+  { id: 'fixed_hours', icon: '🎯', label: 'Bolsa de horas fija', description: 'Horas cerradas, facturación por hitos', projectType: 'fixed_bag', billingModel: 'hour_bag' },
+  { id: 'renewable_monthly', icon: '🔄', label: 'Bolsa renovable mensual', description: 'Se renueva cada mes, fee mensual', projectType: 'renewable_bag', billingModel: 'monthly_fee' },
+  { id: 'by_deliverable', icon: '📦', label: 'Tarifa por entregable', description: 'Precio cerrado por entregable', projectType: 'fixed_bag', billingModel: 'by_phase' },
+  { id: 'ongoing', icon: '♾️', label: 'Capacidad continua', description: 'Equipo dedicado, fee mensual', projectType: 'ongoing_capacity', billingModel: 'monthly_fee' },
+] as const
+
+function findPreset(projectType: string | null, billingModel: string | null) {
+  return PROJECT_PRESETS.find((p) => p.projectType === projectType && p.billingModel === billingModel) ?? null
+}
 
 type Props = {
   proposalId: string
@@ -63,6 +78,8 @@ export default function SummaryTab({
   const [clientId, setClientId] = useState<string | null>(initialClientId)
   const [projectType, setProjectType] = useState<string | null>(initialProjectType)
   const [billingModel, setBillingModel] = useState<string | null>(initialBillingModel)
+  // F3.1 — si la combinación inicial no encaja en un preset, arranca en modo personalizar
+  const [customMode, setCustomMode] = useState(() => findPreset(initialProjectType, initialBillingModel) === null)
   const [useDefaultMargin, setUseDefaultMargin] = useState(initialUseDefaultMargin)
   const [margin, setMargin] = useState<number | ''>(
     initialMargin ? Number(initialMargin) : '',
@@ -77,6 +94,13 @@ export default function SummaryTab({
 
   const showBagHours = projectType != null && BAG_PROJECT_TYPES.includes(projectType)
   const effectiveMargin = useDefaultMargin ? Number(orgDefaultMargin) : margin
+  const activePreset = customMode ? null : findPreset(projectType, billingModel)
+
+  function selectPreset(preset: (typeof PROJECT_PRESETS)[number]) {
+    setProjectType(preset.projectType)
+    setBillingModel(preset.billingModel)
+    setCustomMode(false)
+  }
 
   function handleSave() {
     setError(null)
@@ -134,22 +158,78 @@ export default function SummaryTab({
         }}
       />
 
-      <Group grow>
-        <Select
-          label="Tipo de proyecto"
-          placeholder="Selecciona…"
-          data={PROJECT_TYPE_OPTIONS}
-          value={projectType}
-          onChange={setProjectType}
-        />
-        <Select
-          label="Modelo de facturación"
-          placeholder="Selecciona…"
-          data={BILLING_MODEL_OPTIONS}
-          value={billingModel}
-          onChange={setBillingModel}
-        />
-      </Group>
+      <Stack gap="xs">
+        <Text size="sm" fw={500}>Modelo de proyecto</Text>
+        <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="xs">
+          {PROJECT_PRESETS.map((preset) => {
+            const active = activePreset?.id === preset.id
+            return (
+              <Card
+                key={preset.id}
+                withBorder
+                p="sm"
+                onClick={() => selectPreset(preset)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPreset(preset) } }}
+                style={{
+                  cursor: 'pointer',
+                  borderColor: active ? 'var(--mantine-color-blue-5)' : undefined,
+                  background: active ? 'var(--mantine-color-blue-0)' : undefined,
+                }}
+              >
+                <Group gap="xs" wrap="nowrap" align="flex-start">
+                  <span style={{ fontSize: 18, lineHeight: 1 }}>{preset.icon}</span>
+                  <div>
+                    <Text size="sm" fw={500}>{preset.label}</Text>
+                    <Text size="xs" c="dimmed">{preset.description}</Text>
+                  </div>
+                </Group>
+              </Card>
+            )
+          })}
+          <Card
+            withBorder
+            p="sm"
+            onClick={() => setCustomMode(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCustomMode(true) } }}
+            style={{
+              cursor: 'pointer',
+              borderColor: customMode ? 'var(--mantine-color-blue-5)' : undefined,
+              background: customMode ? 'var(--mantine-color-blue-0)' : undefined,
+            }}
+          >
+            <Group gap="xs" wrap="nowrap" align="flex-start">
+              <span style={{ fontSize: 18, lineHeight: 1 }}>⚙️</span>
+              <div>
+                <Text size="sm" fw={500}>Personalizar…</Text>
+                <Text size="xs" c="dimmed">Elige tipo y facturación por separado</Text>
+              </div>
+            </Group>
+          </Card>
+        </SimpleGrid>
+
+        {customMode && (
+          <Group grow mt="xs">
+            <Select
+              label="Tipo de proyecto"
+              placeholder="Selecciona…"
+              data={PROJECT_TYPE_OPTIONS}
+              value={projectType}
+              onChange={setProjectType}
+            />
+            <Select
+              label="Modelo de facturación"
+              placeholder="Selecciona…"
+              data={BILLING_MODEL_OPTIONS}
+              value={billingModel}
+              onChange={setBillingModel}
+            />
+          </Group>
+        )}
+      </Stack>
 
       {showBagHours && (
         <NumberInput
