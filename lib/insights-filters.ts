@@ -52,6 +52,17 @@ export const MARGIN_BUCKET_LABELS: Record<MarginBucket, string> = {
   '30+': '30%+',
 }
 
+// ─── Modo de comparación temporal (F3.5 Ola 2) ───────────────────────────────────
+// 'prev' = periodo inmediatamente anterior de la misma longitud (LQ / PoP).
+// 'yoy'  = mismo rango de meses desplazado un año atrás (LY / YoY).
+export const COMPARE_MODES = ['none', 'prev', 'yoy'] as const
+export type CompareMode = (typeof COMPARE_MODES)[number]
+export const COMPARE_LABELS: Record<CompareMode, string> = {
+  none: 'Sin comparación',
+  prev: 'Periodo anterior',
+  yoy: 'Año anterior',
+}
+
 // ─── Filtros ────────────────────────────────────────────────────────────────────
 
 export type InsightsFilters = {
@@ -66,6 +77,7 @@ export type InsightsFilters = {
   areas: string[]
   statuses: string[]
   marginBucket: MarginBucket | null
+  compare: CompareMode
 }
 
 export const EMPTY_FILTERS: InsightsFilters = {
@@ -80,6 +92,7 @@ export const EMPTY_FILTERS: InsightsFilters = {
   areas: [],
   statuses: [],
   marginBucket: null,
+  compare: 'none',
 }
 
 type RawSearchParams = Record<string, string | string[] | undefined>
@@ -104,10 +117,12 @@ export function parseInsightsFilters(params: RawSearchParams): InsightsFilters {
     ? (only(params.period) as PeriodPreset)
     : 'this_year'
   const marginRaw = only(params.margin)
+  const compareRaw = only(params.compare)
   return {
     period,
     from: only(params.from),
     to: only(params.to),
+    compare: (COMPARE_MODES as readonly string[]).includes(compareRaw) ? (compareRaw as CompareMode) : 'none',
     clientIds: csv(params.clients).filter((x) => UUID_RE.test(x)),
     workspaceIds: csv(params.accounts).filter((x) => UUID_RE.test(x)),
     projectIds: csv(params.projects).filter((x) => UUID_RE.test(x)),
@@ -135,6 +150,7 @@ export function buildInsightsQuery(f: InsightsFilters): string {
   if (f.areas.length) p.set('areas', f.areas.join(','))
   if (f.statuses.length) p.set('statuses', f.statuses.join(','))
   if (f.marginBucket) p.set('margin', f.marginBucket)
+  if (f.compare !== 'none') p.set('compare', f.compare)
   return p.toString()
 }
 
@@ -190,6 +206,37 @@ export function resolveMonthRange(f: InsightsFilters): { fromMonth: string; toMo
   // last_12m
   const start = new Date(Date.UTC(y, m - 11, 1))
   return { fromMonth: firstOfMonth(ymOf(start)), toMonth: firstOfMonth(thisMonth) }
+}
+
+// ─── Rango de comparación (F3.5 Ola 2) ───────────────────────────────────────────
+
+/** Índice absoluto de mes (año*12 + mes-1) a partir de 'YYYY-MM-01'. */
+function monthIndex(firstOfMonthStr: string): number {
+  const [y, m] = firstOfMonthStr.split('-').map(Number)
+  return (y as number) * 12 + ((m as number) - 1)
+}
+function firstOfMonthFromIndex(idx: number): string {
+  const y = Math.floor(idx / 12)
+  const m = idx % 12
+  return `${y}-${pad2(m + 1)}-01`
+}
+
+/**
+ * Devuelve el rango de comparación [fromMonth, toMonth] como 'YYYY-MM-01', o null si
+ * `compare === 'none'`. 'prev' = mismo nº de meses justo antes del rango actual;
+ * 'yoy' = mismo rango desplazado 12 meses atrás.
+ */
+export function resolveCompareRange(f: InsightsFilters): { fromMonth: string; toMonth: string } | null {
+  if (f.compare === 'none') return null
+  const { fromMonth, toMonth } = resolveMonthRange(f)
+  const fromIdx = monthIndex(fromMonth)
+  const toIdx = monthIndex(toMonth)
+  if (f.compare === 'yoy') {
+    return { fromMonth: firstOfMonthFromIndex(fromIdx - 12), toMonth: firstOfMonthFromIndex(toIdx - 12) }
+  }
+  // prev: misma longitud, inmediatamente anterior
+  const len = toIdx - fromIdx + 1
+  return { fromMonth: firstOfMonthFromIndex(fromIdx - len), toMonth: firstOfMonthFromIndex(toIdx - len) }
 }
 
 export function matchesBucket(m: number, b: MarginBucket): boolean {

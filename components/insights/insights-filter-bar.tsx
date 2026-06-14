@@ -9,8 +9,11 @@ import {
   type InsightsFilters,
   type PeriodPreset,
   type MarginBucket,
+  type CompareMode,
   PERIOD_PRESETS,
   PERIOD_LABELS,
+  COMPARE_MODES,
+  COMPARE_LABELS,
   MARGIN_BUCKETS,
   MARGIN_BUCKET_LABELS,
   INSIGHTS_AREAS,
@@ -42,6 +45,7 @@ export default function InsightsFilterBar({ filters, options }: Props) {
   }
 
   const periodData = PERIOD_PRESETS.map((p) => ({ value: p, label: PERIOD_LABELS[p] }))
+  const compareData = COMPARE_MODES.map((m) => ({ value: m, label: COMPARE_LABELS[m] }))
   const marginData = MARGIN_BUCKETS.map((b) => ({ value: b, label: MARGIN_BUCKET_LABELS[b] }))
   const areaData = INSIGHTS_AREAS.map((a) => ({ value: a, label: AREA_LABELS[a] ?? a }))
   const catData = INSIGHTS_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_LABELS[c] ?? c }))
@@ -182,6 +186,15 @@ export default function InsightsFilterBar({ filters, options }: Props) {
           onChange={(v) => set('marginBucket', (v as MarginBucket) || null)}
           clearable
           w={130}
+          size="xs"
+        />
+        <Select
+          label="Comparar"
+          data={compareData}
+          value={filters.compare}
+          onChange={(v) => set('compare', (v as CompareMode) ?? 'none')}
+          allowDeselect={false}
+          w={160}
           size="xs"
         />
 

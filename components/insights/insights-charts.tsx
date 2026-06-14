@@ -8,16 +8,30 @@ const PALETTE = ['#4263eb', '#37b24d', '#f59f00', '#7048e8', '#e8590c', '#1098ad
 
 // ─── KPI en tonal container ──────────────────────────────────────────────────────
 
+export type KpiTrend = {
+  arrow: '▲' | '▼' | '→'
+  label: string
+  sentiment: 'good' | 'bad' | 'neutral'
+}
+
+const TREND_COLOR: Record<KpiTrend['sentiment'], string> = {
+  good: 'var(--mantine-color-teal-7)',
+  bad: 'var(--mantine-color-red-7)',
+  neutral: 'var(--mantine-color-gray-6)',
+}
+
 export function KpiCard({
   label,
   value,
   sub,
   tone = 'blue',
+  trend,
 }: {
   label: string
   value: string
   sub?: string
   tone?: string
+  trend?: KpiTrend
 }) {
   return (
     <Card
@@ -34,6 +48,11 @@ export function KpiCard({
       <Text fw={700} style={{ fontSize: '1.5rem', letterSpacing: '-0.02em', lineHeight: 1.2 }} mt={4}>
         {value}
       </Text>
+      {trend && (
+        <Text size="xs" fw={600} mt={3} style={{ color: TREND_COLOR[trend.sentiment] }}>
+          {trend.arrow} {trend.label}
+        </Text>
+      )}
       {sub && (
         <Text size="xs" c="dimmed" mt={2}>
           {sub}
@@ -170,10 +189,20 @@ export function Donut({
 
 // ─── Línea temporal: revenue (barras) + margen (línea) ───────────────────────────
 
-export function RevenueMarginTimeline({ points }: { points: TimePoint[] }) {
+export function RevenueMarginTimeline({
+  points,
+  comparePoints,
+  compareLabel,
+}: {
+  points: TimePoint[]
+  comparePoints?: TimePoint[]
+  compareLabel?: string
+}) {
   const hasData = points.some((p) => p.revenueCents > 0)
-  const maxRev = Math.max(1, ...points.map((p) => p.revenueCents))
-  const margins = points.map((p) => p.marginPct ?? 0)
+  const cmp = comparePoints ?? []
+  const hasCompare = cmp.some((p) => p.revenueCents > 0)
+  const maxRev = Math.max(1, ...points.map((p) => p.revenueCents), ...cmp.map((p) => p.revenueCents))
+  const margins = [...points, ...cmp].map((p) => p.marginPct ?? 0)
   const maxM = Math.max(10, ...margins)
   const minM = Math.min(0, ...margins)
   const rangeM = maxM - minM || 1
@@ -186,14 +215,26 @@ export function RevenueMarginTimeline({ points }: { points: TimePoint[] }) {
   const innerH = H - padY * 2
   const n = points.length
   const slot = n > 0 ? innerW / n : innerW
+  const marginY = (m: number | null) => padY + innerH - ((((m ?? 0) - minM) / rangeM) * innerH)
+  const revY = (rev: number) => padY + innerH - (rev / maxRev) * innerH
 
   const linePts = points
-    .map((p, i) => {
-      const x = padX + slot * i + slot / 2
-      const y = padY + innerH - ((((p.marginPct ?? 0) - minM) / rangeM) * innerH)
-      return `${x.toFixed(1)},${y.toFixed(1)}`
-    })
+    .map((p, i) => `${(padX + slot * i + slot / 2).toFixed(1)},${marginY(p.marginPct).toFixed(1)}`)
     .join(' ')
+
+  // Overlay de comparación: alineado por índice de posición (i-ésimo vs i-ésimo).
+  const cmpMarginPts = hasCompare
+    ? cmp
+        .slice(0, n)
+        .map((p, i) => `${(padX + slot * i + slot / 2).toFixed(1)},${marginY(p.marginPct).toFixed(1)}`)
+        .join(' ')
+    : ''
+  const cmpRevPts = hasCompare
+    ? cmp
+        .slice(0, n)
+        .map((p, i) => `${(padX + slot * i + slot / 2).toFixed(1)},${revY(p.revenueCents).toFixed(1)}`)
+        .join(' ')
+    : ''
 
   return (
     <Card p="md" withBorder>
@@ -210,6 +251,12 @@ export function RevenueMarginTimeline({ points }: { points: TimePoint[] }) {
             <span style={{ width: 12, height: 2, background: 'var(--mantine-color-teal-6)' }} />
             <Text size="xs" c="dimmed">Margen %</Text>
           </Group>
+          {hasCompare && (
+            <Group gap={4}>
+              <span style={{ width: 12, height: 0, borderTop: '2px dashed var(--mantine-color-gray-5)' }} />
+              <Text size="xs" c="dimmed">{compareLabel ?? 'Comparación'}</Text>
+            </Group>
+          )}
         </Group>
       </Group>
       {!hasData ? (
@@ -238,13 +285,33 @@ export function RevenueMarginTimeline({ points }: { points: TimePoint[] }) {
                 </rect>
               )
             })}
+            {/* overlay de comparación (ingresos + margen, líneas discontinuas) */}
+            {hasCompare && n > 1 && (
+              <>
+                <polyline
+                  points={cmpRevPts}
+                  fill="none"
+                  stroke="var(--mantine-color-blue-3)"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                  opacity={0.7}
+                />
+                <polyline
+                  points={cmpMarginPts}
+                  fill="none"
+                  stroke="var(--mantine-color-gray-5)"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                />
+              </>
+            )}
             {/* línea de margen */}
             {n > 1 && (
               <polyline points={linePts} fill="none" stroke="var(--mantine-color-teal-6)" strokeWidth={2} />
             )}
             {points.map((p, i) => {
               const x = padX + slot * i + slot / 2
-              const y = padY + innerH - ((((p.marginPct ?? 0) - minM) / rangeM) * innerH)
+              const y = marginY(p.marginPct)
               return (
                 <circle key={i} cx={x} cy={y} r={2.5} fill="var(--mantine-color-teal-7)">
                   <title>{`${p.month}: ${p.marginPct === null ? '—' : p.marginPct.toFixed(1) + '%'}`}</title>

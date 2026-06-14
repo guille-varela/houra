@@ -6,6 +6,7 @@ import {
   AREA_LABELS,
   CATEGORY_LABELS,
   resolveMonthRange,
+  resolveCompareRange,
   matchesBucket,
   marginPct,
   type InsightsFilters,
@@ -53,8 +54,12 @@ function inText(col: SQL, vals: string[]): SQL {
   )})`
 }
 
-async function fetchFactRows(orgId: string, f: InsightsFilters): Promise<FactRow[]> {
-  const { fromMonth, toMonth } = resolveMonthRange(f)
+async function fetchFactRows(
+  orgId: string,
+  f: InsightsFilters,
+  range?: { fromMonth: string; toMonth: string },
+): Promise<FactRow[]> {
+  const { fromMonth, toMonth } = range ?? resolveMonthRange(f)
 
   const conds: SQL[] = [sql`f.month >= ${fromMonth}::date`, sql`f.month <= ${toMonth}::date`]
   if (f.clientIds.length) conds.push(inUuid(sql`pr.client_id`, f.clientIds))
@@ -173,6 +178,13 @@ export type TimePoint = {
 }
 export type HeatCell = { area: string; category: string; marginPct: number | null; revenueCents: number }
 
+/** F3.5 Ola 2 — bloque de comparación temporal (periodo anterior o año anterior). */
+export type InsightsCompare = {
+  mode: 'prev' | 'yoy'
+  kpis: InsightsKpis
+  timeline: TimePoint[]
+}
+
 export type InsightsResult = {
   kpis: InsightsKpis
   topClients: RankItem[]
@@ -182,13 +194,13 @@ export type InsightsResult = {
   categoryMix: DonutSlice[]
   timeline: TimePoint[]
   heatmap: HeatCell[]
+  compare: InsightsCompare | null
   rowCount: number
 }
 
-export async function getInsights(orgId: string, f: InsightsFilters): Promise<InsightsResult> {
-  const facts = await fetchFactRows(orgId, f)
+// ─── Cálculos reutilizables (periodo principal y de comparación) ──────────────────
 
-  // KPIs
+function computeKpis(facts: FactRow[]): InsightsKpis {
   let hours = 0
   let revenueCents = 0
   let costCents = 0
@@ -201,13 +213,52 @@ export async function getInsights(orgId: string, f: InsightsFilters): Promise<In
     people.add(r.personId)
     if (r.projectStatus === 'active') activeProjects.add(r.projectId)
   }
-  const kpis: InsightsKpis = {
+  return {
     hours,
     revenueCents,
     costCents,
     marginPct: marginPct(revenueCents, costCents),
     activeProjects: activeProjects.size,
     people: people.size,
+  }
+}
+
+function computeTimeline(facts: FactRow[]): TimePoint[] {
+  const monthAgg = new Map<string, { rev: number; cost: number; hours: number }>()
+  for (const r of facts) {
+    const mm = monthAgg.get(r.month) ?? { rev: 0, cost: 0, hours: 0 }
+    mm.rev += r.revenueCents
+    mm.cost += r.costCents
+    mm.hours += r.hours
+    monthAgg.set(r.month, mm)
+  }
+  return [...monthAgg.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([month, v]) => ({
+      month,
+      revenueCents: v.rev,
+      costCents: v.cost,
+      marginPct: marginPct(v.rev, v.cost),
+      hours: v.hours,
+    }))
+}
+
+export async function getInsights(orgId: string, f: InsightsFilters): Promise<InsightsResult> {
+  const facts = await fetchFactRows(orgId, f)
+
+  // KPIs
+  const kpis = computeKpis(facts)
+
+  // Comparación temporal (periodo anterior / año anterior)
+  let compare: InsightsCompare | null = null
+  const compareRange = resolveCompareRange(f)
+  if (compareRange && f.compare !== 'none') {
+    const compareFacts = await fetchFactRows(orgId, f, compareRange)
+    compare = {
+      mode: f.compare,
+      kpis: computeKpis(compareFacts),
+      timeline: computeTimeline(compareFacts),
+    }
   }
 
   // Rankings
@@ -266,23 +317,7 @@ export async function getInsights(orgId: string, f: InsightsFilters): Promise<In
   }))
 
   // Timeline (mes a mes)
-  const monthAgg = new Map<string, { rev: number; cost: number; hours: number }>()
-  for (const r of facts) {
-    const mm = monthAgg.get(r.month) ?? { rev: 0, cost: 0, hours: 0 }
-    mm.rev += r.revenueCents
-    mm.cost += r.costCents
-    mm.hours += r.hours
-    monthAgg.set(r.month, mm)
-  }
-  const timeline: TimePoint[] = [...monthAgg.entries()]
-    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
-    .map(([month, v]) => ({
-      month,
-      revenueCents: v.rev,
-      costCents: v.cost,
-      marginPct: marginPct(v.rev, v.cost),
-      hours: v.hours,
-    }))
+  const timeline = computeTimeline(facts)
 
   // Heatmap área × categoría (margen por celda)
   const cellAgg = new Map<string, { rev: number; cost: number }>()
@@ -311,6 +346,7 @@ export async function getInsights(orgId: string, f: InsightsFilters): Promise<In
     categoryMix,
     timeline,
     heatmap,
+    compare,
     rowCount: facts.length,
   }
 }

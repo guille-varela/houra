@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { Stack, Group, Text, Card, SimpleGrid, Badge } from '@mantine/core'
 import { getCurrentPerson, canAccessInsights } from '@/lib/auth-helpers'
-import { parseInsightsFilters } from '@/lib/insights-filters'
+import { parseInsightsFilters, COMPARE_LABELS } from '@/lib/insights-filters'
 import { getInsights, getInsightsFilterOptions } from '@/lib/insights-data'
 import InsightsFilterBar from '@/components/insights/insights-filter-bar'
 import {
@@ -11,6 +11,7 @@ import {
   Donut,
   RevenueMarginTimeline,
   MarginHeatmap,
+  type KpiTrend,
 } from '@/components/insights/insights-charts'
 
 export const dynamic = 'force-dynamic'
@@ -28,6 +29,50 @@ function fmtEurShort(cents: number): string {
   return `${eur.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €`
 }
 
+// ─── Tendencias vs periodo de comparación (F3.5 Ola 2) ───────────────────────────
+
+function arrowOf(delta: number): KpiTrend['arrow'] {
+  if (delta > 0.0001) return '▲'
+  if (delta < -0.0001) return '▼'
+  return '→'
+}
+
+/** Tendencia para métricas de valor (horas, ingresos, coste): variación %. */
+function valueTrend(
+  curr: number,
+  prev: number,
+  suffix: string,
+  goodWhen: 'up' | 'down' | 'none',
+): KpiTrend {
+  const d = curr - prev
+  const arrow = arrowOf(d)
+  let sentiment: KpiTrend['sentiment'] = 'neutral'
+  if (goodWhen !== 'none' && Math.abs(d) > 0.0001) {
+    const isUp = d > 0
+    sentiment = (goodWhen === 'up' ? isUp : !isUp) ? 'good' : 'bad'
+  }
+  const label =
+    prev === 0 ? `sin base ${suffix}` : `${Math.abs((d / Math.abs(prev)) * 100).toFixed(1)}% ${suffix}`
+  return { arrow, label, sentiment }
+}
+
+/** Tendencia para el margen: variación en puntos porcentuales (pp). */
+function marginTrend(curr: number | null, prev: number | null, suffix: string): KpiTrend | undefined {
+  if (curr === null || prev === null) return undefined
+  const d = curr - prev
+  return {
+    arrow: arrowOf(d),
+    label: `${Math.abs(d).toFixed(1)} pp ${suffix}`,
+    sentiment: Math.abs(d) < 0.05 ? 'neutral' : d > 0 ? 'good' : 'bad',
+  }
+}
+
+/** Tendencia para conteos (proyectos, personas): delta absoluto. */
+function countTrend(curr: number, prev: number, suffix: string): KpiTrend {
+  const d = curr - prev
+  return { arrow: arrowOf(d), label: `${d > 0 ? '+' : ''}${d} ${suffix}`, sentiment: 'neutral' }
+}
+
 export default async function InsightsPage({ searchParams }: Props) {
   const person = await getCurrentPerson()
   if (!person) redirect('/login')
@@ -39,7 +84,9 @@ export default async function InsightsPage({ searchParams }: Props) {
     getInsights(person.organizationId, filters),
   ])
 
-  const { kpis } = data
+  const { kpis, compare } = data
+  const cmp = compare?.kpis ?? null
+  const suffix = compare ? `vs ${COMPARE_LABELS[compare.mode].toLowerCase()}` : ''
 
   return (
     <Stack p="md" gap="lg">
@@ -62,9 +109,24 @@ export default async function InsightsPage({ searchParams }: Props) {
         <>
           {/* KPIs en tonal containers */}
           <KpiGrid>
-            <KpiCard label="Horas consumidas" value={fmtHours(kpis.hours)} tone="blue" />
-            <KpiCard label="Ingresos" value={fmtEurShort(kpis.revenueCents)} tone="teal" />
-            <KpiCard label="Coste" value={fmtEurShort(kpis.costCents)} tone="orange" />
+            <KpiCard
+              label="Horas consumidas"
+              value={fmtHours(kpis.hours)}
+              tone="blue"
+              {...(cmp ? { trend: valueTrend(kpis.hours, cmp.hours, suffix, 'none') } : {})}
+            />
+            <KpiCard
+              label="Ingresos"
+              value={fmtEurShort(kpis.revenueCents)}
+              tone="teal"
+              {...(cmp ? { trend: valueTrend(kpis.revenueCents, cmp.revenueCents, suffix, 'up') } : {})}
+            />
+            <KpiCard
+              label="Coste"
+              value={fmtEurShort(kpis.costCents)}
+              tone="orange"
+              {...(cmp ? { trend: valueTrend(kpis.costCents, cmp.costCents, suffix, 'down') } : {})}
+            />
             <KpiCard
               label="Margen ponderado"
               value={kpis.marginPct === null ? '—' : `${kpis.marginPct.toFixed(1)}%`}
@@ -77,9 +139,23 @@ export default async function InsightsPage({ searchParams }: Props) {
                       ? 'yellow'
                       : 'red'
               }
+              {...(cmp ? (() => {
+                const t = marginTrend(kpis.marginPct, cmp.marginPct, suffix)
+                return t ? { trend: t } : {}
+              })() : {})}
             />
-            <KpiCard label="Proyectos activos" value={String(kpis.activeProjects)} tone="grape" />
-            <KpiCard label="Personas" value={String(kpis.people)} tone="indigo" />
+            <KpiCard
+              label="Proyectos activos"
+              value={String(kpis.activeProjects)}
+              tone="grape"
+              {...(cmp ? { trend: countTrend(kpis.activeProjects, cmp.activeProjects, suffix) } : {})}
+            />
+            <KpiCard
+              label="Personas"
+              value={String(kpis.people)}
+              tone="indigo"
+              {...(cmp ? { trend: countTrend(kpis.people, cmp.people, suffix) } : {})}
+            />
           </KpiGrid>
 
           {/* Rankings */}
@@ -90,7 +166,12 @@ export default async function InsightsPage({ searchParams }: Props) {
           </SimpleGrid>
 
           {/* Líneas temporales */}
-          <RevenueMarginTimeline points={data.timeline} />
+          <RevenueMarginTimeline
+            points={data.timeline}
+            {...(compare
+              ? { comparePoints: compare.timeline, compareLabel: COMPARE_LABELS[compare.mode] }
+              : {})}
+          />
 
           {/* Donuts */}
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
