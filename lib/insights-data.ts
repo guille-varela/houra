@@ -351,6 +351,123 @@ export async function getInsights(orgId: string, f: InsightsFilters): Promise<In
   }
 }
 
+// ─── Bolsa de horas de cartera (F3.5 Ola 2) ──────────────────────────────────────
+//
+// "Horas vendidas/restantes" es un concepto de VIDA DE PROYECTO, no de periodo: la
+// bolsa total se pacta una vez (originalAllocation) y se ajusta con amendments. Por eso
+// este bloque NO depende del periodo ni de la persona; solo respeta los filtros que son
+// dimensiones reales de la bolsa: cuenta, cliente, proyecto, estado, área y categoría.
+// Solo aplica a proyectos con bolsa (fixed_bag / renewable_bag); capacity/fee se excluyen.
+
+export type BagSummary = {
+  soldHours: number
+  consumedHours: number
+  remainingHours: number
+  consumedPct: number | null
+  projectCount: number
+}
+
+const BAG_PROJECT_TYPES = ['fixed_bag', 'renewable_bag'] as const
+
+function sumAllocation(
+  alloc: Record<string, Record<string, number>> | null | undefined,
+  areas: Set<string> | null,
+  cats: Set<string> | null,
+): number {
+  let total = 0
+  if (!alloc || typeof alloc !== 'object') return total
+  for (const [area, roles] of Object.entries(alloc)) {
+    if (areas && !areas.has(area)) continue
+    if (!roles || typeof roles !== 'object') continue
+    for (const [role, h] of Object.entries(roles)) {
+      if (cats && !cats.has(role)) continue
+      total += Number(h) || 0
+    }
+  }
+  return total
+}
+
+export async function getBagSummary(orgId: string, f: InsightsFilters): Promise<BagSummary | null> {
+  const areasSet = f.areas.length ? new Set(f.areas) : null
+  const catsSet = f.categories.length ? new Set(f.categories) : null
+
+  // 1) Proyectos con bolsa dentro del scope de selección.
+  const conds: SQL[] = [
+    sql`organization_id = ${orgId}`,
+    inText(sql`type::text`, [...BAG_PROJECT_TYPES]),
+  ]
+  if (f.statuses.length) conds.push(inText(sql`status::text`, f.statuses))
+  else conds.push(sql`status::text <> 'draft'`)
+  if (f.clientIds.length) conds.push(inUuid(sql`client_id`, f.clientIds))
+  if (f.workspaceIds.length) conds.push(inUuid(sql`workspace_id`, f.workspaceIds))
+  if (f.projectIds.length) conds.push(inUuid(sql`id`, f.projectIds))
+
+  const projRes = await db.execute(sql`
+    select id::text as id, original_allocation as alloc
+    from projects
+    where ${sql.join(conds, sql` and `)}
+  `)
+  const projRows = ((projRes as { rows?: unknown[] }).rows ?? (projRes as unknown as unknown[])) as Array<
+    Record<string, unknown>
+  >
+  if (projRows.length === 0) return null
+
+  const scopeIds = projRows.map((r) => String(r.id))
+
+  // Horas vendidas = allocation original + amendments (respetando área/categoría).
+  let soldHours = 0
+  for (const r of projRows) {
+    soldHours += sumAllocation(
+      r.alloc as Record<string, Record<string, number>> | null,
+      areasSet,
+      catsSet,
+    )
+  }
+
+  const amdRes = await db.execute(sql`
+    select delta_allocation as delta
+    from amendments
+    where organization_id = ${orgId} and ${inUuid(sql`project_id`, scopeIds)}
+  `)
+  const amdRows = ((amdRes as { rows?: unknown[] }).rows ?? (amdRes as unknown as unknown[])) as Array<
+    Record<string, unknown>
+  >
+  for (const r of amdRows) {
+    soldHours += sumAllocation(
+      r.delta as Record<string, Record<string, number>> | null,
+      areasSet,
+      catsSet,
+    )
+  }
+
+  // 2) Horas consumidas (a vida de proyecto) sobre esos proyectos.
+  const consConds: SQL[] = [
+    sql`te.organization_id = ${orgId}`,
+    inUuid(sql`te.project_id`, scopeIds),
+  ]
+  if (areasSet) consConds.push(inText(sql`te.area`, [...areasSet]))
+  if (catsSet) consConds.push(inText(sql`p.professional_category::text`, [...catsSet]))
+
+  const consRes = await db.execute(sql`
+    select coalesce(sum(te.hours), 0)::float8 as consumed
+    from time_entries te
+    join persons p on p.id = te.person_id
+    where ${sql.join(consConds, sql` and `)}
+  `)
+  const consRows = ((consRes as { rows?: unknown[] }).rows ?? (consRes as unknown as unknown[])) as Array<
+    Record<string, unknown>
+  >
+  const consumedHours = Number(consRows[0]?.consumed ?? 0)
+
+  return {
+    soldHours,
+    consumedHours,
+    remainingHours: soldHours - consumedHours,
+    consumedPct: soldHours > 0 ? (consumedHours / soldHours) * 100 : null,
+    projectCount: scopeIds.length,
+  }
+}
+
 // ─── Opciones para la barra de filtros ───────────────────────────────────────────
 
 export type FilterOptions = {

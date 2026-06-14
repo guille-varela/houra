@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { Stack, Group, Text, Card, SimpleGrid, Badge } from '@mantine/core'
 import { getCurrentPerson, canAccessInsights } from '@/lib/auth-helpers'
 import { parseInsightsFilters, COMPARE_LABELS } from '@/lib/insights-filters'
-import { getInsights, getInsightsFilterOptions } from '@/lib/insights-data'
+import { getInsights, getInsightsFilterOptions, getBagSummary } from '@/lib/insights-data'
 import InsightsFilterBar from '@/components/insights/insights-filter-bar'
 import {
   KpiGrid,
@@ -79,9 +79,10 @@ export default async function InsightsPage({ searchParams }: Props) {
   if (!canAccessInsights(person)) redirect('/today')
 
   const filters = parseInsightsFilters(await searchParams)
-  const [options, data] = await Promise.all([
+  const [options, data, bag] = await Promise.all([
     getInsightsFilterOptions(person.organizationId),
     getInsights(person.organizationId, filters),
+    getBagSummary(person.organizationId, filters),
   ])
 
   const { kpis, compare } = data
@@ -98,6 +99,41 @@ export default async function InsightsPage({ searchParams }: Props) {
       </div>
 
       <InsightsFilterBar filters={filters} options={options} />
+
+      {bag && (
+        <div>
+          <Group justify="space-between" align="baseline" mb={6}>
+            <Text size="xs" fw={600} tt="uppercase" c="dimmed" style={{ letterSpacing: '0.04em' }}>
+              Bolsa de horas · cartera
+            </Text>
+            <Text size="xs" c="dimmed">
+              {bag.projectCount} {bag.projectCount === 1 ? 'proyecto con bolsa' : 'proyectos con bolsa'} · totales a vida de proyecto (no dependen del periodo ni de la persona). Excluye capacidad continua y cuota mensual.
+            </Text>
+          </Group>
+          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+            <KpiCard label="Horas vendidas" value={fmtHours(bag.soldHours)} tone="violet" />
+            <KpiCard label="Horas consumidas" value={fmtHours(bag.consumedHours)} tone="blue" />
+            <KpiCard
+              label="Horas restantes"
+              value={fmtHours(bag.remainingHours)}
+              tone={bag.remainingHours < 0 ? 'red' : 'green'}
+            />
+            <KpiCard
+              label="% consumido"
+              value={bag.consumedPct === null ? '—' : `${bag.consumedPct.toFixed(0)}%`}
+              tone={
+                bag.consumedPct === null
+                  ? 'gray'
+                  : bag.consumedPct >= 100
+                    ? 'red'
+                    : bag.consumedPct >= 80
+                      ? 'orange'
+                      : 'green'
+              }
+            />
+          </SimpleGrid>
+        </div>
+      )}
 
       {data.rowCount === 0 ? (
         <Card withBorder>
