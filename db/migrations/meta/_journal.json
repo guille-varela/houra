@@ -64,6 +64,20 @@
       "when": 1781394180750,
       "tag": "0008_bright_veda",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782090197476,
+      "tag": "0009_red_grey_gargoyle",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782092636787,
+      "tag": "0010_polite_alex_power",
+      "breakpoints": true
     }
   ]
 }

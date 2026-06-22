@@ -1,9 +1,10 @@
 import { notFound, redirect } from 'next/navigation'
-import { eq, sql, desc } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { Stack, Text, Card, Group, Badge, SimpleGrid } from '@mantine/core'
 import { db } from '@/lib/db'
 import { persons, timeEntries, projectAssignments, projects } from '@/db/schema'
 import { requireRole } from '@/lib/auth-helpers'
+import { AvatarPicker } from '@/components/ui/avatar-picker'
 import PersonActionsClient from './person-actions-client'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -60,7 +61,20 @@ export default async function PersonDetailPage({ params }: Props) {
     <Stack p="md" gap="xl">
       <Card p="md">
         <Group justify="space-between" align="flex-start">
-          <div>
+          <Group gap="md" align="flex-start" wrap="nowrap">
+            <AvatarPicker
+              person={{
+                id: person.id,
+                name: person.name,
+                avatarType: person.avatarType,
+                avatarSeed: person.avatarSeed,
+                avatarVariant: person.avatarVariant,
+                avatarColor: person.avatarColor,
+              }}
+              canEdit
+              size={56}
+            />
+            <div>
             <Group gap="xs" mb={4}>
               <Text style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
                 {person.name}
@@ -77,7 +91,8 @@ export default async function PersonDetailPage({ params }: Props) {
               <Badge size="xs" variant="light" color="gray">{CATEGORY_LABELS[person.professionalCategory] ?? person.professionalCategory}</Badge>
               <Badge size="xs" variant="light" color="gray">{AREA_LABELS[person.primaryArea] ?? person.primaryArea}</Badge>
             </Group>
-          </div>
+            </div>
+          </Group>
         </Group>
       </Card>
 

@@ -2,7 +2,8 @@
 
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, Group, Select, MultiSelect, Button, Text, Loader } from '@mantine/core'
+import { Card, Group, Select, MultiSelect, Button, Loader } from '@mantine/core'
+import { MonthPickerInput } from '@mantine/dates'
 import { IconFilterOff } from '@tabler/icons-react'
 import type { FilterOptions } from '@/lib/insights-data'
 import {
@@ -70,36 +71,26 @@ export default function InsightsFilterBar({ filters, options }: Props) {
 
         {filters.period === 'custom' && (
           <>
-            <div>
-              <Text size="xs" fw={500} mb={2}>Desde</Text>
-              <input
-                type="month"
-                value={filters.from}
-                onChange={(e) => set('from', e.currentTarget.value)}
-                style={{
-                  height: 30,
-                  borderRadius: 8,
-                  border: '1px solid var(--mantine-color-gray-3)',
-                  padding: '0 8px',
-                  fontSize: 13,
-                }}
-              />
-            </div>
-            <div>
-              <Text size="xs" fw={500} mb={2}>Hasta</Text>
-              <input
-                type="month"
-                value={filters.to}
-                onChange={(e) => set('to', e.currentTarget.value)}
-                style={{
-                  height: 30,
-                  borderRadius: 8,
-                  border: '1px solid var(--mantine-color-gray-3)',
-                  padding: '0 8px',
-                  fontSize: 13,
-                }}
-              />
-            </div>
+            <MonthPickerInput
+              label="Desde"
+              placeholder="Mes"
+              valueFormat="MMM YYYY"
+              value={filters.from ? `${filters.from}-01` : null}
+              onChange={(v) => set('from', v ? v.slice(0, 7) : '')}
+              size="xs"
+              w={140}
+              clearable
+            />
+            <MonthPickerInput
+              label="Hasta"
+              placeholder="Mes"
+              valueFormat="MMM YYYY"
+              value={filters.to ? `${filters.to}-01` : null}
+              onChange={(v) => set('to', v ? v.slice(0, 7) : '')}
+              size="xs"
+              w={140}
+              clearable
+            />
           </>
         )}
 

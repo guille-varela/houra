@@ -42,18 +42,18 @@ export default function RoleSwitcher({ currentDisplay, actualRole }: Props) {
             style={{
               width: 36,
               height: 36,
-              borderRadius: 8,
+              borderRadius: 'var(--mantine-radius-sm)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: isPreviewing ? '#EEF2FA' : 'transparent',
+              background: isPreviewing ? 'var(--h-accent-bg)' : 'transparent',
               transition: 'background 0.1s',
               flexShrink: 0,
             }}
           >
             {isPreviewing
-              ? <IconEye size={16} style={{ color: '#3b82f6' }} />
-              : <IconEyeOff size={16} style={{ color: '#9A9A9A' }} />
+              ? <IconEye size={16} style={{ color: 'var(--h-accent)' }} />
+              : <IconEyeOff size={16} style={{ color: 'var(--h-text-disabled)' }} />
             }
           </UnstyledButton>
         </Tooltip>
@@ -67,7 +67,7 @@ export default function RoleSwitcher({ currentDisplay, actualRole }: Props) {
             onClick={() => switchRole(role.value)}
             rightSection={
               currentDisplay === role.value
-                ? <IconCheck size={12} style={{ color: '#3b82f6' }} />
+                ? <IconCheck size={12} style={{ color: 'var(--h-accent)' }} />
                 : null
             }
           >
@@ -87,7 +87,7 @@ export default function RoleSwitcher({ currentDisplay, actualRole }: Props) {
             <Menu.Divider />
             <Menu.Item
               onClick={() => switchRole(actualRole)}
-              leftSection={<IconEyeOff size={13} style={{ color: '#9A9A9A' }} />}
+              leftSection={<IconEyeOff size={13} style={{ color: 'var(--h-text-disabled)' }} />}
             >
               <Text size="xs" c="dimmed">Volver a mi rol</Text>
             </Menu.Item>

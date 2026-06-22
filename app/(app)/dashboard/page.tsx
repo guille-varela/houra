@@ -3,6 +3,7 @@ import { eq, sql } from 'drizzle-orm'
 import { Stack, Text, Card, Group, Badge, SimpleGrid } from '@mantine/core'
 import { AnchorLink } from '@/components/ui/anchor-link'
 import { ClickableCard } from '@/components/ui/clickable-card'
+import { StatCard } from '@/components/ui/stat-card'
 import { db } from '@/lib/db'
 import { amendments, persons, projects, timeEntries, workspaces } from '@/db/schema'
 import { requireRole } from '@/lib/auth-helpers'
@@ -118,24 +119,9 @@ export default async function DashboardPage() {
       </Text>
 
       <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
-        <Card p="md">
-          <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>Horas totales</Text>
-          <Text style={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-            {totalHours.toFixed(1)}h
-          </Text>
-        </Card>
-        <Card p="md">
-          <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>Ingresos</Text>
-          <Text style={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-            {formatEur(totalSold)}
-          </Text>
-        </Card>
-        <Card p="md">
-          <Text size="xs" c="dimmed" fw={500} tt="uppercase" style={{ letterSpacing: '0.04em' }}>Proyectos activos</Text>
-          <Text style={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-            {activeProjects}
-          </Text>
-        </Card>
+        <StatCard label="Horas totales" value={`${totalHours.toFixed(1)}h`} />
+        <StatCard label="Ingresos" value={formatEur(totalSold)} />
+        <StatCard label="Proyectos activos" value={String(activeProjects)} />
       </SimpleGrid>
 
       <Stack gap="xl">

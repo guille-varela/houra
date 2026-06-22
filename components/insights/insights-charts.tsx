@@ -3,8 +3,9 @@ import { formatEur } from '@/lib/margin'
 import { marginColor } from '@/lib/tokens'
 import type { RankItem, DonutSlice, TimePoint, HeatCell } from '@/lib/insights-data'
 import { AREA_LABELS, CATEGORY_LABELS, INSIGHTS_AREAS, INSIGHTS_CATEGORIES } from '@/lib/insights-filters'
+import { chartPalette } from '@/lib/tokens'
 
-const PALETTE = ['#4263eb', '#37b24d', '#f59f00', '#7048e8', '#e8590c', '#1098ad', '#d6336c', '#74b816']
+const PALETTE = chartPalette
 
 // ─── KPI en tonal container ──────────────────────────────────────────────────────
 

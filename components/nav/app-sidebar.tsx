@@ -17,9 +17,11 @@ import {
   IconFileText,
   IconBeach,
   IconChartHistogram,
+  IconCalendarPlus,
 } from '@tabler/icons-react'
 import RoleSwitcher from './role-switcher'
 import ThemeToggle from './theme-toggle'
+import { PersonAvatar } from '@/components/ui/person-avatar'
 
 function openCommandPalette() {
   window.dispatchEvent(new CustomEvent('houra:search'))
@@ -39,6 +41,7 @@ const NAV_TOP: NavItem[] = [
   { href: '/week', label: 'Semana', Icon: IconCalendarWeek, exact: true },
   { href: '/my-projects', label: 'Mis proyectos', Icon: IconFolders, roles: ['contributor'] },
   { href: '/projects', label: 'Proyectos', Icon: IconFolders, roles: ['admin', 'manager'] },
+  { href: '/auto-fill', label: 'Autorellenar', Icon: IconCalendarPlus, roles: ['admin', 'manager'] },
   { href: '/dashboard', label: 'Dashboard', Icon: IconLayoutDashboard, roles: ['admin', 'manager'] },
   { href: '/insights', label: 'Insights', Icon: IconChartHistogram, insights: true },
   { href: '/workspaces', label: 'Cuentas', Icon: IconBriefcase, roles: ['admin', 'manager'] },
@@ -95,35 +98,6 @@ function NavBtn({ item, active }: { item: NavItem; active: boolean }) {
         {item.label}
       </span>
     </UnstyledButton>
-  )
-}
-
-function Monogram({ name }: { name: string }) {
-  const initials = name
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('')
-
-  return (
-    <div
-      style={{
-        width: 26,
-        height: 26,
-        borderRadius: 7,
-        background: 'var(--h-text)',
-        color: 'var(--h-text-inverse)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 10,
-        fontWeight: 600,
-        letterSpacing: 0.5,
-        flexShrink: 0,
-      }}
-    >
-      {initials}
-    </div>
   )
 }
 
@@ -244,7 +218,7 @@ export default function AppSidebar({ appRole, displayRole, personName, canSeeIns
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 4px' }}>
           <Tooltip label={personName} position="right" withArrow offset={10} fz="xs">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, cursor: 'default' }}>
-              <Monogram name={personName} />
+              <PersonAvatar person={{ id: personName, name: personName, avatarType: 'initials' }} size={28} />
               <span style={{
                 fontSize: 12,
                 fontWeight: 500,

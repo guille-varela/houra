@@ -1,7 +1,8 @@
 import { Card, Text, Group, Stack } from '@mantine/core'
 import { formatEur } from '@/lib/margin'
+import { chartPalette } from '@/lib/tokens'
 
-const BAR_PALETTE = ['#4263eb', '#37b24d', '#f59f00', '#7048e8', '#e8590c', '#1098ad', '#d6336c', '#74b816']
+const BAR_PALETTE = chartPalette
 
 // ─── Revenue mes a mes (SVG, sin dependencias) ─────────────────────────────────
 

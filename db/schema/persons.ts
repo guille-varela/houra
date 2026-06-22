@@ -13,6 +13,9 @@ export const professionalCategoryEnum = pgEnum('professional_category', [
 ])
 export const areaEnum = pgEnum('area', ['research', 'ux', 'ui', 'cro'])
 
+/** Origen del avatar mostrado. Cascada de resolución: upload > google > generated > initials. */
+export const avatarTypeEnum = pgEnum('avatar_type', ['initials', 'generated', 'upload', 'google'])
+
 export const persons = pgTable(
   'persons',
   {
@@ -30,6 +33,12 @@ export const persons = pgTable(
     professionalCategory: professionalCategoryEnum('professional_category').notNull(),
     primaryArea: areaEnum('primary_area').notNull(),
     holidayRegion: text('holiday_region'),
+    // ─── Avatar (provisional: iniciales/generado; futuro: upload R2 / foto Google) ──
+    avatarType: avatarTypeEnum('avatar_type').notNull().default('initials'),
+    avatarUrl: text('avatar_url'), // upload (R2) o foto de Google
+    avatarSeed: text('avatar_seed'), // semilla para boring-avatars (default = id)
+    avatarVariant: text('avatar_variant'), // estilo boring-avatars: marble/beam/...
+    avatarColor: text('avatar_color'), // override de color de las iniciales
     timezoneOverride: text('timezone_override'),
     notificationPreferences: jsonb('notification_preferences'),
     // Nivel interno informativo (no afecta a precio). UI: tooltip on hover.

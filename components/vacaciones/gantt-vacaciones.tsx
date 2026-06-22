@@ -142,7 +142,7 @@ export function GanttVacaciones({
             return (
               <div key={d} style={{
                 position: 'absolute', left: i * COL_W, top: 0, width: COL_W, height: totalH,
-                background: isToday ? 'rgba(74,144,226,0.08)' : 'var(--h-surface)',
+                background: isToday ? 'var(--h-accent-bg)' : 'var(--h-surface)',
                 pointerEvents: 'none',
               }} />
             )

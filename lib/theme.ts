@@ -4,10 +4,19 @@ import { MANTINE_PRIMARY } from './tokens'
 export const theme: MantineThemeOverride = createTheme({
   primaryColor: MANTINE_PRIMARY,
 
-  fontFamily: 'var(--font-dm-sans), system-ui, sans-serif',
-  fontFamilyMonospace: 'ui-monospace, monospace',
+  fontFamily: 'var(--font-inter), system-ui, sans-serif',
+  fontFamilyMonospace: 'ui-monospace, "JetBrains Mono", monospace',
 
   defaultRadius: 'lg',
+
+  // Named radius scale (MD3-ish "gordito"), aligned to the design system tokens.
+  radius: {
+    xs: '4px',
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    xl: '20px',
+  },
 
   fontSizes: {
     xs: '0.6875rem',
@@ -95,11 +104,23 @@ export const theme: MantineThemeOverride = createTheme({
     Select: {
       defaultProps: { size: 'sm', radius: 'md' },
     },
+    MultiSelect: {
+      defaultProps: { size: 'sm', radius: 'md' },
+    },
+    MonthPickerInput: {
+      defaultProps: { size: 'sm', radius: 'md' },
+    },
+    DateInput: {
+      defaultProps: { size: 'sm', radius: 'md' },
+    },
     Textarea: {
       defaultProps: { size: 'sm', radius: 'md' },
     },
     PasswordInput: {
       defaultProps: { size: 'sm', radius: 'md' },
+    },
+    Table: {
+      defaultProps: { verticalSpacing: 'xs', horizontalSpacing: 'md' },
     },
     Divider: {
       styles: {
@@ -112,10 +133,12 @@ export const theme: MantineThemeOverride = createTheme({
       },
     },
     Modal: {
-      defaultProps: { radius: 'lg' },
+      defaultProps: { radius: 'xl' },
+      styles: { content: { backgroundColor: 'var(--h-surface-overlay)' } },
     },
     Drawer: {
       defaultProps: { radius: 'lg' },
+      styles: { content: { backgroundColor: 'var(--h-surface-overlay)' } },
     },
   },
 })

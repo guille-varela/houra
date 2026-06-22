@@ -8,10 +8,16 @@ export const hColors = {
   brandLight:    'var(--h-brand-light)',
   brandText:     'var(--h-brand-text)',
 
+  // Accent — rationed blue for links / focus / detail
+  accent:        'var(--h-accent)',
+  accentHover:   'var(--h-accent-hover)',
+  accentBg:      'var(--h-accent-bg)',
+
   // Surfaces
   surface:       'var(--h-surface)',
   surfaceRaised: 'var(--h-surface-raised)',
   surfaceSubtle: 'var(--h-surface-subtle)',
+  surfaceOverlay:'var(--h-surface-overlay)',
 
   // Borders
   border:        'var(--h-border)',
@@ -38,6 +44,19 @@ export const hFonts = {
   sans: 'var(--h-font-sans)',
   mono: 'var(--h-font-mono)',
 } as const
+
+// Single source of truth for categorical chart colors (dedupe across charts).
+// Multi-color is legitimate for data viz; the rationed-color rule is for chrome.
+export const chartPalette = [
+  '#4263eb',
+  '#37b24d',
+  '#f59f00',
+  '#7048e8',
+  '#e8590c',
+  '#1098ad',
+  '#d6336c',
+  '#74b816',
+] as const
 
 // Mantine primaryColor key — update this in Phase 09 alongside globals.css --h-brand vars
 export const MANTINE_PRIMARY = 'gray' as const

@@ -49,9 +49,9 @@ body {
   background: var(--h-surface-raised);
 }
 
-/* Focus ring — minimal */
+/* Focus ring — accent (visible in both light and dark) */
 :focus-visible {
-  outline: 2px solid var(--mantine-color-dark-9);
+  outline: 2px solid var(--h-accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -67,24 +67,44 @@ body {
    Status vars (--h-success/warning/caution/danger) are functional — never swap.
    ─────────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Brand */
+  /* Neutral scale — 12 steps, slightly cool (blue-gray identity). All --h-* below remap onto these. */
+  --h-neutral-0:   #FFFFFF;
+  --h-neutral-50:  #F7F9FC;
+  --h-neutral-100: #F2F5FA;
+  --h-neutral-200: #EEF2FA;
+  --h-neutral-300: #DDE1EC;
+  --h-neutral-400: #C3C9D6;
+  --h-neutral-500: #9AA1B2;
+  --h-neutral-600: #6B7180;
+  --h-neutral-700: #4A4F5C;
+  --h-neutral-800: #2E323B;
+  --h-neutral-900: #1B1E24;
+  --h-neutral-950: #101216;
+
+  /* Brand (neutral near-black for actions — Google-like) */
   --h-brand:       #3C3C3C;
-  --h-brand-light: #EEF2FA;
+  --h-brand-light: var(--h-neutral-200);
   --h-brand-text:  #ffffff;
 
+  /* Accent — rationed blue for links / focus / detail (not for filling surfaces) */
+  --h-accent:       #1B66C9;
+  --h-accent-hover: #1557AD;
+  --h-accent-bg:    #E7F1FC;
+
   /* Surfaces */
-  --h-surface:        #F2F5FA;
-  --h-surface-raised: #ffffff;
-  --h-surface-subtle: #EEF2FA;
+  --h-surface:        var(--h-neutral-100);
+  --h-surface-raised: var(--h-neutral-0);
+  --h-surface-subtle: var(--h-neutral-200);
+  --h-surface-overlay: var(--h-neutral-0);
 
   /* Borders */
-  --h-border:        #DDE1EC;
-  --h-border-strong: #9A9A9A;
+  --h-border:        var(--h-neutral-300);
+  --h-border-strong: var(--h-neutral-400);
 
   /* Text */
-  --h-text:          #111111;
-  --h-text-subtle:   #555555;
-  --h-text-disabled: #9A9A9A;
+  --h-text:          var(--h-neutral-900);
+  --h-text-subtle:   var(--h-neutral-600);
+  --h-text-disabled: var(--h-neutral-500);
   --h-text-inverse:  #ffffff;
 
   /* Status — functional traffic-light (cell consumption + margin) */
@@ -107,21 +127,52 @@ body {
    selects dark mode (or OS preference resolves to dark).
    ─────────────────────────────────────────────────────────────────────────── */
 [data-mantine-color-scheme="dark"] {
-  --h-brand:       #5B8EFF;
-  --h-brand-light: #1A2440;
-  --h-brand-text:  #ffffff;
+  /* Charcoal-blue neutral, 12 steps. Tonal elevation (MD3): surface sits a step
+     LIGHTER than canvas — depth without harsh black or heavy shadows. */
+  --h-neutral-0:   #131620;
+  --h-neutral-50:  #16191F;
+  --h-neutral-100: #1B1F27;
+  --h-neutral-200: #20242E;
+  --h-neutral-300: #262B36;
+  --h-neutral-400: #39404E;
+  --h-neutral-500: #4A5263;
+  --h-neutral-600: #6B7488;
+  --h-neutral-700: #8A93A6;
+  --h-neutral-800: #AAB3C4;
+  --h-neutral-900: #C9D0DC;
+  --h-neutral-950: #E6EAF2;
 
-  --h-surface:        #0F1117;
-  --h-surface-raised: #1E2536;
-  --h-surface-subtle: #161B25;
+  /* Brand inverts to a light neutral (Google-like CTA in dark) */
+  --h-brand:       #C9D0DC;
+  --h-brand-light: #232A3A;
+  --h-brand-text:  #16191F;
 
-  --h-border:        #2A3347;
-  --h-border-strong: #3D4F6E;
+  /* Accent — desaturated blue (saturated blues vibrate in dark) */
+  --h-accent:       #6EA8E0;
+  --h-accent-hover: #87B7E8;
+  --h-accent-bg:    #1A2740;
 
-  --h-text:          #E8EDF5;
-  --h-text-subtle:   #7A8BA8;
-  --h-text-disabled: #3D4F6E;
-  --h-text-inverse:  #111111;
+  /* Surfaces — tonal layers: card (+ luminance) over canvas, modal over card */
+  --h-surface:         #16191F;  /* canvas — not pure black */
+  --h-surface-raised:  #20242E;  /* card = +2 steps over canvas */
+  --h-surface-subtle:  #1B1F27;  /* sunken zones / tracks */
+  --h-surface-overlay: #2E3440;  /* modal / drawer / popover */
+
+  /* Borders — hairline visible */
+  --h-border:        #262B36;
+  --h-border-strong: #39404E;
+
+  /* Text — secondary +1 step of brightness for AA over elevated surface */
+  --h-text:          #E6EAF2;  /* not pure white */
+  --h-text-subtle:   #AAB3C4;
+  --h-text-disabled: #6B7488;
+  --h-text-inverse:  #16191F;
+
+  /* Status — dark desaturated tints + bright text */
+  --h-success:    #6FD79C;  --h-success-bg: #11271A;
+  --h-warning:    #F0B454;  --h-warning-bg: #2A2110;
+  --h-caution:    #E8C766;  --h-caution-bg: #28220F;
+  --h-danger:     #F09AA4;  --h-danger-bg:  #2D1518;
 }
 
 /* ─── Tailwind 4 custom utilities ───────────────────────────────────────────
@@ -132,9 +183,13 @@ body {
   --color-h-brand:          var(--h-brand);
   --color-h-brand-light:    var(--h-brand-light);
   --color-h-brand-text:     var(--h-brand-text);
+  --color-h-accent:         var(--h-accent);
+  --color-h-accent-hover:   var(--h-accent-hover);
+  --color-h-accent-bg:      var(--h-accent-bg);
   --color-h-surface:        var(--h-surface);
   --color-h-surface-raised: var(--h-surface-raised);
   --color-h-surface-subtle: var(--h-surface-subtle);
+  --color-h-surface-overlay: var(--h-surface-overlay);
   --color-h-border:         var(--h-border);
   --color-h-border-strong:  var(--h-border-strong);
   --color-h-text:           var(--h-text);
