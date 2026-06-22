@@ -4,6 +4,7 @@ import { getCurrentPerson, canAccessInsights } from '@/lib/auth-helpers'
 import { parseInsightsFilters, COMPARE_LABELS } from '@/lib/insights-filters'
 import { getInsights, getInsightsFilterOptions, getBagSummary } from '@/lib/insights-data'
 import InsightsFilterBar from '@/components/insights/insights-filter-bar'
+import PivotTable from '@/components/insights/pivot-table'
 import {
   KpiGrid,
   KpiCard,
@@ -217,6 +218,9 @@ export default async function InsightsPage({ searchParams }: Props) {
 
           {/* Heatmap */}
           <MarginHeatmap cells={data.heatmap} />
+
+          {/* Tabla pivote dinámica (F3.5 Ola 3) */}
+          <PivotTable pivot={data.pivot} filters={filters} />
 
           <Group justify="flex-end">
             <Badge size="xs" variant="light" color="gray">

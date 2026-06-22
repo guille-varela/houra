@@ -63,6 +63,36 @@ export const COMPARE_LABELS: Record<CompareMode, string> = {
   yoy: 'Año anterior',
 }
 
+// ─── Pivot table dinámica (F3.5 Ola 3) ───────────────────────────────────────────
+// Dimensiones que pueden ir en los ejes (filas/columnas) de la tabla pivote.
+// El eje de columnas admite además 'none' → tabla de una sola columna (ranking).
+export const PIVOT_DIMENSIONS = ['client', 'project', 'person', 'area', 'category', 'month'] as const
+export type PivotDim = (typeof PIVOT_DIMENSIONS)[number]
+export const PIVOT_DIM_LABELS: Record<PivotDim, string> = {
+  client: 'Cliente',
+  project: 'Proyecto',
+  person: 'Persona',
+  area: 'Área',
+  category: 'Categoría',
+  month: 'Mes',
+}
+
+export type PivotCol = PivotDim | 'none'
+
+export const PIVOT_METRICS = ['revenue', 'cost', 'hours', 'margin'] as const
+export type PivotMetric = (typeof PIVOT_METRICS)[number]
+export const PIVOT_METRIC_LABELS: Record<PivotMetric, string> = {
+  revenue: 'Ingresos',
+  cost: 'Coste',
+  hours: 'Horas',
+  margin: 'Margen %',
+}
+
+// Defaults de la vista pivote (configuración de vista, no "filtros de datos").
+export const PIVOT_DEFAULT_ROW: PivotDim = 'client'
+export const PIVOT_DEFAULT_COL: PivotCol = 'month'
+export const PIVOT_DEFAULT_METRIC: PivotMetric = 'revenue'
+
 // ─── Filtros ────────────────────────────────────────────────────────────────────
 
 export type InsightsFilters = {
@@ -78,6 +108,10 @@ export type InsightsFilters = {
   statuses: string[]
   marginBucket: MarginBucket | null
   compare: CompareMode
+  // Vista pivote (F3.5 Ola 3) — ortogonal a los filtros de datos.
+  pivotRow: PivotDim
+  pivotCol: PivotCol
+  pivotMetric: PivotMetric
 }
 
 export const EMPTY_FILTERS: InsightsFilters = {
@@ -93,6 +127,9 @@ export const EMPTY_FILTERS: InsightsFilters = {
   statuses: [],
   marginBucket: null,
   compare: 'none',
+  pivotRow: PIVOT_DEFAULT_ROW,
+  pivotCol: PIVOT_DEFAULT_COL,
+  pivotMetric: PIVOT_DEFAULT_METRIC,
 }
 
 type RawSearchParams = Record<string, string | string[] | undefined>
@@ -118,6 +155,9 @@ export function parseInsightsFilters(params: RawSearchParams): InsightsFilters {
     : 'this_year'
   const marginRaw = only(params.margin)
   const compareRaw = only(params.compare)
+  const prowRaw = only(params.prow)
+  const pcolRaw = only(params.pcol)
+  const pmetricRaw = only(params.pmetric)
   return {
     period,
     from: only(params.from),
@@ -131,6 +171,14 @@ export function parseInsightsFilters(params: RawSearchParams): InsightsFilters {
     areas: csv(params.areas).filter((x) => (INSIGHTS_AREAS as readonly string[]).includes(x)),
     statuses: csv(params.statuses).filter((x) => (INSIGHTS_STATUSES as readonly string[]).includes(x)),
     marginBucket: (MARGIN_BUCKETS as readonly string[]).includes(marginRaw) ? (marginRaw as MarginBucket) : null,
+    pivotRow: (PIVOT_DIMENSIONS as readonly string[]).includes(prowRaw) ? (prowRaw as PivotDim) : PIVOT_DEFAULT_ROW,
+    pivotCol:
+      pcolRaw === 'none' || (PIVOT_DIMENSIONS as readonly string[]).includes(pcolRaw)
+        ? (pcolRaw as PivotCol)
+        : PIVOT_DEFAULT_COL,
+    pivotMetric: (PIVOT_METRICS as readonly string[]).includes(pmetricRaw)
+      ? (pmetricRaw as PivotMetric)
+      : PIVOT_DEFAULT_METRIC,
   }
 }
 
@@ -151,6 +199,9 @@ export function buildInsightsQuery(f: InsightsFilters): string {
   if (f.statuses.length) p.set('statuses', f.statuses.join(','))
   if (f.marginBucket) p.set('margin', f.marginBucket)
   if (f.compare !== 'none') p.set('compare', f.compare)
+  if (f.pivotRow !== PIVOT_DEFAULT_ROW) p.set('prow', f.pivotRow)
+  if (f.pivotCol !== PIVOT_DEFAULT_COL) p.set('pcol', f.pivotCol)
+  if (f.pivotMetric !== PIVOT_DEFAULT_METRIC) p.set('pmetric', f.pivotMetric)
   return p.toString()
 }
 

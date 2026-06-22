@@ -10,6 +10,9 @@ import {
   matchesBucket,
   marginPct,
   type InsightsFilters,
+  type PivotDim,
+  type PivotCol,
+  type PivotMetric,
 } from './insights-filters'
 
 /**
@@ -185,6 +188,19 @@ export type InsightsCompare = {
   timeline: TimePoint[]
 }
 
+/** F3.5 Ola 3 — tabla pivote dinámica (ejes elegibles + métrica). */
+export type PivotResult = {
+  rowDim: PivotDim
+  colDim: PivotCol
+  metric: PivotMetric
+  colHeaders: Array<{ key: string; label: string }>
+  rows: Array<{ key: string; label: string; cells: Array<number | null>; total: number | null }>
+  colTotals: Array<number | null>
+  grandTotal: number | null
+  truncatedRows: number // filas omitidas tras el tope (0 si ninguna)
+  truncatedCols: number
+}
+
 export type InsightsResult = {
   kpis: InsightsKpis
   topClients: RankItem[]
@@ -195,7 +211,176 @@ export type InsightsResult = {
   timeline: TimePoint[]
   heatmap: HeatCell[]
   compare: InsightsCompare | null
+  pivot: PivotResult
   rowCount: number
+}
+
+// ─── Pivot table (F3.5 Ola 3) ─────────────────────────────────────────────────────
+
+const PIVOT_MAX_ROWS = 50
+const PIVOT_MAX_COLS = 31
+
+type Acc = { hours: number; rev: number; cost: number }
+
+function emptyAcc(): Acc {
+  return { hours: 0, rev: 0, cost: 0 }
+}
+function addInto(acc: Acc, r: FactRow): void {
+  acc.hours += r.hours
+  acc.rev += r.revenueCents
+  acc.cost += r.costCents
+}
+function projectMetric(acc: Acc, metric: PivotMetric): number | null {
+  switch (metric) {
+    case 'hours':
+      return acc.hours
+    case 'revenue':
+      return acc.rev
+    case 'cost':
+      return acc.cost
+    case 'margin':
+      return marginPct(acc.rev, acc.cost)
+  }
+}
+
+function dimKeyLabel(r: FactRow, dim: PivotDim): { key: string; label: string } {
+  switch (dim) {
+    case 'client':
+      return { key: r.clientId ?? '∅', label: r.clientName ?? 'Sin cliente' }
+    case 'project':
+      return { key: r.projectId, label: r.projectName }
+    case 'person':
+      return { key: r.personId, label: r.personName }
+    case 'area':
+      return { key: r.area, label: AREA_LABELS[r.area] ?? r.area }
+    case 'category':
+      return { key: r.category, label: CATEGORY_LABELS[r.category] ?? r.category }
+    case 'month':
+      return { key: r.month, label: r.month }
+  }
+}
+
+/**
+ * Ordena las claves de un eje. Las dimensiones con orden natural (mes, área,
+ * categoría) usan ese orden; el resto se ordena por ingresos descendente para que
+ * lo relevante quede arriba/izquierda independientemente de la métrica mostrada.
+ */
+function orderAxis(
+  dim: PivotDim,
+  entries: Array<{ key: string; label: string; rev: number }>,
+): Array<{ key: string; label: string }> {
+  let sorted: typeof entries
+  if (dim === 'month') {
+    sorted = [...entries].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+  } else if (dim === 'area') {
+    const order = INSIGHTS_AREAS as readonly string[]
+    sorted = [...entries].sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
+  } else if (dim === 'category') {
+    const order = INSIGHTS_CATEGORIES as readonly string[]
+    sorted = [...entries].sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
+  } else {
+    sorted = [...entries].sort((a, b) => b.rev - a.rev)
+  }
+  return sorted.map((e) => ({ key: e.key, label: e.label }))
+}
+
+export function computePivot(
+  facts: FactRow[],
+  config: { row: PivotDim; col: PivotCol; metric: PivotMetric },
+): PivotResult {
+  const { row: rowDim, metric } = config
+  // Si fila y columna coinciden, la columna pierde sentido → tabla de una sola columna.
+  const colDim: PivotCol = config.col === rowDim ? 'none' : config.col
+
+  const rowMeta = new Map<string, { label: string; rev: number }>()
+  const colMeta = new Map<string, { label: string; rev: number }>()
+  const cellAcc = new Map<string, Acc>() // `${rowKey}|${colKey}`
+
+  const COL_NONE = '∑'
+
+  for (const r of facts) {
+    const rk = dimKeyLabel(r, rowDim)
+    const rm = rowMeta.get(rk.key) ?? { label: rk.label, rev: 0 }
+    rm.rev += r.revenueCents
+    rowMeta.set(rk.key, rm)
+
+    let colKey = COL_NONE
+    if (colDim !== 'none') {
+      const ck = dimKeyLabel(r, colDim)
+      colKey = ck.key
+      const cm = colMeta.get(colKey) ?? { label: ck.label, rev: 0 }
+      cm.rev += r.revenueCents
+      colMeta.set(colKey, cm)
+    }
+
+    const cellKey = `${rk.key} ${colKey}`
+    const acc = cellAcc.get(cellKey) ?? emptyAcc()
+    addInto(acc, r)
+    cellAcc.set(cellKey, acc)
+  }
+
+  // Ejes ordenados + tope.
+  const rowEntries = [...rowMeta.entries()].map(([key, v]) => ({ key, label: v.label, rev: v.rev }))
+  let orderedRows = orderAxis(rowDim, rowEntries)
+  const truncatedRows = Math.max(0, orderedRows.length - PIVOT_MAX_ROWS)
+  if (truncatedRows > 0) orderedRows = orderedRows.slice(0, PIVOT_MAX_ROWS)
+
+  let colHeaders: Array<{ key: string; label: string }>
+  let truncatedCols = 0
+  if (colDim === 'none') {
+    colHeaders = []
+  } else {
+    const colEntries = [...colMeta.entries()].map(([key, v]) => ({ key, label: v.label, rev: v.rev }))
+    let ordered = orderAxis(colDim, colEntries)
+    truncatedCols = Math.max(0, ordered.length - PIVOT_MAX_COLS)
+    if (truncatedCols > 0) ordered = ordered.slice(0, PIVOT_MAX_COLS)
+    colHeaders = ordered
+  }
+
+  // Acumuladores de totales por columna (incluido el caso 'none' → 1 columna virtual).
+  const colTotalAcc = colDim === 'none' ? [emptyAcc()] : colHeaders.map(() => emptyAcc())
+  const grandAcc = emptyAcc()
+
+  const rows = orderedRows.map((rEntry) => {
+    if (colDim === 'none') {
+      const acc = cellAcc.get(`${rEntry.key} ${COL_NONE}`) ?? emptyAcc()
+      mergeAcc(colTotalAcc[0] as Acc, acc)
+      mergeAcc(grandAcc, acc)
+      return { key: rEntry.key, label: rEntry.label, cells: [], total: projectMetric(acc, metric) }
+    }
+    const rowAcc = emptyAcc()
+    const cells = colHeaders.map((cHeader, i) => {
+      const acc = cellAcc.get(`${rEntry.key} ${cHeader.key}`) ?? emptyAcc()
+      mergeAcc(rowAcc, acc)
+      mergeAcc(colTotalAcc[i] as Acc, acc)
+      mergeAcc(grandAcc, acc)
+      return projectMetric(acc, metric)
+    })
+    return { key: rEntry.key, label: rEntry.label, cells, total: projectMetric(rowAcc, metric) }
+  })
+
+  const colTotals =
+    colDim === 'none' ? [] : colTotalAcc.map((acc) => projectMetric(acc, metric))
+  const grandTotal = projectMetric(grandAcc, metric)
+
+  return {
+    rowDim,
+    colDim,
+    metric,
+    colHeaders,
+    rows,
+    colTotals,
+    grandTotal,
+    truncatedRows,
+    truncatedCols,
+  }
+}
+
+// Acumular un Acc dentro de otro.
+function mergeAcc(into: Acc, from: Acc): void {
+  into.hours += from.hours
+  into.rev += from.rev
+  into.cost += from.cost
 }
 
 // ─── Cálculos reutilizables (periodo principal y de comparación) ──────────────────
@@ -337,6 +522,13 @@ export async function getInsights(orgId: string, f: InsightsFilters): Promise<In
     }
   }
 
+  // Tabla pivote dinámica (reutiliza los facts ya filtrados).
+  const pivot = computePivot(facts, {
+    row: f.pivotRow,
+    col: f.pivotCol,
+    metric: f.pivotMetric,
+  })
+
   return {
     kpis,
     topClients,
@@ -347,6 +539,7 @@ export async function getInsights(orgId: string, f: InsightsFilters): Promise<In
     timeline,
     heatmap,
     compare,
+    pivot,
     rowCount: facts.length,
   }
 }
