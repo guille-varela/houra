@@ -1,4 +1,10 @@
 /**
+ * Región de festivos por defecto (Madrid = sede principal). Se usa cuando no hay
+ * una región de persona definida o cuando el contexto no es por-persona (propuestas).
+ */
+export const DEFAULT_HOLIDAY_REGION = 'ES-MD'
+
+/**
  * Lists the working days between two ISO dates (inclusive) as 'YYYY-MM-DD',
  * excluding weekends and the dates in `holidaySet`.
  * Uses local-time Date to avoid UTC timezone shifts on date boundaries.

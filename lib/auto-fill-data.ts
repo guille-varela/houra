@@ -18,10 +18,8 @@ import {
   timeOffEntries,
 } from '@/db/schema'
 import { computeAutoFill, dailyHoursFromWeekly, type AutoFillMode } from './auto-fill'
-import { listWorkingDays } from './feasibility'
+import { listWorkingDays, DEFAULT_HOLIDAY_REGION } from './feasibility'
 import { resolveRate } from './rates'
-
-const DEFAULT_REGION = 'ES-MD'
 
 export type AutoFillScope = { projectId?: string; personId?: string }
 
@@ -63,7 +61,7 @@ export type AutoFillScopeResult = {
 }
 
 function regionOf(holidayRegion: string | null): string {
-  return holidayRegion && holidayRegion.trim() ? holidayRegion : DEFAULT_REGION
+  return holidayRegion && holidayRegion.trim() ? holidayRegion : DEFAULT_HOLIDAY_REGION
 }
 
 function yearsBetween(startIso: string, endIso: string): number[] {

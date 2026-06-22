@@ -7,6 +7,7 @@ import { requireRole } from '@/lib/auth-helpers'
 import { persons, holidayPresets, organizations, timeOffEntries } from '@/db/schema'
 import { getProposal, getProposalPhases, getProposalStaffing } from '@/actions/proposals'
 import { getClients } from '@/actions/clients'
+import { DEFAULT_HOLIDAY_REGION } from '@/lib/feasibility'
 import ProposalTabs from './proposal-tabs'
 import SummaryTab from './summary-tab'
 import StaffingTab from './staffing-tab'
@@ -75,7 +76,7 @@ export default async function ProposalDetailPage({ params, searchParams }: Props
     db
       .select({ dates: holidayPresets.dates, year: holidayPresets.year })
       .from(holidayPresets)
-      .where(eq(holidayPresets.region, 'ES-MD')),
+      .where(eq(holidayPresets.region, DEFAULT_HOLIDAY_REGION)),
   ])
 
   // Build flat holiday set from all fetched years

@@ -3,6 +3,7 @@
 import { useRef, useEffect } from 'react'
 import { Tooltip } from '@mantine/core'
 import type { PersonBalance } from '@/lib/sheets-vacaciones'
+import { DEFAULT_HOLIDAY_REGION } from '@/lib/feasibility'
 
 // ─── Layout ──────────────────────────────────────────────────────────────────
 
@@ -200,7 +201,7 @@ export function GanttVacaciones({
           {/* Per-row: holidays + separator + bars */}
           {sorted.map((p, rowIdx) => {
             const rowTop = HDR_H + rowIdx * ROW_H
-            const region = personRegions[p.name] ?? 'ES-MD'
+            const region = personRegions[p.name] ?? DEFAULT_HOLIDAY_REGION
 
             return (
               <div key={`row-${p.name}`}>
