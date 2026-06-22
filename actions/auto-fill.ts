@@ -50,6 +50,7 @@ export async function previewAutoFill(input: {
     )
     return { ok: true, result }
   } catch (e) {
+    console.error('[previewAutoFill] error:', e)
     return { ok: false, error: e instanceof Error ? e.message : 'Error al calcular el preview.' }
   }
 }

@@ -194,9 +194,10 @@ export async function computeAutoFillForScope(
   ])
   const orgWeekly = orgRow[0]?.defaultWeeklyHours ? parseFloat(orgRow[0].defaultWeeklyHours) : 37.5
 
-  const rows: AutoFillRow[] = []
-
-  for (const a of eligible) {
+  // Cada asignación hace varias queries (festivos, manuales, tarifa); se procesan
+  // EN PARALELO (no secuencial) para no agotar el tiempo del Worker con N+1 round-trips.
+  const rows: AutoFillRow[] = await Promise.all(
+    eligible.map(async (a): Promise<AutoFillRow> => {
     const area = a.autoFillArea ?? a.personPrimaryArea
     const baseRow = {
       assignmentId: a.assignmentId,
@@ -210,12 +211,10 @@ export async function computeAutoFillForScope(
 
     // Validaciones que descartan la asignación con un error legible.
     if (!a.autoFillMode) {
-      rows.push({ ...baseRow, targetHours: 0, manualHours: 0, filledHours: 0, revenueCents: 0, costCents: 0, entries: [], warnings: [], error: 'Sin modo de dedicación configurado.' })
-      continue
+      return { ...baseRow, targetHours: 0, manualHours: 0, filledHours: 0, revenueCents: 0, costCents: 0, entries: [], warnings: [], error: 'Sin modo de dedicación configurado.' }
     }
     if (a.autoFillArea && !a.allowedAreas.includes(a.autoFillArea)) {
-      rows.push({ ...baseRow, targetHours: 0, manualHours: 0, filledHours: 0, revenueCents: 0, costCents: 0, entries: [], warnings: [], error: `El área "${a.autoFillArea}" no está permitida en esta asignación.` })
-      continue
+      return { ...baseRow, targetHours: 0, manualHours: 0, filledHours: 0, revenueCents: 0, costCents: 0, entries: [], warnings: [], error: `El área "${a.autoFillArea}" no está permitida en esta asignación.` }
     }
 
     // Ventana efectiva del periodo (altas/bajas, cambios de %).
@@ -228,8 +227,7 @@ export async function computeAutoFillForScope(
       effEnd = minIso(effEnd, deIso)
     }
     if (effStart > effEnd) {
-      rows.push({ ...baseRow, targetHours: 0, manualHours: 0, filledHours: 0, revenueCents: 0, costCents: 0, entries: [], warnings: ['La asignación no está vigente en el periodo seleccionado.'], error: null })
-      continue
+      return { ...baseRow, targetHours: 0, manualHours: 0, filledHours: 0, revenueCents: 0, costCents: 0, entries: [], warnings: ['La asignación no está vigente en el periodo seleccionado.'], error: null }
     }
 
     const holidaySet = await buildPersonHolidaySet(orgId, a.personId, a.holidayRegion, effStart, effEnd)
@@ -294,7 +292,7 @@ export async function computeAutoFillForScope(
     const revenueCents = entries.reduce((s, e) => s + Math.round(e.hours * e.soldRateCents), 0)
     const costCents = entries.reduce((s, e) => s + Math.round(e.hours * e.costRateCents), 0)
 
-    rows.push({
+    return {
       ...baseRow,
       targetHours: result.targetHours,
       manualHours: result.manualHours,
@@ -304,8 +302,9 @@ export async function computeAutoFillForScope(
       entries,
       warnings: result.warnings,
       error,
-    })
-  }
+    }
+    }),
+  )
 
   const totals = rows.reduce(
     (t, r) => ({

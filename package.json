@@ -14,6 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx --env-file=.env.local db/seed.ts",
+    "db:seed-demo": "tsx --env-file=.env.local db/seed-demo.ts",
     "db:seed-2027": "tsx --env-file=.env.local db/seed-2027.ts",
     "db:seed-fernando": "tsx --env-file=.env.local db/seed-fernando.ts",
     "db:seed-team": "tsx --env-file=.env.local db/seed-team.ts",
