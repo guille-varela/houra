@@ -1,0 +1,373 @@
+/**
+ * F3.5 — Autorellenar horas: capa de datos (server-only).
+ *
+ * Orquesta el cálculo puro de `lib/auto-fill.ts` sobre datos reales: construye el
+ * calendario laborable por persona (festivos de su región + vacaciones), carga las
+ * imputaciones manuales del periodo, resuelve tarifas y agrega el resultado por
+ * asignación. Lo usan tanto `previewAutoFill` (no escribe) como `commitAutoFill`.
+ */
+import { and, eq, gte, inArray, lte, ne } from 'drizzle-orm'
+import { db } from './db'
+import {
+  holidayPresets,
+  organizations,
+  persons,
+  projectAssignments,
+  projects,
+  timeEntries,
+  timeOffEntries,
+} from '@/db/schema'
+import { computeAutoFill, dailyHoursFromWeekly, type AutoFillMode } from './auto-fill'
+import { listWorkingDays } from './feasibility'
+import { resolveRate } from './rates'
+
+const DEFAULT_REGION = 'ES-MD'
+
+export type AutoFillScope = { projectId?: string; personId?: string }
+
+export type AutoFillRowEntry = {
+  date: string
+  hours: number
+  costRateCents: number
+  soldRateCents: number
+}
+
+export type AutoFillRow = {
+  assignmentId: string
+  personId: string
+  personName: string
+  projectId: string
+  projectName: string
+  area: string
+  mode: AutoFillMode
+  targetHours: number
+  manualHours: number
+  filledHours: number
+  revenueCents: number
+  costCents: number
+  entries: AutoFillRowEntry[]
+  warnings: string[]
+  error: string | null
+}
+
+export type AutoFillScopeResult = {
+  rows: AutoFillRow[]
+  totals: {
+    assignments: number
+    entries: number
+    hours: number
+    revenueCents: number
+    costCents: number
+    withErrors: number
+  }
+}
+
+function regionOf(holidayRegion: string | null): string {
+  return holidayRegion && holidayRegion.trim() ? holidayRegion : DEFAULT_REGION
+}
+
+function yearsBetween(startIso: string, endIso: string): number[] {
+  const y0 = Number(startIso.slice(0, 4))
+  const y1 = Number(endIso.slice(0, 4))
+  const out: number[] = []
+  for (let y = y0; y <= y1; y++) out.push(y)
+  return out
+}
+
+/** Festivos (por región de la persona) ∪ vacaciones/ausencias de la persona en el periodo. */
+async function buildPersonHolidaySet(
+  orgId: string,
+  personId: string,
+  holidayRegion: string | null,
+  periodStart: string,
+  periodEnd: string,
+): Promise<Set<string>> {
+  const region = regionOf(holidayRegion)
+  const years = yearsBetween(periodStart, periodEnd)
+
+  const [holidayRows, timeOffRows] = await Promise.all([
+    db
+      .select({ dates: holidayPresets.dates })
+      .from(holidayPresets)
+      .where(and(eq(holidayPresets.region, region), inArray(holidayPresets.year, years))),
+    db
+      .select({ date: timeOffEntries.date })
+      .from(timeOffEntries)
+      .where(
+        and(
+          eq(timeOffEntries.organizationId, orgId),
+          eq(timeOffEntries.personId, personId),
+          gte(timeOffEntries.date, periodStart),
+          lte(timeOffEntries.date, periodEnd),
+        ),
+      ),
+  ])
+
+  const set = new Set<string>()
+  for (const r of holidayRows) {
+    for (const d of r.dates as Array<{ date: string }>) set.add(d.date)
+  }
+  for (const r of timeOffRows) set.add(r.date as string)
+  return set
+}
+
+type EligibleRow = {
+  assignmentId: string
+  personId: string
+  personName: string
+  personPrimaryArea: string
+  professionalCategory: string
+  holidayRegion: string | null
+  deactivatedAt: Date | null
+  projectId: string
+  projectName: string
+  projectWeeklyHours: string
+  allowedAreas: string[]
+  autoFillMode: AutoFillMode | null
+  dedicationPercent: string | null
+  monthlyTargetHours: string | null
+  autoFillArea: string | null
+  effectiveFrom: string | null
+  effectiveTo: string | null
+}
+
+async function getEligibleAssignments(orgId: string, scope: AutoFillScope): Promise<EligibleRow[]> {
+  const conds = [
+    eq(projectAssignments.organizationId, orgId),
+    eq(projectAssignments.autoFillEnabled, true),
+    eq(projectAssignments.isActive, true),
+    // Solo proyectos que aceptan imputaciones (no draft/closed).
+    inArray(projects.status, ['active', 'paused']),
+  ]
+  if (scope.projectId) conds.push(eq(projectAssignments.projectId, scope.projectId))
+  if (scope.personId) conds.push(eq(projectAssignments.personId, scope.personId))
+
+  const rows = await db
+    .select({
+      assignmentId: projectAssignments.id,
+      personId: projectAssignments.personId,
+      personName: persons.name,
+      personPrimaryArea: persons.primaryArea,
+      professionalCategory: persons.professionalCategory,
+      holidayRegion: persons.holidayRegion,
+      deactivatedAt: persons.deactivatedAt,
+      projectId: projectAssignments.projectId,
+      projectName: projects.name,
+      projectWeeklyHours: projects.weeklyHours,
+      allowedAreas: projectAssignments.allowedAreas,
+      autoFillMode: projectAssignments.autoFillMode,
+      dedicationPercent: projectAssignments.dedicationPercent,
+      monthlyTargetHours: projectAssignments.monthlyTargetHours,
+      autoFillArea: projectAssignments.autoFillArea,
+      effectiveFrom: projectAssignments.effectiveFrom,
+      effectiveTo: projectAssignments.effectiveTo,
+    })
+    .from(projectAssignments)
+    .innerJoin(persons, eq(persons.id, projectAssignments.personId))
+    .innerJoin(projects, eq(projects.id, projectAssignments.projectId))
+    .where(and(...conds))
+
+  return rows as EligibleRow[]
+}
+
+/** Mayor de dos fechas ISO 'YYYY-MM-DD' (string compare es válido en ISO). */
+function maxIso(a: string, b: string): string {
+  return a >= b ? a : b
+}
+function minIso(a: string, b: string): string {
+  return a <= b ? a : b
+}
+
+/** Calcula el autorelleno propuesto para todas las asignaciones elegibles del scope. */
+export async function computeAutoFillForScope(
+  orgId: string,
+  period: { periodStart: string; periodEnd: string },
+  scope: AutoFillScope,
+): Promise<AutoFillScopeResult> {
+  const { periodStart, periodEnd } = period
+
+  const [eligible, orgRow] = await Promise.all([
+    getEligibleAssignments(orgId, scope),
+    db
+      .select({ defaultWeeklyHours: organizations.defaultWeeklyHours })
+      .from(organizations)
+      .where(eq(organizations.id, orgId))
+      .limit(1),
+  ])
+  const orgWeekly = orgRow[0]?.defaultWeeklyHours ? parseFloat(orgRow[0].defaultWeeklyHours) : 37.5
+
+  const rows: AutoFillRow[] = []
+
+  for (const a of eligible) {
+    const area = a.autoFillArea ?? a.personPrimaryArea
+    const baseRow = {
+      assignmentId: a.assignmentId,
+      personId: a.personId,
+      personName: a.personName,
+      projectId: a.projectId,
+      projectName: a.projectName,
+      area,
+      mode: (a.autoFillMode ?? 'percent') as AutoFillMode,
+    }
+
+    // Validaciones que descartan la asignación con un error legible.
+    if (!a.autoFillMode) {
+      rows.push({ ...baseRow, targetHours: 0, manualHours: 0, filledHours: 0, revenueCents: 0, costCents: 0, entries: [], warnings: [], error: 'Sin modo de dedicación configurado.' })
+      continue
+    }
+    if (a.autoFillArea && !a.allowedAreas.includes(a.autoFillArea)) {
+      rows.push({ ...baseRow, targetHours: 0, manualHours: 0, filledHours: 0, revenueCents: 0, costCents: 0, entries: [], warnings: [], error: `El área "${a.autoFillArea}" no está permitida en esta asignación.` })
+      continue
+    }
+
+    // Ventana efectiva del periodo (altas/bajas, cambios de %).
+    let effStart = periodStart
+    let effEnd = periodEnd
+    if (a.effectiveFrom) effStart = maxIso(effStart, a.effectiveFrom)
+    if (a.effectiveTo) effEnd = minIso(effEnd, a.effectiveTo)
+    if (a.deactivatedAt) {
+      const deIso = a.deactivatedAt.toISOString().slice(0, 10)
+      effEnd = minIso(effEnd, deIso)
+    }
+    if (effStart > effEnd) {
+      rows.push({ ...baseRow, targetHours: 0, manualHours: 0, filledHours: 0, revenueCents: 0, costCents: 0, entries: [], warnings: ['La asignación no está vigente en el periodo seleccionado.'], error: null })
+      continue
+    }
+
+    const holidaySet = await buildPersonHolidaySet(orgId, a.personId, a.holidayRegion, effStart, effEnd)
+
+    // Imputaciones manuales del periodo (se respetan y descuentan del objetivo).
+    const manualRows = await db
+      .select({ date: timeEntries.date, hours: timeEntries.hours })
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.organizationId, orgId),
+          eq(timeEntries.personId, a.personId),
+          eq(timeEntries.projectId, a.projectId),
+          eq(timeEntries.source, 'manual'),
+          gte(timeEntries.date, effStart),
+          lte(timeEntries.date, effEnd),
+        ),
+      )
+    const manualHoursByDate: Record<string, number> = {}
+    for (const m of manualRows) {
+      manualHoursByDate[m.date as string] = (manualHoursByDate[m.date as string] ?? 0) + parseFloat(m.hours)
+    }
+
+    const weekly = a.projectWeeklyHours ? parseFloat(a.projectWeeklyHours) : orgWeekly
+    const dailyHours = dailyHoursFromWeekly(weekly)
+
+    // Pro-rata en modo monthly_hours: días laborables del periodo COMPLETO solicitado.
+    const fullPeriodWorkingDays =
+      a.autoFillMode === 'monthly_hours'
+        ? listWorkingDays(periodStart, periodEnd, holidaySet).length
+        : null
+
+    const result = computeAutoFill({
+      periodStart: effStart,
+      periodEnd: effEnd,
+      holidaySet,
+      mode: a.autoFillMode,
+      dailyHours,
+      dedicationPercent: a.dedicationPercent ? parseFloat(a.dedicationPercent) : null,
+      monthlyTargetHours: a.monthlyTargetHours ? parseFloat(a.monthlyTargetHours) : null,
+      fullPeriodWorkingDays,
+      manualHoursByDate,
+    })
+
+    // Tarifa: se resuelve una vez por asignación (al inicio del periodo efectivo).
+    let costRateCents = 0
+    let soldRateCents = 0
+    let error: string | null = null
+    if (result.entries.length > 0) {
+      try {
+        const r = await resolveRate(a.personId, a.projectId, area, a.professionalCategory, effStart)
+        costRateCents = r.costRateCents
+        soldRateCents = r.soldRateCents
+      } catch (e) {
+        error = e instanceof Error ? e.message : 'No se pudo resolver la tarifa.'
+      }
+    }
+
+    const entries: AutoFillRowEntry[] = error
+      ? []
+      : result.entries.map((e) => ({ date: e.date, hours: e.hours, costRateCents, soldRateCents }))
+    const revenueCents = entries.reduce((s, e) => s + Math.round(e.hours * e.soldRateCents), 0)
+    const costCents = entries.reduce((s, e) => s + Math.round(e.hours * e.costRateCents), 0)
+
+    rows.push({
+      ...baseRow,
+      targetHours: result.targetHours,
+      manualHours: result.manualHours,
+      filledHours: error ? 0 : result.filledHours,
+      revenueCents,
+      costCents,
+      entries,
+      warnings: result.warnings,
+      error,
+    })
+  }
+
+  const totals = rows.reduce(
+    (t, r) => ({
+      assignments: t.assignments + 1,
+      entries: t.entries + r.entries.length,
+      hours: Math.round((t.hours + r.filledHours) * 100) / 100,
+      revenueCents: t.revenueCents + r.revenueCents,
+      costCents: t.costCents + r.costCents,
+      withErrors: t.withErrors + (r.error ? 1 : 0),
+    }),
+    { assignments: 0, entries: 0, hours: 0, revenueCents: 0, costCents: 0, withErrors: 0 },
+  )
+
+  return { rows, totals }
+}
+
+// ─── Configuración de dedicación por asignación ───────────────────────────────────
+
+export type ConfigurableAssignment = {
+  assignmentId: string
+  personName: string
+  projectId: string
+  projectName: string
+  projectType: string
+  billingModel: string
+  allowedAreas: string[]
+  autoFillEnabled: boolean
+  autoFillMode: AutoFillMode | null
+  dedicationPercent: string | null
+  monthlyTargetHours: string | null
+  autoFillArea: string | null
+}
+
+/** Asignaciones activas de la org (para configurar su dedicación en el panel). */
+export async function getConfigurableAssignments(orgId: string): Promise<ConfigurableAssignment[]> {
+  const rows = await db
+    .select({
+      assignmentId: projectAssignments.id,
+      personName: persons.name,
+      projectId: projectAssignments.projectId,
+      projectName: projects.name,
+      projectType: projects.type,
+      billingModel: projects.billingModel,
+      allowedAreas: projectAssignments.allowedAreas,
+      autoFillEnabled: projectAssignments.autoFillEnabled,
+      autoFillMode: projectAssignments.autoFillMode,
+      dedicationPercent: projectAssignments.dedicationPercent,
+      monthlyTargetHours: projectAssignments.monthlyTargetHours,
+      autoFillArea: projectAssignments.autoFillArea,
+    })
+    .from(projectAssignments)
+    .innerJoin(persons, eq(persons.id, projectAssignments.personId))
+    .innerJoin(projects, eq(projects.id, projectAssignments.projectId))
+    .where(
+      and(
+        eq(projectAssignments.organizationId, orgId),
+        eq(projectAssignments.isActive, true),
+        ne(projects.status, 'closed'),
+      ),
+    )
+
+  return rows as ConfigurableAssignment[]
+}

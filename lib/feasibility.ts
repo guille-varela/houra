@@ -1,31 +1,43 @@
 /**
- * Counts working days between two ISO dates (inclusive), excluding weekends and holidays.
+ * Lists the working days between two ISO dates (inclusive) as 'YYYY-MM-DD',
+ * excluding weekends and the dates in `holidaySet`.
  * Uses local-time Date to avoid UTC timezone shifts on date boundaries.
  */
-export function getWorkingDays(
+export function listWorkingDays(
   from: string,        // 'YYYY-MM-DD'
   to: string,          // 'YYYY-MM-DD'
   holidaySet: Set<string>,
-): number {
+): string[] {
   const [fy, fm, fd] = from.split('-').map(Number) as [number, number, number]
   const [ty, tm, td] = to.split('-').map(Number) as [number, number, number]
 
   const start = new Date(fy, fm - 1, fd)
   const end = new Date(ty, tm - 1, td)
 
-  if (end < start) return 0
+  if (end < start) return []
 
-  let count = 0
+  const days: string[] = []
   const cur = new Date(start)
   while (cur <= end) {
     const dow = cur.getDay()
     if (dow !== 0 && dow !== 6) {
       const iso = isoDate(cur)
-      if (!holidaySet.has(iso)) count++
+      if (!holidaySet.has(iso)) days.push(iso)
     }
     cur.setDate(cur.getDate() + 1)
   }
-  return count
+  return days
+}
+
+/**
+ * Counts working days between two ISO dates (inclusive), excluding weekends and holidays.
+ */
+export function getWorkingDays(
+  from: string,        // 'YYYY-MM-DD'
+  to: string,          // 'YYYY-MM-DD'
+  holidaySet: Set<string>,
+): number {
+  return listWorkingDays(from, to, holidaySet).length
 }
 
 function isoDate(d: Date): string {
