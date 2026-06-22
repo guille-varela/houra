@@ -114,6 +114,23 @@ const PROJECTS: ProjTpl[] = [
   { name: 'Titan — Discovery 2026', client: 'Titan Logistics', type: 'fixed_bag', billing: 'by_phase', status: 'draft', areas: ['research', 'ux'], bag: { research: { mid: 100 }, ux: { senior: 120 } }, margin: 34 },
 ]
 
+// Escala de las bolsas (originalAllocation). Las bolsas se dimensionan por encima del
+// consumo de 14 meses para que el % consumido de cartera quede en verde (~60-70%).
+const BAG_SCALE = 3
+function scaleBag(
+  bag: Partial<Record<Area, Partial<Record<Role, number>>>> | undefined,
+): Record<string, Record<string, number>> {
+  const out: Record<string, Record<string, number>> = {}
+  if (!bag) return out
+  for (const [area, roles] of Object.entries(bag)) {
+    out[area] = {}
+    for (const [role, h] of Object.entries(roles ?? {})) {
+      out[area]![role] = Math.round((h as number) * BAG_SCALE)
+    }
+  }
+  return out
+}
+
 function pad2(n: number) {
   return n < 10 ? `0${n}` : `${n}`
 }
@@ -230,7 +247,7 @@ async function seed() {
       type: t.type,
       billingModel: t.billing,
       areasEnabled: t.areas,
-      originalAllocation: (t.bag ?? {}) as Record<string, Record<string, number>>,
+      originalAllocation: scaleBag(t.bag),
       weeklyHours: '37.5',
       status: t.status,
       startDate: '2025-01-15',
