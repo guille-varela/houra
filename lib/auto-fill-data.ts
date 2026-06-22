@@ -14,12 +14,12 @@ import {
   persons,
   projectAssignments,
   projects,
+  rates,
   timeEntries,
   timeOffEntries,
 } from '@/db/schema'
 import { computeAutoFill, dailyHoursFromWeekly, type AutoFillMode } from './auto-fill'
 import { listWorkingDays, DEFAULT_HOLIDAY_REGION } from './feasibility'
-import { resolveRate } from './rates'
 
 export type AutoFillScope = { projectId?: string; personId?: string }
 
@@ -72,43 +72,6 @@ function yearsBetween(startIso: string, endIso: string): number[] {
   return out
 }
 
-/** Festivos (por región de la persona) ∪ vacaciones/ausencias de la persona en el periodo. */
-async function buildPersonHolidaySet(
-  orgId: string,
-  personId: string,
-  holidayRegion: string | null,
-  periodStart: string,
-  periodEnd: string,
-): Promise<Set<string>> {
-  const region = regionOf(holidayRegion)
-  const years = yearsBetween(periodStart, periodEnd)
-
-  const [holidayRows, timeOffRows] = await Promise.all([
-    db
-      .select({ dates: holidayPresets.dates })
-      .from(holidayPresets)
-      .where(and(eq(holidayPresets.region, region), inArray(holidayPresets.year, years))),
-    db
-      .select({ date: timeOffEntries.date })
-      .from(timeOffEntries)
-      .where(
-        and(
-          eq(timeOffEntries.organizationId, orgId),
-          eq(timeOffEntries.personId, personId),
-          gte(timeOffEntries.date, periodStart),
-          lte(timeOffEntries.date, periodEnd),
-        ),
-      ),
-  ])
-
-  const set = new Set<string>()
-  for (const r of holidayRows) {
-    for (const d of r.dates as Array<{ date: string }>) set.add(d.date)
-  }
-  for (const r of timeOffRows) set.add(r.date as string)
-  return set
-}
-
 type EligibleRow = {
   assignmentId: string
   personId: string
@@ -120,6 +83,7 @@ type EligibleRow = {
   projectId: string
   projectName: string
   projectWeeklyHours: string
+  projectWorkspaceId: string | null
   allowedAreas: string[]
   autoFillMode: AutoFillMode | null
   dedicationPercent: string | null
@@ -152,6 +116,7 @@ async function getEligibleAssignments(orgId: string, scope: AutoFillScope): Prom
       projectId: projectAssignments.projectId,
       projectName: projects.name,
       projectWeeklyHours: projects.weeklyHours,
+      projectWorkspaceId: projects.workspaceId,
       allowedAreas: projectAssignments.allowedAreas,
       autoFillMode: projectAssignments.autoFillMode,
       dedicationPercent: projectAssignments.dedicationPercent,
@@ -194,10 +159,110 @@ export async function computeAutoFillForScope(
   ])
   const orgWeekly = orgRow[0]?.defaultWeeklyHours ? parseFloat(orgRow[0].defaultWeeklyHours) : 37.5
 
-  // Cada asignación hace varias queries (festivos, manuales, tarifa); se procesan
-  // EN PARALELO (no secuencial) para no agotar el tiempo del Worker con N+1 round-trips.
-  const rows: AutoFillRow[] = await Promise.all(
-    eligible.map(async (a): Promise<AutoFillRow> => {
+  if (eligible.length === 0) {
+    return { rows: [], totals: { assignments: 0, entries: 0, hours: 0, revenueCents: 0, costCents: 0, withErrors: 0 } }
+  }
+
+  // ── Carga EN LOTE de todos los datos auxiliares (pocas queries fijas, no por
+  //    asignación → respeta el límite de subrequests del Worker). ──────────────────
+  const personIds = [...new Set(eligible.map((a) => a.personId))]
+  const projectIds = [...new Set(eligible.map((a) => a.projectId))]
+  const regions = [...new Set(eligible.map((a) => regionOf(a.holidayRegion)))]
+  const years = yearsBetween(periodStart, periodEnd)
+
+  const [holidayRows, timeOffRows, manualRows, rateRows] = await Promise.all([
+    db
+      .select({ region: holidayPresets.region, dates: holidayPresets.dates })
+      .from(holidayPresets)
+      .where(and(inArray(holidayPresets.region, regions), inArray(holidayPresets.year, years))),
+    db
+      .select({ personId: timeOffEntries.personId, date: timeOffEntries.date })
+      .from(timeOffEntries)
+      .where(
+        and(
+          eq(timeOffEntries.organizationId, orgId),
+          inArray(timeOffEntries.personId, personIds),
+          gte(timeOffEntries.date, periodStart),
+          lte(timeOffEntries.date, periodEnd),
+        ),
+      ),
+    db
+      .select({
+        personId: timeEntries.personId,
+        projectId: timeEntries.projectId,
+        date: timeEntries.date,
+        hours: timeEntries.hours,
+      })
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.organizationId, orgId),
+          inArray(timeEntries.personId, personIds),
+          inArray(timeEntries.projectId, projectIds),
+          eq(timeEntries.source, 'manual'),
+          gte(timeEntries.date, periodStart),
+          lte(timeEntries.date, periodEnd),
+        ),
+      ),
+    db.select().from(rates).where(eq(rates.organizationId, orgId)),
+  ])
+
+  // Festivos por región.
+  const holidaysByRegion = new Map<string, Set<string>>()
+  for (const r of holidayRows) {
+    const set = holidaysByRegion.get(r.region) ?? new Set<string>()
+    for (const d of r.dates as Array<{ date: string }>) set.add(d.date)
+    holidaysByRegion.set(r.region, set)
+  }
+  // Vacaciones por persona.
+  const vacationsByPerson = new Map<string, Set<string>>()
+  for (const r of timeOffRows) {
+    const set = vacationsByPerson.get(r.personId) ?? new Set<string>()
+    set.add(r.date as string)
+    vacationsByPerson.set(r.personId, set)
+  }
+  // Manuales por (persona|proyecto) → horas por fecha.
+  const manualByPair = new Map<string, Record<string, number>>()
+  for (const m of manualRows) {
+    const key = `${m.personId}|${m.projectId}`
+    const rec = manualByPair.get(key) ?? {}
+    rec[m.date as string] = (rec[m.date as string] ?? 0) + parseFloat(m.hours)
+    manualByPair.set(key, rec)
+  }
+
+  // Resolución de tarifa EN MEMORIA (misma cascada que lib/rates.ts).
+  function resolveRateMem(
+    personId: string,
+    projectId: string,
+    workspaceId: string | null,
+    area: string,
+    role: string,
+    date: string,
+  ): { costRateCents: number; soldRateCents: number } | null {
+    const cands = rateRows.filter(
+      (r) =>
+        r.area === area &&
+        r.role === role &&
+        r.effectiveFrom <= date &&
+        (r.effectiveTo === null || r.effectiveTo >= date),
+    )
+    const personRow = cands.find((r) => r.personId === personId)
+    const projectRow = cands.find((r) => r.projectId === projectId && r.personId === null)
+    const workspaceRow = cands.find(
+      (r) => r.workspaceId === workspaceId && r.projectId === null && r.personId === null,
+    )
+    const orgScopeRow = cands.find((r) => r.workspaceId === null && r.projectId === null && r.personId === null)
+    const costRateCents =
+      personRow?.costRateCents ?? projectRow?.costRateCents ?? workspaceRow?.costRateCents ?? orgScopeRow?.costRateCents ?? null
+    const soldRateCents =
+      projectRow?.soldRateCents ?? workspaceRow?.soldRateCents ?? orgScopeRow?.soldRateCents ?? null
+    if (costRateCents === null || soldRateCents === null) return null
+    return { costRateCents, soldRateCents }
+  }
+
+  // Todo lo necesario está ya en memoria → el cálculo por asignación es síncrono
+  // (cero queries dentro del bucle → no agota el límite de subrequests del Worker).
+  const rows: AutoFillRow[] = eligible.map((a): AutoFillRow => {
     const area = a.autoFillArea ?? a.personPrimaryArea
     const baseRow = {
       assignmentId: a.assignmentId,
@@ -230,26 +295,11 @@ export async function computeAutoFillForScope(
       return { ...baseRow, targetHours: 0, manualHours: 0, filledHours: 0, revenueCents: 0, costCents: 0, entries: [], warnings: ['La asignación no está vigente en el periodo seleccionado.'], error: null }
     }
 
-    const holidaySet = await buildPersonHolidaySet(orgId, a.personId, a.holidayRegion, effStart, effEnd)
-
-    // Imputaciones manuales del periodo (se respetan y descuentan del objetivo).
-    const manualRows = await db
-      .select({ date: timeEntries.date, hours: timeEntries.hours })
-      .from(timeEntries)
-      .where(
-        and(
-          eq(timeEntries.organizationId, orgId),
-          eq(timeEntries.personId, a.personId),
-          eq(timeEntries.projectId, a.projectId),
-          eq(timeEntries.source, 'manual'),
-          gte(timeEntries.date, effStart),
-          lte(timeEntries.date, effEnd),
-        ),
-      )
-    const manualHoursByDate: Record<string, number> = {}
-    for (const m of manualRows) {
-      manualHoursByDate[m.date as string] = (manualHoursByDate[m.date as string] ?? 0) + parseFloat(m.hours)
-    }
+    const holidaySet = new Set<string>([
+      ...(holidaysByRegion.get(regionOf(a.holidayRegion)) ?? []),
+      ...(vacationsByPerson.get(a.personId) ?? []),
+    ])
+    const manualHoursByDate = manualByPair.get(`${a.personId}|${a.projectId}`) ?? {}
 
     const weekly = a.projectWeeklyHours ? parseFloat(a.projectWeeklyHours) : orgWeekly
     const dailyHours = dailyHoursFromWeekly(weekly)
@@ -272,17 +322,17 @@ export async function computeAutoFillForScope(
       manualHoursByDate,
     })
 
-    // Tarifa: se resuelve una vez por asignación (al inicio del periodo efectivo).
+    // Tarifa: resuelta EN MEMORIA (cascada person>project>workspace>org).
     let costRateCents = 0
     let soldRateCents = 0
     let error: string | null = null
     if (result.entries.length > 0) {
-      try {
-        const r = await resolveRate(a.personId, a.projectId, area, a.professionalCategory, effStart)
+      const r = resolveRateMem(a.personId, a.projectId, a.projectWorkspaceId, area, a.professionalCategory, effStart)
+      if (r) {
         costRateCents = r.costRateCents
         soldRateCents = r.soldRateCents
-      } catch (e) {
-        error = e instanceof Error ? e.message : 'No se pudo resolver la tarifa.'
+      } else {
+        error = `No hay tarifa configurada para el área ${area} y rol ${a.professionalCategory}.`
       }
     }
 
@@ -303,8 +353,7 @@ export async function computeAutoFillForScope(
       warnings: result.warnings,
       error,
     }
-    }),
-  )
+  })
 
   const totals = rows.reduce(
     (t, r) => ({
